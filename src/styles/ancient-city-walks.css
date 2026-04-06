@@ -1,0 +1,355 @@
+/* Ancient City Walks Experience Styles */
+.ancient-city-walks-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #8B4513 0%, #CD853F 20%, #D2691E 40%, #DEB887 60%, #F4A460 80%, #DAA520 100%);
+  color: #fff;
+  font-family: 'Inter', 'Arial', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 60px;
+}
+
+/* Animated Background */
+.ancient-city-walks-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(218, 165, 32, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(139, 69, 19, 0.1) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 30%, rgba(210, 105, 30, 0.1) 50%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+  animation: ancientAura 25s ease-in-out infinite;
+}
+
+@keyframes ancientAura {
+  0%, 100% { opacity: 0.3; }
+  25% { opacity: 0.6; }
+  50% { opacity: 0.4; }
+  75% { opacity: 0.7; }
+}
+
+.ancient-city-walks-container > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Header */
+.ancient-city-walks-header {
+  text-align: center;
+  padding: 40px 20px;
+  background: rgba(139, 69, 19, 0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 3px solid rgba(218, 165, 32, 0.6);
+  box-shadow: 0 0 40px rgba(218, 165, 32, 0.4);
+}
+
+.ancient-city-walks-header h1 {
+  font-size: 3.2rem;
+  margin: 0 0 15px 0;
+  background: linear-gradient(45deg, #DAA520, #F4A460, #DEB887, #DAA520);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: bold;
+  text-shadow: 0 0 30px rgba(218, 165, 32, 0.6);
+  font-family: 'Georgia', serif;
+}
+
+.ancient-city-walks-header p {
+  font-size: 1.4rem;
+  color: #FFF8DC;
+  margin: 0;
+  font-style: italic;
+  text-shadow: 0 0 10px rgba(218, 165, 32, 0.3);
+}
+
+/* City Information Section */
+.city-info-section {
+  max-width: 1000px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.city-title {
+  text-align: center;
+  margin-bottom: 25px;
+  background: rgba(139, 69, 19, 0.8);
+  border-radius: 15px;
+  padding: 25px;
+  border: 2px solid rgba(218, 165, 32, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.city-title h2 {
+  font-size: 2.5rem;
+  margin: 0;
+  color: #DAA520;
+  font-family: 'Georgia', serif;
+  text-shadow: 0 0 20px rgba(218, 165, 32, 0.5);
+}
+
+.city-description {
+  text-align: center;
+  margin-bottom: 20px;
+  background: rgba(139, 69, 19, 0.6);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(218, 165, 32, 0.3);
+}
+
+.city-description p {
+  font-size: 1.3rem;
+  line-height: 1.6;
+  color: #FFF8DC;
+  margin: 0;
+  font-style: italic;
+}
+
+.city-landmark {
+  text-align: center;
+  background: rgba(139, 69, 19, 0.6);
+  border-radius: 12px;
+  padding: 15px;
+  border: 1px solid rgba(218, 165, 32, 0.3);
+}
+
+.city-landmark p {
+  font-size: 1.1rem;
+  color: #F4A460;
+  margin: 0;
+}
+
+.city-landmark strong {
+  color: #DAA520;
+}
+
+/* Video Content */
+.ancient-city-walks-content {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.video-container {
+  display: flex;
+  justify-content: center;
+  background: rgba(139, 69, 19, 0.8);
+  border-radius: 20px;
+  padding: 30px;
+  border: 3px solid rgba(218, 165, 32, 0.5);
+  backdrop-filter: blur(15px);
+  box-shadow: 0 0 50px rgba(218, 165, 32, 0.3);
+}
+
+.city-walk-video {
+  width: 100%;
+  max-width: 800px;
+  border-radius: 15px;
+  box-shadow: 0 15px 60px rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(218, 165, 32, 0.4);
+}
+
+/* Loading State */
+.ancient-city-walks-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.time-portal-spinner {
+  width: 120px;
+  height: 120px;
+  border: 6px solid rgba(218, 165, 32, 0.3);
+  border-top: 6px solid #DAA520;
+  border-radius: 50%;
+  animation: timePortalSpinning 4s linear infinite;
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.time-portal-spinner::before {
+  content: '🏛️';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.5rem;
+  animation: counterSpin 4s linear infinite;
+}
+
+@keyframes timePortalSpinning {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes counterSpin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(-360deg); }
+}
+
+.ancient-city-walks-loading h2 {
+  color: #DAA520;
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  font-weight: bold;
+  text-shadow: 0 0 20px rgba(218, 165, 32, 0.5);
+  font-family: 'Georgia', serif;
+}
+
+.ancient-city-walks-loading p {
+  color: #FFF8DC;
+  font-size: 1.3rem;
+  font-style: italic;
+  margin-bottom: 20px;
+}
+
+.generation-info {
+  background: rgba(139, 69, 19, 0.6);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(218, 165, 32, 0.3);
+  max-width: 500px;
+}
+
+.generation-info p {
+  font-size: 1.1rem;
+  margin: 10px 0;
+  color: #F4A460;
+}
+
+/* Error State */
+.ancient-city-walks-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.ancient-city-walks-error h3 {
+  color: #FF6347;
+  font-size: 2.2rem;
+  margin-bottom: 20px;
+  font-weight: bold;
+  font-family: 'Georgia', serif;
+}
+
+.ancient-city-walks-error p {
+  color: #FFB6C1;
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  max-width: 500px;
+}
+
+/* Action Buttons */
+.ancient-city-walks-actions {
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  padding: 20px;
+  flex-wrap: wrap;
+}
+
+.ancient-city-walks-btn {
+  padding: 18px 35px;
+  border: none;
+  border-radius: 30px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 250px;
+  justify-content: center;
+  font-family: 'Inter', 'Arial', sans-serif;
+}
+
+.ancient-city-walks-btn.primary {
+  background: linear-gradient(45deg, #DAA520, #F4A460, #DEB887);
+  color: #8B4513;
+  box-shadow: 0 6px 25px rgba(218, 165, 32, 0.5);
+}
+
+.ancient-city-walks-btn.primary:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 35px rgba(218, 165, 32, 0.7);
+  background: linear-gradient(45deg, #DEB887, #F4A460, #DAA520);
+}
+
+.ancient-city-walks-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ancient-city-walks-btn.secondary {
+  background: rgba(218, 165, 32, 0.1);
+  color: #DAA520;
+  border: 2px solid rgba(218, 165, 32, 0.5);
+}
+
+.ancient-city-walks-btn.secondary:hover {
+  transform: translateY(-2px);
+  background: rgba(218, 165, 32, 0.2);
+  border-color: rgba(218, 165, 32, 0.7);
+}
+
+/* Model Attribution */
+.model-attribution {
+  text-align: center;
+  padding: 25px;
+  margin-top: 30px;
+  border-top: 1px solid rgba(218, 165, 32, 0.3);
+  background: rgba(139, 69, 19, 0.4);
+}
+
+.model-attribution p {
+  color: #FFF8DC;
+  font-size: 0.95rem;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .ancient-city-walks-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .ancient-city-walks-header p {
+    font-size: 1.2rem;
+  }
+  
+  .city-title h2 {
+    font-size: 2rem;
+  }
+  
+  .video-container {
+    padding: 20px;
+  }
+  
+  .ancient-city-walks-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .ancient-city-walks-btn {
+    width: 100%;
+    max-width: 320px;
+  }
+}

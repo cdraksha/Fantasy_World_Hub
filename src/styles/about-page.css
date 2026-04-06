@@ -1,0 +1,419 @@
+/* About Page Styles */
+.about-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, #16213e 50%, #1a1a2e 100%);
+  color: #e8e8e8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  padding: 0;
+}
+
+.about-header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 40px;
+  padding: 20px 0;
+  border-bottom: 2px solid rgba(78, 205, 196, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+
+.back-button {
+  background: transparent;
+  color: #64b5f6;
+  border: 1px solid rgba(100, 181, 246, 0.4);
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-bottom: 1rem;
+}
+
+.back-button:hover {
+  background: rgba(100, 181, 246, 0.1);
+  border-color: #64b5f6;
+}
+
+.about-header h1 {
+  font-size: 2.5rem;
+  margin: 0;
+  color: #ffffff;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Generate Another Image Buttons */
+.generate-another-btn {
+  background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 12px rgba(124, 58, 237, 0.3);
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.generate-another-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4);
+}
+
+.generate-another-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Model Attribution */
+.model-attribution {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  font-size: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 2rem;
+}
+
+.about-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Section Layout with Images */
+.personal-section,
+.fantasyworldhub-section,
+.why-ai-section,
+.ai-future-section,
+.creator-fantasy-section {
+  display: flex;
+  gap: 3rem;
+  margin: 3rem;
+  padding: 3rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.profile-section {
+  display: flex;
+  gap: 4rem;
+  margin: 3rem;
+  padding: 3rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(20px);
+}
+
+/* Alternating Layout */
+.image-right {
+  flex-direction: row-reverse;
+}
+
+.image-left {
+  flex-direction: row;
+}
+
+.section-image {
+  flex: 0 0 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section-image img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.section-image img:hover {
+  transform: scale(1.02);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(124, 58, 237, 0.2);
+  border-left: 4px solid #7c3aed;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.image-placeholder {
+  width: 100%;
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+}
+
+.placeholder-icon {
+  font-size: 3rem;
+  opacity: 0.5;
+  margin-bottom: 10px;
+}
+
+.section-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.section-content h3 {
+  color: #64b5f6;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.section-content p {
+  color: #e8e8e8;
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+.fantasy-scenario {
+  color: #7c3aed !important;
+  font-style: italic;
+  font-size: 1.1rem !important;
+  background: rgba(124, 58, 237, 0.1);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border-left: 4px solid #7c3aed;
+}
+
+.profile-section {
+  display: flex;
+  gap: 4rem;
+  margin: 3rem;
+  padding: 3rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(20px);
+}
+
+.profile-image {
+  flex-shrink: 0;
+}
+
+.profile-image img {
+  width: 180px;
+  height: 180px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.profile-info h2 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: #ffffff;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.professional-bio {
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 400;
+}
+
+.linkedin-link {
+  display: inline-flex;
+  align-items: center;
+  background: #0077b5;
+  color: white;
+  padding: 0.7rem 1.4rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.linkedin-link:hover {
+  background: #005885;
+  transform: translateY(-1px);
+}
+
+.profile-buttons {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.deck-button {
+  display: inline-flex;
+  align-items: center;
+  background: #0077b5;
+  color: white;
+  padding: 0.7rem 1.4rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.deck-button:hover {
+  background: #005885;
+  transform: translateY(-1px);
+}
+
+.personal-section, .fantasyworldhub-section, .why-ai-section {
+  margin: 3rem;
+  padding: 3rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(20px);
+}
+
+.personal-section h3, .fantasyworldhub-section h3, .why-ai-section h3 {
+  font-size: 1.5rem;
+  color: #64b5f6;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.personal-story, .fantasyworldhub-section p, .why-ai-section p {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 1.5rem;
+  font-weight: 400;
+}
+
+.creative-sanctuary-box {
+  margin: 3rem;
+  padding: 3rem;
+  background: rgba(100, 181, 246, 0.05);
+  border: 1px solid rgba(100, 181, 246, 0.2);
+  border-radius: 12px;
+  text-align: center;
+  backdrop-filter: blur(20px);
+}
+
+.sanctuary-quote {
+  font-size: 1.1rem;
+  font-style: italic;
+  color: #64b5f6;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.hub-link {
+  display: inline-block;
+  background: #64b5f6;
+  color: white;
+  padding: 0.8rem 1.6rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.hub-link:hover {
+  background: #42a5f5;
+  transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .about-page {
+    padding: 1rem;
+  }
+  
+  .about-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .about-header h1 {
+    font-size: 2rem;
+  }
+  
+  .profile-section {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 2rem;
+  }
+  
+  .profile-image img {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .profile-info h2 {
+    font-size: 2rem;
+  }
+  
+  .personal-section h3, .fantasyworldhub-section h3, .why-ai-section h3 {
+    font-size: 1.5rem;
+  }
+  
+  .sanctuary-quote {
+    font-size: 1.1rem;
+  }
+  
+  .personal-section,
+  .fantasyworldhub-section,
+  .why-ai-section,
+  .ai-future-section,
+  .creator-fantasy-section {
+    flex-direction: column;
+    gap: 2rem;
+    margin: 1.5rem;
+    padding: 2rem;
+  }
+  
+  .section-image {
+    flex: none;
+  }
+  
+  .section-image img {
+    height: 250px;
+  }
+  
+}

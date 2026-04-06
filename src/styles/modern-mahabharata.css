@@ -1,0 +1,318 @@
+/* Modern Mahabharata - Epic Warfare Theme */
+.modern-mahabharata-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0d1117 0%, #1c2128 30%, #21262d 70%, #30363d 100%);
+  color: #e8e8e8;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.modern-mahabharata-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(255, 69, 0, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 215, 0, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 60% 80%, rgba(220, 20, 60, 0.06) 0%, transparent 50%),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><defs><pattern id="warfare" width="120" height="120" patternUnits="userSpaceOnUse"><rect x="30" y="30" width="60" height="60" fill="none" stroke="%23ff4500" stroke-width="0.5" opacity="0.1"/><polygon points="60,20 70,40 60,60 50,40" fill="none" stroke="%23ffd700" stroke-width="0.3" opacity="0.08"/><circle cx="60" cy="60" r="2" fill="%23dc143c" opacity="0.1"/></pattern></defs><rect width="120" height="120" fill="url(%23warfare)"/></svg>');
+  pointer-events: none;
+}
+
+/* Loading State */
+.modern-mahabharata-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  z-index: 1;
+  position: relative;
+}
+
+.warrior-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(255, 69, 0, 0.3);
+  border-left: 4px solid #ff4500;
+  border-top: 4px solid #ffd700;
+  border-radius: 50%;
+  animation: warriorSpin 2s linear infinite;
+  margin-bottom: 2rem;
+  box-shadow: 0 0 20px rgba(255, 69, 0, 0.3);
+}
+
+@keyframes warriorSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.modern-mahabharata-loading h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #ff4500;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.modern-mahabharata-loading p {
+  font-size: 1.1rem;
+  color: #ffd700;
+  font-style: italic;
+}
+
+/* Error State */
+.modern-mahabharata-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  z-index: 1;
+  position: relative;
+}
+
+.modern-mahabharata-error h3 {
+  color: #ff4500;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.modern-mahabharata-error p {
+  color: #ffd700;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+/* Header */
+.modern-mahabharata-header {
+  text-align: center;
+  padding: 3rem 2rem 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.modern-mahabharata-header h1 {
+  font-size: 3.5rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #ff4500 0%, #ffd700 30%, #dc143c 70%, #ff4500 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(255, 69, 0, 0.3);
+  font-weight: bold;
+}
+
+.modern-mahabharata-header p {
+  font-size: 1.4rem;
+  color: #ff6347;
+  font-style: italic;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Combat Description */
+.combat-description {
+  background: rgba(26, 26, 46, 0.4);
+  border: 2px solid;
+  border-image: linear-gradient(135deg, #ff4500, #ffd700, #dc143c) 1;
+  border-radius: 15px;
+  padding: 1.5rem 2rem;
+  margin: 2rem 3rem;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  z-index: 1;
+  position: relative;
+}
+
+.combat-description p {
+  font-size: 1.2rem;
+  color: #e8e8e8;
+  margin: 0;
+  line-height: 1.6;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  font-weight: 500;
+}
+
+/* Main Image Container */
+.combat-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 3rem;
+  z-index: 1;
+  position: relative;
+}
+
+.combat-image {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  border: 3px solid;
+  border-image: linear-gradient(135deg, #ff4500, #ffd700, #dc143c) 1;
+  transition: transform 0.3s ease;
+}
+
+.combat-image:hover {
+  transform: scale(1.02);
+}
+
+/* Action Buttons */
+.modern-mahabharata-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.modern-mahabharata-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: inherit;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.modern-mahabharata-btn.primary {
+  background: linear-gradient(135deg, #ff4500 0%, #ffd700 100%);
+  color: #ffffff;
+  border: 2px solid #ff4500;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.modern-mahabharata-btn.primary:hover {
+  background: linear-gradient(135deg, #ffd700 0%, #ff4500 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 69, 0, 0.4);
+}
+
+.modern-mahabharata-btn.secondary {
+  background: rgba(26, 26, 46, 0.3);
+  color: #e8e8e8;
+  border: 2px solid rgba(255, 215, 0, 0.5);
+}
+
+.modern-mahabharata-btn.secondary:hover {
+  background: rgba(26, 26, 46, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26, 26, 46, 0.4);
+}
+
+.modern-mahabharata-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Model Attribution */
+.model-attribution {
+  text-align: center;
+  padding: 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.model-attribution p {
+  color: rgba(255, 99, 71, 0.8);
+  font-size: 1rem;
+  font-style: italic;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .combat-description {
+    margin: 2rem;
+  }
+  
+  .combat-image-container {
+    padding: 2rem;
+  }
+  
+  .modern-mahabharata-header h1 {
+    font-size: 3rem;
+  }
+  
+  .modern-mahabharata-header p {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .combat-description {
+    margin: 1rem 2rem;
+    padding: 1rem 1.5rem;
+  }
+  
+  .combat-description p {
+    font-size: 1.1rem;
+  }
+  
+  .combat-image-container {
+    padding: 1rem 2rem;
+  }
+  
+  .modern-mahabharata-header {
+    padding: 2rem 1rem;
+  }
+  
+  .modern-mahabharata-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .modern-mahabharata-header p {
+    font-size: 1.1rem;
+  }
+  
+  .modern-mahabharata-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .modern-mahabharata-btn {
+    width: 100%;
+    max-width: 350px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-mahabharata-header h1 {
+    font-size: 2rem;
+  }
+  
+  .modern-mahabharata-header p {
+    font-size: 1rem;
+  }
+  
+  .combat-description {
+    margin: 1rem;
+    padding: 1rem;
+  }
+  
+  .combat-description p {
+    font-size: 1rem;
+  }
+  
+  .combat-image-container {
+    padding: 1rem;
+  }
+}

@@ -1,0 +1,318 @@
+/* Daydream Fantasy Experience Styles */
+.daydream-fantasy-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  color: white;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.daydream-fantasy-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(138, 43, 226, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(30, 144, 255, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Header */
+.daydream-fantasy-header {
+  text-align: center;
+  margin-bottom: 30px;
+  z-index: 2;
+  position: relative;
+}
+
+.daydream-fantasy-header h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  background: linear-gradient(45deg, #ffd700, #ff6b6b, #4ecdc4);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 3s ease-in-out infinite;
+}
+
+.daydream-fantasy-header p {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Description Box */
+.fantasy-description-box {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  padding: 20px 30px;
+  margin-bottom: 30px;
+  max-width: 800px;
+  width: 100%;
+  text-align: center;
+  z-index: 2;
+  position: relative;
+}
+
+.fantasy-description-box p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+/* Image Container */
+.fantasy-image-container {
+  position: relative;
+  max-width: 1000px;
+  width: 100%;
+  margin-bottom: 40px;
+  z-index: 2;
+  aspect-ratio: 2/1;
+  overflow: hidden;
+  border-radius: 20px;
+  box-shadow: 
+    0 25px 80px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.fantasy-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 0;
+  box-shadow: none;
+  transition: transform 0.3s ease;
+}
+
+.fantasy-image-container:hover {
+  transform: scale(1.02);
+  box-shadow: 
+    0 35px 100px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.fantasy-image:hover {
+  transform: scale(1.05);
+}
+
+/* Labels */
+.fantasy-labels {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 40px;
+  pointer-events: none;
+}
+
+.duoverse-label {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.duoverse-label.left {
+  background: linear-gradient(45deg, rgba(108, 117, 125, 0.8), rgba(73, 80, 87, 0.8));
+}
+
+.duoverse-label.right {
+  background: linear-gradient(45deg, rgba(255, 215, 0, 0.8), rgba(255, 193, 7, 0.8));
+}
+
+/* Actions */
+.daydream-fantasy-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+  z-index: 2;
+  position: relative;
+}
+
+.daydream-fantasy-btn {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+}
+
+.daydream-fantasy-btn.primary {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+}
+
+.daydream-fantasy-btn.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+}
+
+.daydream-fantasy-btn.secondary {
+  background: linear-gradient(45deg, #6c757d, #495057);
+  color: white;
+  box-shadow: 0 10px 30px rgba(108, 117, 125, 0.3);
+}
+
+.daydream-fantasy-btn.secondary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(108, 117, 125, 0.5);
+}
+
+.daydream-fantasy-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Loading */
+.daydream-fantasy-loading {
+  text-align: center;
+  padding: 60px 20px;
+  z-index: 2;
+  position: relative;
+}
+
+.fantasy-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(102, 126, 234, 0.3);
+  border-top: 4px solid #ffd700;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 30px;
+}
+
+.daydream-fantasy-loading h2 {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  color: #ffd700;
+}
+
+.daydream-fantasy-loading p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-style: italic;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error */
+.daydream-fantasy-error {
+  text-align: center;
+  padding: 60px 20px;
+  z-index: 2;
+  position: relative;
+}
+
+.daydream-fantasy-error h3 {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  color: #ff6b6b;
+}
+
+.daydream-fantasy-error p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 30px;
+}
+
+/* Model Attribution */
+.model-attribution {
+  text-align: center;
+  z-index: 2;
+  position: relative;
+}
+
+.model-attribution p {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .daydream-fantasy-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .daydream-fantasy-header p {
+    font-size: 1rem;
+  }
+  
+  .fantasy-description-box {
+    padding: 15px 20px;
+    margin-bottom: 20px;
+  }
+  
+  .fantasy-description-box p {
+    font-size: 1rem;
+  }
+  
+  .fantasy-image-container {
+    max-width: 100%;
+    aspect-ratio: 16/9;
+  }
+  
+  .fantasy-labels {
+    padding: 0 20px;
+  }
+  
+  .fantasy-label {
+    padding: 8px 15px;
+    font-size: 0.9rem;
+  }
+  
+  .daydream-fantasy-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .daydream-fantasy-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

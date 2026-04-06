@@ -1,0 +1,364 @@
+/* Human Hive Mind - Neural network/collective consciousness theme */
+.human-hive-mind-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 25%, #2d1b69 50%, #3b2f87 75%, #4a3c9a 100%);
+  color: #e0e6ff;
+  padding: 2rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+.human-hive-mind-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(138, 43, 226, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(75, 0, 130, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(147, 112, 219, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Loading State */
+.human-hive-mind-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.neural-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(138, 43, 226, 0.3);
+  border-top: 4px solid #8a2be2;
+  border-radius: 50%;
+  animation: neuralPulse 2s ease-in-out infinite;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.neural-spinner::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  border: 2px solid rgba(75, 0, 130, 0.3);
+  border-bottom: 2px solid #4b0082;
+  border-radius: 50%;
+  animation: neuralPulse 1.5s ease-in-out infinite reverse;
+}
+
+.neural-spinner::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  border: 1px solid rgba(147, 112, 219, 0.3);
+  border-left: 1px solid #9370db;
+  border-radius: 50%;
+  animation: neuralPulse 1s ease-in-out infinite;
+}
+
+@keyframes neuralPulse {
+  0%, 100% { transform: rotate(0deg) scale(1); opacity: 0.6; }
+  25% { transform: rotate(90deg) scale(1.1); opacity: 0.8; }
+  50% { transform: rotate(180deg) scale(1.2); opacity: 1; }
+  75% { transform: rotate(270deg) scale(1.1); opacity: 0.8; }
+}
+
+.human-hive-mind-loading h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #8a2be2;
+  text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
+}
+
+.human-hive-mind-loading p {
+  font-size: 1.1rem;
+  color: #9370db;
+  font-style: italic;
+}
+
+/* Error State */
+.human-hive-mind-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.human-hive-mind-error h3 {
+  color: #8a2be2;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.human-hive-mind-error p {
+  color: #9370db;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+/* Header */
+.human-hive-mind-header {
+  text-align: center;
+  padding: 3rem 2rem 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.human-hive-mind-header h1 {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  color: #8a2be2;
+  text-shadow: 0 0 15px rgba(138, 43, 226, 0.7);
+  font-weight: bold;
+}
+
+.human-hive-mind-header p {
+  font-size: 1.3rem;
+  color: #9370db;
+  font-style: italic;
+  text-shadow: 0 0 5px rgba(147, 112, 219, 0.5);
+}
+
+/* Content Layout - Text Left, Image Right like Retro Futurism */
+.human-hive-mind-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+/* Text Section */
+.hive-mind-text-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hive-mind-story {
+  background: rgba(10, 10, 10, 0.4);
+  border: 2px solid rgba(138, 43, 226, 0.4);
+  border-radius: 20px;
+  padding: 2.5rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(138, 43, 226, 0.2);
+  position: relative;
+}
+
+.hive-mind-story::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #8a2be2, #4b0082, #9370db, #8a2be2);
+  border-radius: 20px;
+  z-index: -1;
+  animation: collectiveGlow 4s ease-in-out infinite alternate;
+}
+
+@keyframes collectiveGlow {
+  0% { opacity: 0.3; }
+  100% { opacity: 0.6; }
+}
+
+.hive-mind-story h3 {
+  font-size: 1.8rem;
+  color: #8a2be2;
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
+}
+
+.story-content p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #e0e6ff;
+  margin-bottom: 1.2rem;
+  font-weight: 400;
+  text-shadow: 0 0 3px rgba(224, 230, 255, 0.3);
+}
+
+.story-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Image Section */
+.hive-mind-image-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hive-mind-image-container {
+  background: rgba(10, 10, 10, 0.4);
+  border: 2px solid rgba(147, 112, 219, 0.4);
+  border-radius: 20px;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(147, 112, 219, 0.2);
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+}
+
+.hive-mind-image-container::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #9370db, #8a2be2, #4b0082, #9370db);
+  border-radius: 20px;
+  z-index: -1;
+  animation: neuralFlow 5s ease-in-out infinite;
+}
+
+@keyframes neuralFlow {
+  0%, 100% { opacity: 0.3; }
+  25% { opacity: 0.5; }
+  50% { opacity: 0.7; }
+  75% { opacity: 0.5; }
+}
+
+.hive-mind-image {
+  width: 100%;
+  height: auto;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(138, 43, 226, 0.3);
+  object-fit: cover;
+}
+
+/* Action Buttons */
+.human-hive-mind-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.human-hive-mind-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(138, 43, 226, 0.2);
+  position: relative;
+}
+
+.human-hive-mind-btn.primary {
+  background: linear-gradient(135deg, #8a2be2 0%, #4b0082 100%);
+  color: #ffffff;
+  border: 2px solid #8a2be2;
+}
+
+.human-hive-mind-btn.primary:hover {
+  background: linear-gradient(135deg, #4b0082 0%, #8a2be2 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(138, 43, 226, 0.4);
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+.human-hive-mind-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.human-hive-mind-btn.secondary {
+  background: rgba(10, 10, 10, 0.4);
+  color: #e0e6ff;
+  border: 2px solid rgba(147, 112, 219, 0.5);
+}
+
+.human-hive-mind-btn.secondary:hover {
+  background: rgba(10, 10, 10, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(147, 112, 219, 0.4);
+  text-shadow: 0 0 5px rgba(224, 230, 255, 0.5);
+}
+
+/* Model Attribution */
+.model-attribution {
+  text-align: center;
+  margin-top: 3rem;
+  padding: 1rem;
+  color: #666;
+  font-size: 0.9rem;
+  font-style: italic;
+  position: relative;
+  z-index: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .human-hive-mind-content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  .hive-mind-image-section {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .human-hive-mind-content {
+    padding: 1rem 2rem;
+  }
+  
+  .human-hive-mind-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .hive-mind-story {
+    padding: 2rem;
+  }
+  
+  .story-content p {
+    font-size: 1rem;
+  }
+  
+  .human-hive-mind-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .human-hive-mind-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

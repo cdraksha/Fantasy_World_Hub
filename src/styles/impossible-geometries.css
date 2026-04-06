@@ -1,0 +1,298 @@
+/* Impossible Geometries - Mathematical/Escher theme */
+.impossible-geometries-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #404040 100%);
+  color: #e0e0e0;
+  padding: 2rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+.impossible-geometries-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(128, 128, 128, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(192, 192, 192, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.geometry-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid #ffffff;
+  border-radius: 0;
+  animation: geometrySpin 2s linear infinite;
+  margin-bottom: 2rem;
+  position: relative;
+  transform: rotate(45deg);
+}
+
+.geometry-spinner::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  border: 2px solid rgba(128, 128, 128, 0.3);
+  border-bottom: 2px solid #808080;
+  border-radius: 0;
+  animation: geometrySpin 1.5s linear infinite reverse;
+  transform: rotate(45deg);
+}
+
+@keyframes geometrySpin {
+  0% { transform: rotate(45deg); }
+  100% { transform: rotate(405deg); }
+}
+
+.impossible-geometries-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.impossible-geometries-loading h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #ffffff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.impossible-geometries-loading p {
+  font-size: 1.1rem;
+  color: #808080;
+  font-style: italic;
+}
+
+.impossible-geometries-header {
+  text-align: center;
+  padding: 3rem 2rem 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.impossible-geometries-header h1 {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-weight: bold;
+}
+
+.impossible-geometries-header p {
+  font-size: 1.3rem;
+  color: #808080;
+  font-style: italic;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.impossible-geometries-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.geometries-description {
+  text-align: center;
+  margin-bottom: 3rem;
+  background: rgba(26, 26, 26, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 15px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.geometries-description::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: linear-gradient(45deg, #ffffff, #808080, #ffffff, #808080);
+  border-radius: 15px;
+  z-index: -1;
+  animation: geometryGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes geometryGlow {
+  0% { opacity: 0.3; }
+  100% { opacity: 0.6; }
+}
+
+.geometries-description p {
+  font-size: 1.4rem;
+  line-height: 1.6;
+  color: #e0e0e0;
+  margin: 0;
+  font-weight: 500;
+}
+
+.geometries-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(26, 26, 26, 0.3);
+  border: 2px solid rgba(128, 128, 128, 0.4);
+  border-radius: 15px;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.geometries-image-container::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #808080, #ffffff, #808080, #ffffff);
+  border-radius: 15px;
+  z-index: -1;
+  animation: paradoxShift 4s ease-in-out infinite;
+}
+
+@keyframes paradoxShift {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+.geometries-image {
+  max-width: 100%;
+  max-height: 600px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  object-fit: contain;
+}
+
+.impossible-geometries-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.impossible-geometries-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.impossible-geometries-btn.primary {
+  background: linear-gradient(135deg, #ffffff 0%, #808080 100%);
+  color: #000000;
+  border: 2px solid #ffffff;
+}
+
+.impossible-geometries-btn.primary:hover {
+  background: linear-gradient(135deg, #808080 0%, #ffffff 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
+}
+
+.impossible-geometries-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.impossible-geometries-btn.secondary {
+  background: rgba(26, 26, 26, 0.3);
+  color: #e0e0e0;
+  border: 2px solid rgba(128, 128, 128, 0.5);
+}
+
+.impossible-geometries-btn.secondary:hover {
+  background: rgba(26, 26, 26, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(128, 128, 128, 0.4);
+}
+
+.impossible-geometries-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.impossible-geometries-error h3 {
+  color: #ffffff;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.impossible-geometries-error p {
+  color: #808080;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.model-attribution {
+  text-align: center;
+  margin-top: 3rem;
+  padding: 1rem;
+  color: #888;
+  font-size: 0.9rem;
+  font-style: italic;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .impossible-geometries-content {
+    padding: 1rem 2rem;
+  }
+  
+  .impossible-geometries-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .geometries-description p {
+    font-size: 1.2rem;
+  }
+  
+  .impossible-geometries-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .impossible-geometries-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

@@ -1,0 +1,393 @@
+/* Fictional Empire - Epic Civilization Theme */
+.fictional-empire-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 30%, #0f3460 70%, #533483 100%);
+  color: #e8e8e8;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.fictional-empire-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(138, 43, 226, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 60% 80%, rgba(100, 149, 237, 0.06) 0%, transparent 50%),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><defs><pattern id="empire" width="120" height="120" patternUnits="userSpaceOnUse"><rect x="40" y="40" width="40" height="40" fill="none" stroke="%23ffd700" stroke-width="0.5" opacity="0.1"/><circle cx="60" cy="60" r="3" fill="%236495ed" opacity="0.1"/><path d="M30,60 L90,60 M60,30 L60,90" stroke="%238a2be2" stroke-width="0.3" opacity="0.08"/></pattern></defs><rect width="120" height="120" fill="url(%23empire)"/></svg>');
+  pointer-events: none;
+}
+
+/* Loading State */
+.fictional-empire-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  z-index: 1;
+  position: relative;
+}
+
+.empire-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(255, 215, 0, 0.3);
+  border-left: 4px solid #ffd700;
+  border-top: 4px solid #6495ed;
+  border-radius: 50%;
+  animation: empireSpin 2s linear infinite;
+  margin-bottom: 2rem;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+@keyframes empireSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.fictional-empire-loading h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #ffd700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.fictional-empire-loading p {
+  font-size: 1.1rem;
+  color: #6495ed;
+  font-style: italic;
+}
+
+/* Error State */
+.fictional-empire-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  z-index: 1;
+  position: relative;
+}
+
+.fictional-empire-error h3 {
+  color: #ffd700;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.fictional-empire-error p {
+  color: #6495ed;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+/* Header */
+.fictional-empire-header {
+  text-align: center;
+  padding: 3rem 2rem 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.fictional-empire-header h1 {
+  font-size: 3.5rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #ffd700 0%, #6495ed 30%, #8a2be2 70%, #ffd700 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+  font-weight: bold;
+}
+
+.fictional-empire-header p {
+  font-size: 1.4rem;
+  color: #c9b037;
+  font-style: italic;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Main Content Layout - Retro Futurism Style */
+.fictional-empire-content {
+  display: flex;
+  gap: 3rem;
+  padding: 2rem 3rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  z-index: 1;
+  position: relative;
+}
+
+/* Story Panel (Left Side) */
+.empire-story-panel {
+  flex: 1;
+  background: rgba(26, 26, 46, 0.4);
+  border: 2px solid;
+  border-image: linear-gradient(135deg, #ffd700, #6495ed, #8a2be2) 1;
+  border-radius: 20px;
+  padding: 2rem;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.empire-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+.empire-header h2 {
+  font-size: 2rem;
+  color: #ffd700;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  line-height: 1.2;
+}
+
+.empire-status {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  white-space: nowrap;
+}
+
+.empire-backstory {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2rem;
+  border-radius: 15px;
+  border-left: 4px solid #6495ed;
+}
+
+.empire-backstory h3 {
+  color: #6495ed;
+  font-size: 1.3rem;
+  margin-bottom: 1.5rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.backstory-text {
+  color: #e8e8e8;
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+.backstory-text p {
+  margin: 0;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  text-align: justify;
+}
+
+/* Image Panel (Right Side) */
+.empire-image-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.image-container {
+  background: rgba(26, 26, 46, 0.4);
+  border: 3px solid;
+  border-image: linear-gradient(135deg, #ffd700, #6495ed, #8a2be2) 1;
+  border-radius: 20px;
+  padding: 1.5rem;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empire-image {
+  max-width: 100%;
+  max-height: 500px;
+  border-radius: 15px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease;
+}
+
+.empire-image:hover {
+  transform: scale(1.02);
+}
+
+.image-caption {
+  background: rgba(26, 26, 46, 0.3);
+  border: 2px solid rgba(255, 215, 0, 0.4);
+  border-radius: 10px;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.image-caption p {
+  color: #c9b037;
+  font-style: italic;
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Action Buttons */
+.fictional-empire-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.fictional-empire-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: inherit;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.fictional-empire-btn.primary {
+  background: linear-gradient(135deg, #ffd700 0%, #6495ed 100%);
+  color: #ffffff;
+  border: 2px solid #ffd700;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.fictional-empire-btn.primary:hover {
+  background: linear-gradient(135deg, #6495ed 0%, #ffd700 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+}
+
+.fictional-empire-btn.secondary {
+  background: rgba(26, 26, 46, 0.3);
+  color: #e8e8e8;
+  border: 2px solid rgba(100, 149, 237, 0.5);
+}
+
+.fictional-empire-btn.secondary:hover {
+  background: rgba(26, 26, 46, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26, 26, 46, 0.4);
+}
+
+.fictional-empire-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Model Attribution */
+.model-attribution {
+  text-align: center;
+  padding: 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.model-attribution p {
+  color: rgba(201, 176, 55, 0.8);
+  font-size: 1rem;
+  font-style: italic;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .fictional-empire-content {
+    flex-direction: column;
+    padding: 2rem;
+  }
+  
+  .fictional-empire-header h1 {
+    font-size: 3rem;
+  }
+  
+  .fictional-empire-header p {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .fictional-empire-content {
+    padding: 1rem 2rem;
+  }
+  
+  .fictional-empire-header {
+    padding: 2rem 1rem;
+  }
+  
+  .fictional-empire-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .fictional-empire-header p {
+    font-size: 1.1rem;
+  }
+  
+  .fictional-empire-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .fictional-empire-btn {
+    width: 100%;
+    max-width: 350px;
+  }
+  
+  .empire-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .empire-header h2 {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .fictional-empire-header h1 {
+    font-size: 2rem;
+  }
+  
+  .fictional-empire-header p {
+    font-size: 1rem;
+  }
+  
+  .empire-story-panel {
+    padding: 1.5rem;
+  }
+  
+  .empire-backstory {
+    padding: 1.5rem;
+  }
+  
+  .empire-header h2 {
+    font-size: 1.5rem;
+  }
+}

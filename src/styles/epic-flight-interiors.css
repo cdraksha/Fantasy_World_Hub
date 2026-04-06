@@ -1,0 +1,295 @@
+/* Epic Flight Interiors Experience Styles */
+.epic-flight-interiors-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #475569 75%, #64748b 100%);
+  color: #e2e8f0;
+  font-family: 'Arial', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 60px;
+}
+
+/* Header */
+.epic-flight-interiors-header {
+  text-align: center;
+  padding: 40px 20px 30px 20px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+}
+
+.epic-flight-interiors-header h1 {
+  font-size: 3rem;
+  margin: 0 0 10px 0;
+  background: linear-gradient(45deg, #3b82f6, #1d4ed8, #1e40af);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+}
+
+.epic-flight-interiors-header p {
+  font-size: 1.2rem;
+  color: #cbd5e1;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Loading Screen */
+.epic-flight-interiors-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.aircraft-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(59, 130, 246, 0.2);
+  border-left: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: aircraftSpin 1.5s linear infinite;
+  margin-bottom: 30px;
+  box-shadow: 0 0 40px rgba(59, 130, 246, 0.4);
+}
+
+@keyframes aircraftSpin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.epic-flight-interiors-loading h2 {
+  color: #3b82f6;
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.epic-flight-interiors-loading p {
+  color: #cbd5e1;
+  font-size: 1.1rem;
+}
+
+/* Main Content */
+.epic-flight-interiors-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 30px;
+}
+
+/* Description */
+.flight-interior-description {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 20px;
+  padding: 25px 30px;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  text-align: center;
+  max-width: 800px;
+}
+
+.flight-interior-description p {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+}
+
+/* Image Container */
+.flight-interior-image-container {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 20px;
+  padding: 20px;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 900px;
+  width: 100%;
+}
+
+.flight-interior-image {
+  width: 100%;
+  height: auto;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+/* Action Buttons */
+.epic-flight-interiors-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px 20px 20px 20px;
+  flex-wrap: wrap;
+}
+
+.epic-flight-interiors-btn {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+  justify-content: center;
+}
+
+.epic-flight-interiors-btn.primary {
+  background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+  color: #fff;
+  box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4);
+}
+
+.epic-flight-interiors-btn.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.6);
+  background: linear-gradient(45deg, #1d4ed8, #1e40af);
+}
+
+.epic-flight-interiors-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.epic-flight-interiors-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+}
+
+.epic-flight-interiors-btn.secondary:hover {
+  transform: translateY(-2px);
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+/* Error State */
+.epic-flight-interiors-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.epic-flight-interiors-error h3 {
+  color: #ef4444;
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.epic-flight-interiors-error p {
+  color: #cbd5e1;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  max-width: 500px;
+}
+
+/* Model Attribution */
+.model-attribution {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  padding: 5px 15px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 10px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.model-attribution p {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  opacity: 0.8;
+}
+
+/* Background Effects */
+.epic-flight-interiors-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(29, 78, 216, 0.1) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 40%, rgba(59, 130, 246, 0.05) 50%, transparent 60%);
+  pointer-events: none;
+  z-index: 1;
+  animation: magicalGlow 20s ease-in-out infinite;
+}
+
+@keyframes magicalGlow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+.epic-flight-interiors-container > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .epic-flight-interiors-content {
+    padding: 30px 15px;
+  }
+  
+  .epic-flight-interiors-header h1 {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .epic-flight-interiors-header h1 {
+    font-size: 2rem;
+  }
+  
+  .epic-flight-interiors-content {
+    padding: 20px 15px;
+  }
+  
+  .flight-interior-description {
+    padding: 20px;
+  }
+  
+  .flight-interior-image-container {
+    padding: 15px;
+  }
+  
+  .epic-flight-interiors-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .epic-flight-interiors-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

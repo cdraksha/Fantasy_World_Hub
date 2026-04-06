@@ -1,0 +1,261 @@
+/* Useless Powers - Comedy Superhero Theme */
+.useless-powers-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #2c1810 0%, #8b4513 30%, #cd853f 70%, #daa520 100%);
+  color: #fff8dc;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.useless-powers-header {
+  text-align: center;
+  padding: 3rem 2rem 2rem;
+  background: rgba(139, 69, 19, 0.6);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(218, 165, 32, 0.3);
+}
+
+.useless-powers-header h1 {
+  font-size: 3.5rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #ffd700 0%, #ffb347 30%, #ff8c00 70%, #ffd700 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: bold;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.useless-powers-header p {
+  font-size: 1.4rem;
+  color: #ffb347;
+  font-style: italic;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.useless-powers-content {
+  display: flex;
+  gap: 3rem;
+  padding: 2rem 3rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
+
+.story-section {
+  flex: 1;
+  background: rgba(139, 69, 19, 0.4);
+  border: 2px solid;
+  border-image: linear-gradient(135deg, #ffd700, #ffb347, #ff8c00) 1;
+  border-radius: 15px;
+  padding: 2rem;
+  backdrop-filter: blur(15px);
+}
+
+.story-section h2 {
+  font-size: 2rem;
+  color: #ffd700;
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.story-text {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #fff8dc;
+  text-align: justify;
+  font-weight: 400;
+}
+
+.image-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.power-image {
+  max-width: 100%;
+  max-height: 500px;
+  border-radius: 15px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  border: 3px solid;
+  border-image: linear-gradient(135deg, #ffd700, #ffb347, #ff8c00) 1;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.power-image:hover {
+  transform: scale(1.02);
+  box-shadow: 0 16px 50px rgba(255, 215, 0, 0.3);
+}
+
+.image-caption {
+  font-size: 0.9rem;
+  color: #ffb347;
+  font-style: italic;
+  text-align: center;
+  max-width: 400px;
+  line-height: 1.4;
+}
+
+.useless-powers-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.useless-powers-btn {
+  padding: 1rem 2rem;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.useless-powers-btn.primary {
+  background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+  color: #8b4513;
+  border-color: #ffd700;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.useless-powers-btn.primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ffb347 0%, #ff8c00 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+}
+
+.useless-powers-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.useless-powers-btn.secondary {
+  background: rgba(139, 69, 19, 0.3);
+  color: #fff8dc;
+  border-color: rgba(255, 179, 71, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.useless-powers-btn.secondary:hover {
+  background: rgba(255, 179, 71, 0.2);
+  border-color: #ffb347;
+  transform: translateY(-2px);
+}
+
+.useless-powers-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  text-align: center;
+}
+
+.powers-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(255, 215, 0, 0.3);
+  border-left: 4px solid #ffd700;
+  border-top: 4px solid #ffb347;
+  border-radius: 50%;
+  animation: spin 2s linear infinite;
+  margin-bottom: 2rem;
+}
+
+.useless-powers-loading h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.useless-powers-loading p {
+  font-size: 1.1rem;
+  color: #ffb347;
+  font-style: italic;
+}
+
+.useless-powers-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  text-align: center;
+}
+
+.useless-powers-error h3 {
+  color: #ffd700;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.useless-powers-error p {
+  color: #ffb347;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.model-attribution {
+  text-align: center;
+  padding: 2rem;
+  border-top: 1px solid rgba(255, 179, 71, 0.3);
+  margin-top: 2rem;
+}
+
+.model-attribution p {
+  color: rgba(255, 179, 71, 0.8);
+  font-size: 1rem;
+  font-style: italic;
+  margin: 0;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .useless-powers-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .useless-powers-header p {
+    font-size: 1.1rem;
+  }
+  
+  .useless-powers-content {
+    flex-direction: column;
+    padding: 1rem;
+    gap: 2rem;
+  }
+  
+  .story-section {
+    padding: 1.5rem;
+  }
+  
+  .useless-powers-actions {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .useless-powers-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

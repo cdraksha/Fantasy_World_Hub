@@ -1,0 +1,339 @@
+/* Gossip Aunties Experience Styles */
+.gossip-aunties-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 25%, #ffd23f 50%, #06ffa5 75%, #4ecdc4 100%);
+  color: #2c3e50;
+  font-family: 'Arial', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 60px;
+}
+
+/* Header */
+.gossip-aunties-header {
+  text-align: center;
+  padding: 40px 20px 30px 20px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(255, 107, 53, 0.3);
+  box-shadow: 0 0 20px rgba(255, 107, 53, 0.2);
+}
+
+.gossip-aunties-header h1 {
+  font-size: 3rem;
+  margin: 0 0 10px 0;
+  background: linear-gradient(45deg, #ff6b35, #f7931e, #ffd23f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
+}
+
+.gossip-aunties-header p {
+  font-size: 1.2rem;
+  color: #ffffff;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Loading Screen */
+.gossip-aunties-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.whatsapp-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(255, 107, 53, 0.2);
+  border-left: 4px solid #ff6b35;
+  border-radius: 50%;
+  animation: whatsappSpin 1.5s linear infinite;
+  margin-bottom: 30px;
+  box-shadow: 0 0 40px rgba(255, 107, 53, 0.4);
+}
+
+@keyframes whatsappSpin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.gossip-aunties-loading h2 {
+  color: #ff6b35;
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.gossip-aunties-loading p {
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+/* Main Content - Side by Side Layout */
+.gossip-aunties-content {
+  display: flex;
+  align-items: flex-start;
+  padding: 40px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: 40px;
+  min-height: 60vh;
+}
+
+/* Text Content - Left Side */
+.gossip-content {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  padding: 40px;
+  border: 2px solid rgba(255, 107, 53, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.gossip-title {
+  margin-bottom: 25px;
+}
+
+.gossip-title h2 {
+  font-size: 2.2rem;
+  color: #ff6b35;
+  margin: 0;
+  font-weight: 600;
+  text-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
+}
+
+.gossip-text {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.gossip-text p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #2c3e50;
+  margin: 0;
+  text-align: left;
+  font-weight: 400;
+}
+
+/* Image Content - Right Side */
+.gossip-image-container {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  padding: 20px;
+  border: 2px solid rgba(255, 107, 53, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gossip-image {
+  width: 100%;
+  height: auto;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+/* Action Buttons */
+.gossip-aunties-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px 20px 20px 20px;
+  flex-wrap: wrap;
+}
+
+.gossip-aunties-btn {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+  justify-content: center;
+}
+
+.gossip-aunties-btn.primary {
+  background: linear-gradient(45deg, #ff6b35, #f7931e);
+  color: #fff;
+  box-shadow: 0 5px 20px rgba(255, 107, 53, 0.4);
+}
+
+.gossip-aunties-btn.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(255, 107, 53, 0.6);
+  background: linear-gradient(45deg, #f7931e, #ffd23f);
+}
+
+.gossip-aunties-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.gossip-aunties-btn.secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: #2c3e50;
+  border: 2px solid rgba(255, 107, 53, 0.3);
+}
+
+.gossip-aunties-btn.secondary:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 107, 53, 0.2);
+  border-color: rgba(255, 107, 53, 0.5);
+}
+
+/* Error State */
+.gossip-aunties-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.gossip-aunties-error h3 {
+  color: #dc2626;
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.gossip-aunties-error p {
+  color: #2c3e50;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  max-width: 500px;
+}
+
+/* Model Attribution */
+.model-attribution {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  padding: 5px 15px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.model-attribution p {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #ffffff;
+  opacity: 0.8;
+}
+
+/* Background Effects */
+.gossip-aunties-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(255, 107, 53, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(247, 147, 30, 0.1) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 40%, rgba(255, 107, 53, 0.05) 50%, transparent 60%);
+  pointer-events: none;
+  z-index: 1;
+  animation: gossipGlow 20s ease-in-out infinite;
+}
+
+@keyframes gossipGlow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+.gossip-aunties-container > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .gossip-aunties-content {
+    flex-direction: column;
+    padding: 30px 15px;
+    gap: 30px;
+  }
+  
+  .gossip-aunties-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .gossip-content {
+    padding: 30px;
+  }
+  
+  .gossip-title h2 {
+    font-size: 2rem;
+  }
+  
+  .gossip-text p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .gossip-aunties-header h1 {
+    font-size: 2rem;
+  }
+  
+  .gossip-aunties-content {
+    padding: 20px 15px;
+    gap: 20px;
+  }
+  
+  .gossip-content {
+    padding: 25px;
+  }
+  
+  .gossip-title h2 {
+    font-size: 1.8rem;
+  }
+  
+  .gossip-text p {
+    font-size: 0.95rem;
+  }
+  
+  .gossip-image-container {
+    padding: 15px;
+  }
+  
+  .gossip-aunties-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .gossip-aunties-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

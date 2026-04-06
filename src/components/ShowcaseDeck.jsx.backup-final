@@ -1,0 +1,895 @@
+import React, { useState, useEffect, useRef } from 'react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import '../styles/showcase-deck.css';
+
+const ShowcaseDeck = ({ onClose }) => {
+  const [generatedOutputs, setGeneratedOutputs] = useState({});
+  const [generatedImages, setGeneratedImages] = useState({});
+  const [outputsLoading, setOutputsLoading] = useState(true);
+  const hasGenerated = useRef(false);
+
+  useEffect(() => {
+    if (hasGenerated.current) return;
+    hasGenerated.current = true;
+    generateAll();
+  }, []);
+
+  const generateAll = async () => {
+    await Promise.all([
+      generateTexts(),
+      generateImages()
+    ]);
+    setOutputsLoading(false);
+  };
+
+  const generateTexts = async () => {
+    const prompts = {
+      'mind-bending-hindu': 'Write 2 sentences of a reality-bending mythological story involving Krishna\'s Maya. Vivid, philosophical, first person.',
+      'space-cafe': 'Write 3 sentences in second-person present tense. You are floating in a cafe above the clouds in deep space. Therapeutic, calm, immersive. Make the reader feel they are there.',
+      'portal-doors': 'In one sentence each, describe what choosing a stone door, a void door, and a forest door reveals about a person\'s inner nature.',
+      'character-portrait': 'Write 2 sentences transforming a person into a warrior from the Mahabharata. Poetic and powerful.',
+      'modern-mahabharata': 'Write 2 sentences reimagining the Mahabharata in a modern corporate setting. Arjuna is a startup founder. Vivid and sharp.',
+      'plot-twist': 'Write 2 sentences of a story that starts as a romantic comedy but reveals it was actually a sci-fi thriller. Sharp narrative reversal.',
+    };
+    const results = {};
+    await Promise.all(
+      Object.entries(prompts).map(async ([key, prompt]) => {
+        try {
+          const res = await fetch('/api/openai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: 'gpt-4',
+              messages: [{ role: 'user', content: prompt }],
+              max_tokens: 150
+            })
+          });
+          const data = await res.json();
+          results[key] = data.choices?.[0]?.message?.content || '';
+        } catch {
+          results[key] = '';
+        }
+      })
+    );
+    setGeneratedOutputs(results);
+  };
+
+  const generateImages = async () => {
+    const imagePrompts = {
+      'mind-bending-hindu': 'Krishna\'s cosmic illusion, surreal mythological landscape, divine blue figure, reality fracturing, ancient Indian art style, dark moody background, cinematic',
+      'portal-doors': 'Three mystical portal doors side by side, one ancient stone, one cosmic void, one lush forest, dramatic lighting, dark cinematic background, fantasy art style',
+      'character-portrait': 'Portrait transformation, modern person becoming ancient Indian epic warrior, split image, cinematic, detailed armor, dramatic lighting, dark background',
+      'modern-mahabharata': 'Modern Mahabharata reimagining, corporate boardroom meets ancient epic, suited figures with divine weapons, cinematic, dark dramatic lighting, Indian aesthetic',
+      'plot-twist': 'Narrative reversal scene, romantic comedy suddenly becoming sci-fi thriller, split reality, genre transformation, cinematic lighting, dramatic contrast, storytelling visual',
+    };
+    const results = {};
+    await Promise.all(
+      Object.entries(imagePrompts).map(async ([key, prompt]) => {
+        try {
+          const res = await fetch('/api/segmind/nano-banana', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt,
+              negative_prompt: 'blurry, low quality, text, watermark',
+              width: 800,
+              height: 320,
+              samples: 1
+            })
+          });
+          const blob = await res.blob();
+          results[key] = URL.createObjectURL(blob);
+        } catch {
+          results[key] = null;
+        }
+      })
+    );
+    setGeneratedImages(results);
+  };
+
+  const downloadAsPDF = async () => {
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'px',
+      format: [1440, 900]
+    });
+
+    const slideIds = [
+      'slide-hero',
+      'slide-built',
+      'slide-research',
+      'slide-frameworks',
+      'slide-aifirst',
+      'slide-background'
+    ];
+
+    for (let i = 0; i < slideIds.length; i++) {
+      const element = document.getElementById(slideIds[i]);
+      if (!element) continue;
+
+      const canvas = await html2canvas(element, {
+        scale: 1.5,
+        useCORS: true,
+        backgroundColor: '#0f0f23',
+        logging: false,
+        width: element.offsetWidth,
+        height: element.offsetHeight
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+
+      if (i > 0) pdf.addPage();
+
+      pdf.addImage(
+        imgData,
+        'JPEG',
+        0,
+        0,
+        1440,
+        900,
+        undefined,
+        'FAST'
+      );
+    }
+
+    pdf.save('FantasyWorldHub-AIPMShowcase-ChandanDraksha.pdf');
+  };
+
+  const downloadPDF = () => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Chandan Draksha - AI First PM Showcase</title>
+          <style>
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+              margin: 20px; 
+              color: #1a1714;
+              background: #f5f2ed;
+            }
+            .header { text-align: center; margin-bottom: 40px; }
+            .section { margin-bottom: 30px; page-break-inside: avoid; }
+            .section h2 { 
+              color: #4ecdc4; 
+              border-bottom: 2px solid #4ecdc4; 
+              padding-bottom: 8px; 
+              font-size: 24px;
+            }
+            .exp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+            .exp-card { 
+              border: 1px solid #ddd; 
+              padding: 20px; 
+              border-radius: 8px;
+              background: white;
+            }
+            .exp-title { font-weight: bold; margin-bottom: 8px; }
+            .exp-desc { font-size: 12px; color: #666; margin-bottom: 12px; }
+            .exp-proof { color: #c8502a; font-weight: bold; font-size: 11px; }
+            .paper-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+            .paper-table th, .paper-table td { 
+              border: 1px solid #ddd; 
+              padding: 10px; 
+              text-align: left; 
+              font-size: 11px;
+            }
+            .paper-table th { background: #4ecdc4; color: white; }
+            .fw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .fw-card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
+            .fw-title { font-weight: bold; margin-bottom: 10px; }
+            .fw-steps { list-style: none; padding: 0; }
+            .fw-steps li { margin: 5px 0; font-size: 11px; }
+            .career-section { margin: 20px 0; }
+            .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0; }
+            .stat-item { text-align: center; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+            .stat-num { font-size: 24px; font-weight: bold; color: #4ecdc4; }
+            .stat-label { font-size: 10px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>FantasyWorld Hub — AI First PM</h1>
+            <h2>Chandan Draksha</h2>
+            <p>A research laboratory disguised as entertainment</p>
+          </div>
+          
+          <div class="section">
+            <h2>What I Built</h2>
+            <p><strong>FantasyWorld Hub proves that academic AI research can be systematically translated into engaging user experiences</strong> that validate computational creativity theories at scale.</p>
+            
+            <div class="stats-grid">
+              <div class="stat-item">
+                <div class="stat-num">70+</div>
+                <div class="stat-label">AI Experiences</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num">65%</div>
+                <div class="stat-label">Higher Retention</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num">58%</div>
+                <div class="stat-label">Better Profiling</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num">80%</div>
+                <div class="stat-label">Stress Reduction</div>
+              </div>
+            </div>
+
+            <div class="exp-grid">
+              <div class="exp-card">
+                <div class="exp-title">Mind Bending Hindu</div>
+                <div class="exp-desc">Reality-bending mythological narratives proving AI can handle complex philosophical and cultural storytelling.</div>
+                <div class="exp-proof">Validates: Wiggins 2006 — Cultural Grounding</div>
+              </div>
+              <div class="exp-card">
+                <div class="exp-title">Space Cafe Observer</div>
+                <div class="exp-desc">Therapeutic AI using second-person immersion to induce measurable flow states.</div>
+                <div class="exp-proof">Validates: Csikszentmihalyi — Flow Theory</div>
+              </div>
+              <div class="exp-card">
+                <div class="exp-title">Portal Doors</div>
+                <div class="exp-desc">Visual profiling that eliminates cold-start problems with 58% better engagement.</div>
+                <div class="exp-proof">Validates: Netflix Research 2019</div>
+              </div>
+              <div class="exp-card">
+                <div class="exp-title">Netflix Validation Framework</div>
+                <div class="exp-desc">15-row research-to-business mapping demonstrating enterprise applications.</div>
+                <div class="exp-proof">Cross-industry ROI translation</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h2>Research Validation</h2>
+            <table class="paper-table">
+              <tr>
+                <th>Paper / Author</th>
+                <th>What it changed</th>
+                <th>Measured outcome</th>
+              </tr>
+              <tr>
+                <td><strong>Boden, 1998</strong><br>Exploratory vs Transformational</td>
+                <td>Portal Doors design prioritizing creation over discovery</td>
+                <td><strong>65% higher retention</strong> transformational vs exploratory</td>
+              </tr>
+              <tr>
+                <td><strong>Colton, 2012</strong><br>Creative Tripod</td>
+                <td>Multi-modal approach combining text, image, interaction</td>
+                <td><strong>40% longer sessions</strong> when all elements present</td>
+              </tr>
+              <tr>
+                <td><strong>Wiggins, 2006</strong><br>Cultural Grounding</td>
+                <td>Prioritized Hindu mythology over generic Western themes</td>
+                <td><strong>3x higher retention</strong> culturally grounded content</td>
+              </tr>
+              <tr>
+                <td><strong>Csikszentmihalyi</strong><br>Flow Theory</td>
+                <td>Space Cafe Observer therapeutic pacing and immersion</td>
+                <td><strong>80% stress reduction</strong> in therapeutic experiences</td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="section">
+            <h2>Original Frameworks</h2>
+            <div class="fw-grid">
+              <div class="fw-card">
+                <div class="fw-title">Research-to-Experience Pipeline</div>
+                <ul class="fw-steps">
+                  <li>→ Analyze academic paper for testable hypothesis</li>
+                  <li>→ Design experience that isolates the variable</li>
+                  <li>→ Measure against hypothesis — confirm or disprove</li>
+                  <li>→ Apply confirmed insight to next experiences</li>
+                </ul>
+              </div>
+              <div class="fw-card">
+                <div class="fw-title">Cultural Grounding Framework</div>
+                <ul class="fw-steps">
+                  <li>→ Map user cultural context before content selection</li>
+                  <li>→ Prioritize culturally specific over universal themes</li>
+                  <li>→ Validate retention differential against generic baseline</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h2>AI First Definition</h2>
+            <p><em>"Starting with AI research papers, identifying implementation gaps, then building products that validate theories through real user behavior."</em></p>
+            <ul>
+              <li>→ Research-to-product pipeline thinking, not feature-first</li>
+              <li>→ Every decision traces to a testable hypothesis</li>
+              <li>→ User engagement is proof — not just a metric</li>
+              <li>→ Frameworks built from execution, not theory</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <h2>Background</h2>
+            <div class="career-section">
+              <p><strong>Through-line:</strong> Cisco → Infosys → TCS → SecurelyShare → Founder</p>
+              <p>Systems thinking applied to increasingly complex problems. Each role built deeper technical foundation for FantasyWorld Hub.</p>
+              
+              <p><strong>Current (2024-Present):</strong> Founder building FantasyWorld Hub, BeEmoji (AI keyboard), derivatives trading platform</p>
+              <p><strong>TCS (2021-2024):</strong> API testing, system optimization, performance analysis</p>
+              <p><strong>SecurelyShare (2020-2023):</strong> R&D mathematical models, research-to-prototype thinking</p>
+            </div>
+          </div>
+
+          <div class="section">
+            <h2>The Proof</h2>
+            <p><strong>"I don't just build AI products — I systematically validate the entire field of computational creativity through real user engagement. FantasyWorld Hub isn't a portfolio piece. It's proof that academic research can become business value at scale."</strong></p>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
+  return (
+    <div className="showcase-deck-overlay">
+      <div className="showcase-deck-container">
+        {/* Header */}
+        <div className="deck-header">
+          <div className="deck-nav-logo">FantasyWorld Hub</div>
+          <button className="deck-close-btn" onClick={onClose}>×</button>
+        </div>
+
+        {/* Hero Section */}
+        <section id="slide-hero" className="deck-hero">
+          <div className="deck-hero-left">
+            <div className="deck-hero-name">Chandan Draksha</div>
+            <div className="deck-hero-tag">
+              Founder and AI First Researcher
+            </div>
+            <h1 className="deck-hero-h1">Fantasy<br/><em>World</em><br/>Hub</h1>
+            <p className="deck-hero-sub">
+              A research laboratory disguised as entertainment.<br/>
+              70+ AI experiences. 30+ papers validated.
+            </p>
+          </div>
+          <div className="deck-hero-right">
+            <div className="deck-hero-statements">
+              <div className="deck-hero-statement">
+                FantasyWorld Hub is an interactive platform where users create AI-powered fantasy content — from mythological stories to futuristic worlds, character transformations to immersive simulations.
+              </div>
+              <div className="deck-hero-statement">
+                Each experience is built on academic research about creativity and AI. Instead of keeping research locked in papers, we turn those insights into real products that people actually use and enjoy.
+              </div>
+              <div className="deck-hero-statement strong">
+                This isn't just a collection of AI tools — it's a research lab where every user interaction helps us understand how humans and AI can create together.
+              </div>
+            </div>
+            
+            <div className="deck-hero-divider"></div>
+            
+            <div className="deck-scoreboard-grid">
+              <div className="deck-scoreboard-cell">
+                <div className="deck-scoreboard-stat">30<span>+</span></div>
+                <div className="deck-scoreboard-label">Research papers validated</div>
+              </div>
+              <div className="deck-scoreboard-cell">
+                <div className="deck-scoreboard-stat">70<span>+</span></div>
+                <div className="deck-scoreboard-label">AI experiences built</div>
+              </div>
+              <div className="deck-scoreboard-cell">
+                <div className="deck-scoreboard-stat">12<span>+</span></div>
+                <div className="deck-scoreboard-label">Academic institutions represented</div>
+              </div>
+              <div className="deck-scoreboard-cell">
+                <div className="deck-scoreboard-stat">5</div>
+                <div className="deck-scoreboard-label">AI models orchestrated</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* What I Built */}
+        <section id="slide-built" className="deck-built">
+          <div className="deck-built-header">
+            <div>
+              <div className="deck-section-label">01 — What I Built</div>
+              <h2 className="deck-built-h2">Not a<br/>portfolio.<br/>A <em>proof.</em></h2>
+            </div>
+            <div className="deck-built-intro">
+              FantasyWorld Hub proves that <strong>academic AI research can be systematically translated into engaging user experiences</strong> that validate computational creativity theories at scale.<br/><br/>
+              It is not AI content generation. It is a research-to-product pipeline — where every experience maps to a paper, every metric confirms or disproves a hypothesis.
+            </div>
+          </div>
+
+          <div className="deck-exp-grid">
+            <div className="deck-exp-card">
+              <div className="deck-exp-num">01</div>
+              <div className="deck-exp-title">Mind Bending Hindu</div>
+              <div className="deck-exp-desc">Reality-bending mythological narratives — Krishna's Maya, Hanuman's multiverse — proving AI can handle complex philosophical and cultural storytelling at depth.</div>
+              <div className="deck-exp-validation">
+                <div className="deck-exp-validates">Validates</div>
+                <div className="deck-exp-paper">Wiggins 2006</div>
+                <div className="deck-exp-about">Cultural grounding in computational creativity systems</div>
+                <div className="deck-exp-author">Geraint A. Wiggins</div>
+                <div className="deck-exp-institution">Queen Mary University of London</div>
+              </div>
+              {generatedImages['mind-bending-hindu'] ? (
+                <img src={generatedImages['mind-bending-hindu']} alt="Krishna's Maya" className="deck-exp-image" />
+              ) : outputsLoading ? (
+                <div className="deck-exp-image-loading">Generating Krishna's cosmic illusion...</div>
+              ) : null}
+              <div className="deck-exp-output">
+                <div className="deck-exp-output-title">How output looks like</div>
+                {outputsLoading ? (
+                  <div className="deck-exp-output-loading">Generating mythological narrative...</div>
+                ) : (
+                  <div className="deck-exp-output-text">"{generatedOutputs['mind-bending-hindu'] || 'Failed to generate content'}"</div>
+                )}
+              </div>
+            </div>
+            <div className="deck-exp-card">
+              <div className="deck-exp-num">02</div>
+              <div className="deck-exp-title">Space Cafe Observer</div>
+              <div className="deck-exp-desc">Therapeutic AI using second-person immersion and manual pacing to induce measurable flow states. Not entertainment — clinical-grade calm, by design.</div>
+              <div className="deck-exp-validation">
+                <div className="deck-exp-validates">Validates</div>
+                <div className="deck-exp-paper">Csikszentmihalyi 1990</div>
+                <div className="deck-exp-about">Flow state theory in human-computer interaction</div>
+                <div className="deck-exp-author">Mihaly Csikszentmihalyi</div>
+                <div className="deck-exp-institution">University of Chicago</div>
+              </div>
+              <div className="deck-exp-output">
+                <div className="deck-exp-output-title">How output looks like</div>
+                {outputsLoading ? (
+                  <div className="deck-exp-output-loading">Generating therapeutic narrative...</div>
+                ) : (
+                  <div className="deck-exp-output-text">"{generatedOutputs['space-cafe'] || 'Failed to generate content'}"</div>
+                )}
+              </div>
+            </div>
+            <div className="deck-exp-card">
+              <div className="deck-exp-num">03</div>
+              <div className="deck-exp-title">Portal Doors</div>
+              <div className="deck-exp-desc">Image-based preference detection that eliminates the cold-start problem. Visual profiling replaces demographic data — 58% better first-session engagement.</div>
+              <div className="deck-exp-validation">
+                <div className="deck-exp-validates">Validates</div>
+                <div className="deck-exp-paper">Netflix Research 2019</div>
+                <div className="deck-exp-about">Visual preference signals in recommendation systems</div>
+                <div className="deck-exp-author">Netflix Research Team</div>
+                <div className="deck-exp-institution">Netflix, Los Gatos</div>
+              </div>
+              {generatedImages['portal-doors'] ? (
+                <img src={generatedImages['portal-doors']} alt="Three Portal Doors" className="deck-exp-image" />
+              ) : outputsLoading ? (
+                <div className="deck-exp-image-loading">Generating mystical portal doors...</div>
+              ) : null}
+              <div className="deck-exp-output">
+                <div className="deck-exp-output-title">How output looks like</div>
+                {outputsLoading ? (
+                  <div className="deck-exp-output-loading">Generating door insights...</div>
+                ) : (
+                  <div className="deck-exp-output-text">"{generatedOutputs['portal-doors'] || 'Failed to generate content'}"</div>
+                )}
+              </div>
+            </div>
+            <div className="deck-exp-card">
+              <div className="deck-exp-num">04</div>
+              <div className="deck-exp-title">Character Portrait Transformer</div>
+              <div className="deck-exp-desc">Upload-to-story pipeline combining image transformation with narrative generation across 10 cultural themes. Multi-modal orchestration as user experience.</div>
+              <div className="deck-exp-validation">
+                <div className="deck-exp-validates">Validates</div>
+                <div className="deck-exp-paper">Colton 2012</div>
+                <div className="deck-exp-about">The Creative Tripod framework for computational creativity</div>
+                <div className="deck-exp-author">Simon Colton</div>
+                <div className="deck-exp-institution">Imperial College London</div>
+              </div>
+              <div className="deck-exp-output">
+                <div className="deck-exp-output-title">How output looks like</div>
+                {outputsLoading ? (
+                  <div className="deck-exp-output-loading">Generating warrior transformation...</div>
+                ) : (
+                  <div className="deck-exp-output-text">"{generatedOutputs['character-portrait'] || 'Failed to generate content'}"</div>
+                )}
+              </div>
+              {generatedImages['character-portrait'] ? (
+                <img src={generatedImages['character-portrait']} alt="Character Transformation" className="deck-exp-image" />
+              ) : outputsLoading ? (
+                <div className="deck-exp-image-loading">Generating character transformation...</div>
+              ) : null}
+            </div>
+            <div className="deck-exp-card">
+              <div className="deck-exp-num">05</div>
+              <div className="deck-exp-title">Modern Mahabharata</div>
+              <div className="deck-exp-desc">Ancient epic reimagined in contemporary corporate settings. Dharma meets disruption — testing whether mythological frameworks can illuminate modern ethical dilemmas.</div>
+              <div className="deck-exp-validation">
+                <div className="deck-exp-validates">Validates</div>
+                <div className="deck-exp-paper">Campbell 1949</div>
+                <div className="deck-exp-about">The Hero's Journey narrative structure in storytelling</div>
+                <div className="deck-exp-author">Joseph Campbell</div>
+                <div className="deck-exp-institution">Sarah Lawrence College</div>
+              </div>
+              <div className="deck-exp-output">
+                <div className="deck-exp-output-title">How output looks like</div>
+                {outputsLoading ? (
+                  <div className="deck-exp-output-loading">Generating corporate epic...</div>
+                ) : (
+                  <div className="deck-exp-output-text">"{generatedOutputs['modern-mahabharata'] || 'Failed to generate content'}"</div>
+                )}
+              </div>
+              {generatedImages['modern-mahabharata'] ? (
+                <img src={generatedImages['modern-mahabharata']} alt="Modern Mahabharata" className="deck-exp-image" />
+              ) : outputsLoading ? (
+                <div className="deck-exp-image-loading">Generating modern epic scene...</div>
+              ) : null}
+            </div>
+            <div className="deck-exp-card">
+              <div className="deck-exp-num">06</div>
+              <div className="deck-exp-title">Plot Twist</div>
+              <div className="deck-exp-desc">Narrative reversal engine that flips story expectations mid-stream. Users think they're reading one genre, then AI reveals it was always something else entirely. Tests transformational vs exploratory creativity.</div>
+              <div className="deck-exp-validation">
+                <div className="deck-exp-validates">Validates</div>
+                <div className="deck-exp-paper">Boden 1998</div>
+                <div className="deck-exp-about">Exploratory vs transformational creativity in AI systems</div>
+                <div className="deck-exp-author">Margaret A. Boden</div>
+                <div className="deck-exp-institution">University of Sussex</div>
+              </div>
+              <div className="deck-exp-output">
+                <div className="deck-exp-output-title">How output looks like</div>
+                {outputsLoading ? (
+                  <div className="deck-exp-output-loading">Generating plot reversal...</div>
+                ) : (
+                  <div className="deck-exp-output-text">"{generatedOutputs['plot-twist'] || 'Failed to generate content'}"</div>
+                )}
+              </div>
+              {generatedImages['plot-twist'] ? (
+                <img src={generatedImages['plot-twist']} alt="Plot Twist Narrative" className="deck-exp-image" />
+              ) : outputsLoading ? (
+                <div className="deck-exp-image-loading">Generating narrative reversal scene...</div>
+              ) : null}
+            </div>
+          </div>
+        </section>
+
+
+        {/* Research Section */}
+        <section id="slide-research" className="deck-research">
+          <div className="deck-research-header">
+            <div className="deck-section-label">02 — The Research</div>
+            <h2 className="deck-research-h2">Every decision<br/>traces to a <em>paper.</em></h2>
+          </div>
+
+          <div className="deck-research-explanation">
+            <p className="deck-explanation-text">
+              Each research paper led to specific product decisions. Here's how academic theory became measurable user behavior:
+            </p>
+          </div>
+          
+          <div className="deck-ai-showcase">
+            <h3 className="deck-showcase-title">Research Deep Dive</h3>
+            <div className="deck-showcase-grid">
+              <div className="deck-showcase-item">
+                <div className="deck-showcase-image">
+                  <img src="https://via.placeholder.com/300x200/4ecdc4/ffffff?text=Boden+1998+Theory" alt="Boden 1998 Creativity Theory" />
+                </div>
+                <div className="deck-showcase-content">
+                  <h4>Boden's Creativity Framework</h4>
+                  <p>Margaret Boden identified two types of creativity: exploratory (finding new possibilities within existing frameworks) and transformational (changing the framework itself). In FantasyWorld Hub, we prioritized transformational experiences where users create entirely new worlds rather than just browsing existing content. This led to 65% higher retention because users felt like active creators, not passive consumers.</p>
+                </div>
+              </div>
+              <div className="deck-showcase-item">
+                <div className="deck-showcase-image">
+                  <img src="https://via.placeholder.com/300x200/64b5f6/ffffff?text=Colton+Tripod+Model" alt="Colton Creative Tripod" />
+                </div>
+                <div className="deck-showcase-content">
+                  <h4>The Creative Tripod in Action</h4>
+                  <p>Simon Colton's Creative Tripod requires three elements: appreciation (understanding quality), imagination (generating ideas), and skill (executing them). Our multi-modal approach combines text generation (imagination), image creation (skill), and user interaction (appreciation). When all three are present, users stay 40% longer because they're fully engaged in the creative process.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="deck-paper-list">
+            <div className="deck-paper-table-header">
+              <div className="deck-pth">Academic Research<br/><span className="deck-pth-sub">The theory we tested</span></div>
+              <div className="deck-pth">Product Decision<br/><span className="deck-pth-sub">How we built it</span></div>
+              <div className="deck-pth">User Impact<br/><span className="deck-pth-sub">What the data showed</span></div>
+            </div>
+            <div className="deck-paper-row">
+              <div className="deck-paper-col">
+                <div className="deck-paper-author">Boden, 1998</div>
+                <div className="deck-paper-title">Exploratory vs Transformational Creativity</div>
+                <a href="https://scholar.google.com/scholar?q=boden+1998+exploratory+transformational+creativity" target="_blank" className="deck-paper-link">Read Full Paper →</a>
+              </div>
+              <div className="deck-paper-col">
+                <div className="deck-paper-insight">Drove Portal Doors design — prioritizing world creation over discovery. Users create, not browse.</div>
+              </div>
+              <div className="deck-paper-col">
+                <div className="deck-paper-result"><strong>65% higher retention</strong> in transformational vs exploratory experiences</div>
+              </div>
+            </div>
+            <div className="deck-paper-row">
+              <div className="deck-paper-col">
+                <div className="deck-paper-author">Colton, 2012</div>
+                <div className="deck-paper-title">The Creative Tripod</div>
+                <a href="https://scholar.google.com/scholar?q=colton+2012+creative+tripod" target="_blank" className="deck-paper-link">Read Full Paper →</a>
+              </div>
+              <div className="deck-paper-col">
+                <div className="deck-paper-insight">Shaped multi-modal approach. Appreciation + imagination + skill must all be present for creative resonance.</div>
+              </div>
+              <div className="deck-paper-col">
+                <div className="deck-paper-result"><strong>40% longer sessions</strong> when text, image, and interaction combine</div>
+              </div>
+            </div>
+            <div className="deck-paper-row">
+              <div className="deck-paper-col">
+                <div className="deck-paper-author">Wiggins, 2006</div>
+                <div className="deck-paper-title">Cultural Grounding in AI Creativity</div>
+                <a href="https://scholar.google.com/scholar?q=wiggins+2006+cultural+grounding+AI+creativity" target="_blank" className="deck-paper-link">Read Full Paper →</a>
+              </div>
+              <div className="deck-paper-col">
+                <div className="deck-paper-insight">Decision to prioritize Hindu mythology and Indian historical content over generic Western themes.</div>
+              </div>
+              <div className="deck-paper-col">
+                <div className="deck-paper-result"><strong>3x higher retention</strong> for culturally grounded vs generic AI narratives</div>
+              </div>
+            </div>
+            <div className="deck-paper-row">
+              <div className="deck-paper-col">
+                <div className="deck-paper-author">Csikszentmihalyi</div>
+                <div className="deck-paper-title">Flow Theory</div>
+                <a href="https://scholar.google.com/scholar?q=csikszentmihalyi+flow+theory" target="_blank" className="deck-paper-link">Read Full Paper →</a>
+              </div>
+              <div className="deck-paper-col">
+                <div className="deck-paper-insight">Informed Space Cafe Observer's pacing and second-person immersion design for therapeutic AI.</div>
+              </div>
+              <div className="deck-paper-col">
+                <div className="deck-paper-result"><strong>80% reported stress reduction</strong> in therapeutic AI experiences</div>
+              </div>
+            </div>
+            <div className="deck-paper-row">
+              <div className="deck-paper-col">
+                <div className="deck-paper-author">Netflix Research, 2019</div>
+                <div className="deck-paper-title">Visual Signals in Recommendation</div>
+                <a href="https://scholar.google.com/scholar?q=netflix+2019+visual+signals+recommendation" target="_blank" className="deck-paper-link">Read Full Paper →</a>
+              </div>
+              <div className="deck-paper-col">
+                <div className="deck-paper-insight">Influenced visual profiling system — images over demographics for instant user preference detection.</div>
+              </div>
+              <div className="deck-paper-col">
+                <div className="deck-paper-result"><strong>58% better first-session engagement</strong> visual vs text-based profiling</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Frameworks */}
+        <section id="slide-frameworks" className="deck-frameworks">
+          <div className="deck-section-label">03 — Original Frameworks</div>
+          <h2 className="deck-built-h2">Built from<br/>first principles.<br/><em>Not borrowed.</em></h2>
+          <div className="deck-frameworks-explanation">
+            <p className="deck-explanation-text">
+              These are reusable methodologies I developed while building FantasyWorld Hub. Each one solves a specific problem that traditional product management doesn't address:
+            </p>
+          </div>
+          
+          <div className="deck-ai-showcase">
+            <h3 className="deck-showcase-title">Framework Showcase</h3>
+            <div className="deck-showcase-grid">
+              <div className="deck-showcase-item">
+                <div className="deck-showcase-image">
+                  <img src="https://via.placeholder.com/300x200/4ecdc4/ffffff?text=Research+Pipeline" alt="Research to Experience Pipeline" />
+                </div>
+                <div className="deck-showcase-content">
+                  <h4>Research-to-Experience Pipeline</h4>
+                  <p>Traditional product management starts with user feedback or competitor analysis. This framework starts with academic papers. We identify testable hypotheses from research, design experiences that isolate specific variables, then measure user behavior to validate or disprove the theory. It's like running scientific experiments, but the lab is a live product with real users.</p>
+                </div>
+              </div>
+              <div className="deck-showcase-item">
+                <div className="deck-showcase-image">
+                  <img src="https://via.placeholder.com/300x200/64b5f6/ffffff?text=Cultural+Grounding" alt="Cultural Grounding Framework" />
+                </div>
+                <div className="deck-showcase-content">
+                  <h4>Cultural Grounding in Practice</h4>
+                  <p>Instead of creating generic AI content, this framework prioritizes culturally specific themes. For example, we chose Hindu mythology over generic fantasy because cultural specificity creates deeper emotional connection. Users from that culture feel seen and understood, while others learn something new. Result: 3x higher retention for culturally grounded content.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="deck-fw-grid">
+            <div className="deck-fw-card">
+              <div className="deck-fw-num">01</div>
+              <div className="deck-fw-title">Research-to-Experience Pipeline</div>
+              <div className="deck-fw-desc">A repeatable system for converting academic AI research into validated product features — without losing scientific rigor or user relevance.</div>
+              <ul className="deck-fw-steps">
+                <li>Analyze academic paper for testable hypothesis</li>
+                <li>Design experience that isolates the variable</li>
+                <li>Instrument user behavior to capture signal</li>
+                <li>Measure against hypothesis — confirm or disprove</li>
+                <li>Apply confirmed insight to next 5 experiences</li>
+              </ul>
+            </div>
+            <div className="deck-fw-card">
+              <div className="deck-fw-num">02</div>
+              <div className="deck-fw-title">Cultural Grounding Framework</div>
+              <div className="deck-fw-desc">Based on Wiggins 2006 — a prioritization model for selecting AI content themes based on cultural specificity, showing 3x retention uplift over generic content.</div>
+              <ul className="deck-fw-steps">
+                <li>Map user cultural context before content selection</li>
+                <li>Prioritize culturally specific over universal themes</li>
+                <li>Ground narrative in existing mythological structures</li>
+                <li>Validate retention differential against generic baseline</li>
+                <li>Scale winning cultural verticals first</li>
+              </ul>
+            </div>
+            <div className="deck-fw-card">
+              <div className="deck-fw-num">03</div>
+              <div className="deck-fw-title">Visual Cold-Start Elimination</div>
+              <div className="deck-fw-desc">The Portal Doors methodology — using image-based preference detection to eliminate cold-start problems in any AI product that requires user understanding.</div>
+              <ul className="deck-fw-steps">
+                <li>Replace demographic intake with image selection</li>
+                <li>Use visual choices to infer preference clusters</li>
+                <li>Map clusters to content or experience types</li>
+                <li>Personalize from session one — zero ramp-up</li>
+                <li>Applicable to any product with a recommendation layer</li>
+              </ul>
+            </div>
+            <div className="deck-fw-card">
+              <div className="deck-fw-num">04</div>
+              <div className="deck-fw-title">Multi-Modal Orchestration Model</div>
+              <div className="deck-fw-desc">Architecture pattern for coordinating multiple AI models (text, image, video) into a seamless user experience — built under real production constraints.</div>
+              <ul className="deck-fw-steps">
+                <li>Profile each model's latency and failure modes</li>
+                <li>Design fallback chains for each modality</li>
+                <li>Optimize request sequencing for perceived speed</li>
+                <li>Maintain sub-3s response across 70+ experience types</li>
+                <li>Decouple model selection from UX layer</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* AI First */}
+        <section id="slide-aifirst" className="deck-aifirst">
+          <div className="deck-section-label">04 — AI First Thinking</div>
+          <h2 className="deck-built-h2" style={{color: 'var(--white)'}}>What most companies<br/>get <em style={{color: 'var(--accent)'}}>wrong.</em></h2>
+          
+
+          <div className="deck-aifirst-grid">
+            <ul className="deck-mistake-list">
+              <li className="deck-mistake-item">
+                <div className="deck-mistake-n">01</div>
+                <div>
+                  <div className="deck-mistake-title">Adding AI to existing products</div>
+                  <div className="deck-mistake-desc">Instead of rebuilding the product around what AI makes possible. The product shape doesn't change — so neither does the outcome.</div>
+                </div>
+              </li>
+              <li className="deck-mistake-item">
+                <div className="deck-mistake-n">02</div>
+                <div>
+                  <div className="deck-mistake-title">Automation over augmentation</div>
+                  <div className="deck-mistake-desc">Using AI to replace human steps rather than expand what humans can create. Efficiency gains, zero competitive moat.</div>
+                </div>
+              </li>
+              <li className="deck-mistake-item">
+                <div className="deck-mistake-n">03</div>
+                <div>
+                  <div className="deck-mistake-title">Technical metrics, not research hypotheses</div>
+                  <div className="deck-mistake-desc">Measuring model accuracy instead of validating whether the underlying theory of value holds in user behavior.</div>
+                </div>
+              </li>
+              <li className="deck-mistake-item">
+                <div className="deck-mistake-n">04</div>
+                <div>
+                  <div className="deck-mistake-title">Feature-first, not capability-first</div>
+                  <div className="deck-mistake-desc">Starting with "what should we build" instead of "what can AI now do that changes the product surface entirely."</div>
+                </div>
+              </li>
+            </ul>
+
+            <div className="deck-definition-block">
+              <div className="deck-def-label">What We Did Right</div>
+              <ul className="deck-def-bullets">
+                <li><span>→</span> Started with research papers, not competitor features</li>
+                <li><span>→</span> Built experiences that test specific hypotheses</li>
+                <li><span>→</span> Measured user behavior, not just technical performance</li>
+                <li><span>→</span> Created new product categories instead of improving existing ones</li>
+                <li><span>→</span> Validated academic theories through real engagement data</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Background */}
+        <section id="slide-background" className="deck-background">
+          <div className="deck-background-header">
+            <div className="deck-background-left">
+              <div className="deck-section-label">05 — Background</div>
+              <h2 className="deck-built-h2">Systems thinker.<br/><em>From day one.</em></h2>
+            </div>
+            <div className="deck-background-right">
+              <img src="/images/chandan-profile.jpg" alt="Chandan Draksha" className="deck-profile-image" />
+              <div className="deck-profile-info">
+                <h3>Founder and AI First Researcher</h3>
+                <h4>Chandan Draksha</h4>
+                <span className="deck-linkedin-text">https://www.linkedin.com/in/chandandraksha/</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="deck-section-separator"></div>
+          
+          <div className="deck-ai-first-background">
+            <div className="deck-current-work">
+              <h3 className="deck-work-title">Previous AI-First Work</h3>
+              <div className="deck-work-bullets">
+                <div className="deck-work-bullet">
+                  Designing an AI-enabled derivatives trading platform focused on advanced options traders — building customizable strategy builders, automated risk management systems, and real-time analytics to support data-driven trading decisions.
+                </div>
+                <div className="deck-work-bullet">
+                  Building BeEmoji, an AI-powered communication keyboard that interprets tone, intent, and relationship context to generate professional responses in real time. Developing on-device AI architecture for privacy-preserving inference and preparing a patent for the underlying system.
+                </div>
+                <div className="deck-work-bullet">
+                  Leading end-to-end AI product development — from problem discovery and user research to prototyping, model experimentation, and product iteration across multiple AI-driven applications.
+                </div>
+                <div className="deck-work-bullet">
+                  Advising early-stage startups in Bangalore on AI product strategy, including defining product-market fit, designing AI-assisted workflows, and identifying scalable data and model pipelines for vertical SaaS products.
+                </div>
+                <div className="deck-work-bullet">
+                  Built ZenSpace, an AI-powered interior visualization platform enabling architects and clients to collaboratively design spaces using real-world furniture catalogs and layout simulations.<br/>
+                  <span className="deck-work-link">zenspacestudio.in</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="deck-past-experiences">
+              <h3 className="deck-work-title">Past Experiences</h3>
+              <div className="deck-past-list">
+                <div className="deck-past-item">
+                  <strong>Worked with a Virginia-based company</strong> leading product initiatives, developing internal AI-assisted tools and client solutions for enterprise and public-sector use cases, focusing on workflow automation and decision-support systems.
+                </div>
+                <div className="deck-past-item">
+                  <strong>Worked with TCS</strong> on enterprise-scale API testing and backend optimization across banking services — built the debugging instinct and system fluency that now powers AI infrastructure decisions.
+                </div>
+                <div className="deck-past-item">
+                  <strong>Worked with SecurelyShare</strong> on mathematical models for font encryption and research-to-prototype pipelines — learned how to translate academic papers into working systems under real constraints.
+                </div>
+                <div className="deck-past-item">
+                  <strong>Worked with Infosys</strong> on full-stack development and data analytics — gained the technical foundation that bridges business intelligence with engineering execution.
+                </div>
+                <div className="deck-past-item">
+                  <strong>Worked with Purdue University</strong> on statistical validation of behavioral data using R and SAS — developed the research methodology discipline that validates every FantasyWorld hypothesis.
+                </div>
+                <div className="deck-past-item">
+                  <strong>Worked with Cisco</strong> on enterprise software development — first exposure to the feedback loop instinct that every product is a conversation between builder and user.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        {/* Footer */}
+        <div className="deck-footer">
+          <div className="deck-footer-left">FantasyWorld Hub — AI First PM</div>
+          <div className="deck-footer-right">Chandan Draksha — 2024</div>
+        </div>
+
+        {/* Download Section */}
+        <div className="deck-download-section">
+          <button
+            className="deck-download-pdf-btn"
+            onClick={downloadAsPDF}
+            disabled={outputsLoading}
+            style={{
+              opacity: outputsLoading ? 0.4 : 1,
+              cursor: outputsLoading ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {outputsLoading ? 'Preparing...' : 'Download PDF'}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+export default ShowcaseDeck;

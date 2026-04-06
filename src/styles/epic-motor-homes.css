@@ -1,0 +1,235 @@
+/* Epic Motor Homes - Fantasy Mobile Home Theme */
+.epic-motor-homes-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2a3441 30%, #3a4a5a 70%, #4a5a6a 100%);
+  color: #e8e8e8;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.epic-motor-homes-header {
+  text-align: center;
+  padding: 3rem 2rem 2rem;
+  background: rgba(26, 26, 46, 0.6);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(100, 181, 246, 0.3);
+}
+
+.epic-motor-homes-header h1 {
+  font-size: 3.5rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 30%, #1e88e5 70%, #64b5f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: bold;
+  text-shadow: 0 0 20px rgba(100, 181, 246, 0.3);
+}
+
+.epic-motor-homes-header p {
+  font-size: 1.4rem;
+  color: #42a5f5;
+  font-style: italic;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.motor-home-description {
+  background: rgba(26, 26, 46, 0.4);
+  border: 2px solid;
+  border-image: linear-gradient(135deg, #64b5f6, #42a5f5, #1e88e5) 1;
+  border-radius: 15px;
+  padding: 1.5rem 2rem;
+  margin: 2rem 3rem;
+  backdrop-filter: blur(15px);
+  text-align: center;
+}
+
+.motor-home-description p {
+  font-size: 1.2rem;
+  color: #e8e8e8;
+  margin: 0;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.motor-home-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 3rem;
+  margin-bottom: 2rem;
+}
+
+.motor-home-image {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  border: 3px solid;
+  border-image: linear-gradient(135deg, #64b5f6, #42a5f5, #1e88e5) 1;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.motor-home-image:hover {
+  transform: scale(1.02);
+  box-shadow: 0 16px 50px rgba(100, 181, 246, 0.3);
+}
+
+.epic-motor-homes-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.epic-motor-homes-btn {
+  padding: 1rem 2rem;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.epic-motor-homes-btn.primary {
+  background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%);
+  color: #ffffff;
+  border-color: #64b5f6;
+  box-shadow: 0 4px 15px rgba(100, 181, 246, 0.3);
+}
+
+.epic-motor-homes-btn.primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(100, 181, 246, 0.4);
+}
+
+.epic-motor-homes-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.epic-motor-homes-btn.secondary {
+  background: rgba(26, 26, 46, 0.3);
+  color: #e8e8e8;
+  border-color: rgba(66, 165, 245, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.epic-motor-homes-btn.secondary:hover {
+  background: rgba(66, 165, 245, 0.2);
+  border-color: #42a5f5;
+  transform: translateY(-2px);
+}
+
+.epic-motor-homes-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  text-align: center;
+}
+
+.motor-homes-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(100, 181, 246, 0.3);
+  border-left: 4px solid #64b5f6;
+  border-top: 4px solid #42a5f5;
+  border-radius: 50%;
+  animation: spin 2s linear infinite;
+  margin-bottom: 2rem;
+}
+
+.epic-motor-homes-loading h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #64b5f6;
+  font-weight: bold;
+}
+
+.epic-motor-homes-loading p {
+  font-size: 1.1rem;
+  color: #42a5f5;
+  font-style: italic;
+}
+
+.epic-motor-homes-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  text-align: center;
+}
+
+.epic-motor-homes-error h3 {
+  color: #64b5f6;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.epic-motor-homes-error p {
+  color: #42a5f5;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.model-attribution {
+  text-align: center;
+  padding: 2rem;
+  border-top: 1px solid rgba(66, 165, 245, 0.3);
+  margin-top: 2rem;
+}
+
+.model-attribution p {
+  color: rgba(66, 165, 245, 0.8);
+  font-size: 1rem;
+  font-style: italic;
+  margin: 0;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .epic-motor-homes-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .epic-motor-homes-header p {
+    font-size: 1.1rem;
+  }
+  
+  .motor-home-description {
+    margin: 1rem;
+    padding: 1rem;
+  }
+  
+  .motor-home-image-container {
+    padding: 1rem;
+  }
+  
+  .epic-motor-homes-actions {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .epic-motor-homes-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

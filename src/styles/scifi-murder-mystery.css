@@ -1,0 +1,360 @@
+/* Sci-Fi Murder Mystery - Futuristic detective theme */
+.scifi-murder-mystery-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+  color: #e8e8e8;
+  padding: 2rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+.scifi-murder-mystery-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(255, 0, 100, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Loading State */
+.scifi-murder-mystery-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+}
+
+.scifi-murder-mystery-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(255, 0, 100, 0.3);
+  border-top: 4px solid #ff0064;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 2rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.scifi-murder-mystery-loading h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #ff0064;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.scifi-murder-mystery-loading p {
+  font-size: 1.1rem;
+  color: #00ffff;
+  font-style: italic;
+}
+
+/* Error State */
+.scifi-murder-mystery-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+}
+
+.scifi-murder-mystery-error h3 {
+  color: #ff0064;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.scifi-murder-mystery-error p {
+  color: #00ffff;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+/* Header */
+.scifi-murder-mystery-header {
+  text-align: center;
+  padding: 3rem 2rem 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.scifi-murder-mystery-header h1 {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  color: #ff0064;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-weight: bold;
+}
+
+.scifi-murder-mystery-header p {
+  font-size: 1.3rem;
+  color: #00ffff;
+  font-style: italic;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Main Content Layout - Text Left, Image Right */
+.scifi-murder-mystery-main-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+/* Text Panel - Left Side */
+.scifi-murder-mystery-text-panel {
+  background: rgba(26, 26, 46, 0.3);
+  border: 2px solid rgba(255, 0, 100, 0.4);
+  border-radius: 15px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.mystery-header h2 {
+  color: #ff0064;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.case-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.case-details span {
+  color: #00ffff;
+  font-weight: 500;
+}
+
+.mystery-story h3,
+.clues-section h3,
+.suspects-section h3,
+.solution-section h3 {
+  color: #ff0064;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  margin-top: 2rem;
+}
+
+.mystery-story p {
+  line-height: 1.6;
+  color: #e8e8e8;
+  margin-bottom: 1rem;
+}
+
+.clues-section ul,
+.suspects-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.clues-section li {
+  background: rgba(255, 0, 100, 0.1);
+  border-left: 3px solid #ff0064;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 5px;
+}
+
+.clues-section li strong {
+  color: #ff0064;
+}
+
+.suspects-section li {
+  background: rgba(0, 255, 255, 0.1);
+  border-left: 3px solid #00ffff;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 5px;
+}
+
+.suspects-section li strong {
+  color: #00ffff;
+}
+
+.reveal-btn {
+  background: linear-gradient(135deg, #ff0064 0%, #ff3385 100%);
+  color: #ffffff;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 2rem;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(255, 0, 100, 0.3);
+}
+
+.reveal-btn:hover {
+  background: linear-gradient(135deg, #ff3385 0%, #ff0064 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 0, 100, 0.4);
+}
+
+.solution-section {
+  background: rgba(255, 0, 100, 0.1);
+  border: 2px solid #ff0064;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.murderer-reveal {
+  color: #ff0064;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.method-reveal,
+.explanation {
+  color: #e8e8e8;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.method-reveal strong,
+.explanation strong {
+  color: #00ffff;
+}
+
+/* Image Panel - Right Side */
+.scifi-murder-mystery-image-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.image-container {
+  background: rgba(26, 26, 46, 0.3);
+  border: 2px solid rgba(0, 255, 255, 0.4);
+  border-radius: 15px;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scifi-murder-mystery-image {
+  max-width: 100%;
+  max-height: 600px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  object-fit: contain;
+}
+
+.image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #666;
+  text-align: center;
+}
+
+.placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  color: #00ffff;
+}
+
+.image-placeholder p {
+  font-size: 1.1rem;
+  color: #00ffff;
+}
+
+/* Action Buttons */
+.scifi-murder-mystery-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 3rem;
+  position: relative;
+}
+
+.scifi-murder-mystery-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.scifi-murder-mystery-btn.primary {
+  background: linear-gradient(135deg, #ff0064 0%, #ff3385 100%);
+  color: #ffffff;
+  border: 2px solid #ff0064;
+}
+
+.scifi-murder-mystery-btn.primary:hover {
+  background: linear-gradient(135deg, #ff3385 0%, #ff0064 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 0, 100, 0.4);
+}
+
+.scifi-murder-mystery-btn.secondary {
+  background: rgba(26, 26, 46, 0.3);
+  color: #e8e8e8;
+  border: 2px solid rgba(0, 255, 255, 0.5);
+}
+
+.scifi-murder-mystery-btn.secondary:hover {
+  background: rgba(26, 26, 46, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26, 26, 46, 0.4);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .scifi-murder-mystery-main-content {
+    grid-template-columns: 1fr;
+    padding: 1rem 2rem;
+  }
+  
+  .scifi-murder-mystery-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .scifi-murder-mystery-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .scifi-murder-mystery-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

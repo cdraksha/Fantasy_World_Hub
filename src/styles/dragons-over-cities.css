@@ -1,0 +1,251 @@
+/* Dragons Over Cities - Epic fantasy/dragon theme */
+.dragons-cities-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  color: #f0f0f0;
+  padding: 2rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+.dragons-cities-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(220, 20, 60, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 140, 0, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Loading State */
+.dragons-cities-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.dragons-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(220, 20, 60, 0.3);
+  border-top: 4px solid #dc143c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 2rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.dragons-cities-loading h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #dc143c;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.dragons-cities-loading p {
+  font-size: 1.1rem;
+  color: #ff8c00;
+  font-style: italic;
+}
+
+/* Error State */
+.dragons-cities-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.dragons-cities-error h3 {
+  color: #dc143c;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.dragons-cities-error p {
+  color: #ff8c00;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+/* Header */
+.dragons-cities-header {
+  text-align: center;
+  padding: 3rem 2rem 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.dragons-cities-header h1 {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  color: #dc143c;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-weight: bold;
+}
+
+.dragons-cities-header p {
+  font-size: 1.3rem;
+  color: #ff8c00;
+  font-style: italic;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Content Layout */
+.dragons-cities-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+/* Description */
+.dragons-description {
+  text-align: center;
+  margin-bottom: 3rem;
+  background: rgba(22, 33, 62, 0.3);
+  border: 2px solid rgba(220, 20, 60, 0.4);
+  border-radius: 15px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.dragons-description p {
+  font-size: 1.4rem;
+  line-height: 1.6;
+  color: #f0f0f0;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Image Container */
+.dragons-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(22, 33, 62, 0.3);
+  border: 2px solid rgba(255, 140, 0, 0.4);
+  border-radius: 15px;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.dragons-image {
+  max-width: 100%;
+  max-height: 600px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  object-fit: contain;
+}
+
+/* Action Buttons */
+.dragons-cities-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.dragons-cities-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.dragons-cities-btn.primary {
+  background: linear-gradient(135deg, #dc143c 0%, #ff8c00 100%);
+  color: #ffffff;
+  border: 2px solid #dc143c;
+}
+
+.dragons-cities-btn.primary:hover {
+  background: linear-gradient(135deg, #ff8c00 0%, #dc143c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 20, 60, 0.4);
+}
+
+.dragons-cities-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.dragons-cities-btn.secondary {
+  background: rgba(22, 33, 62, 0.3);
+  color: #f0f0f0;
+  border: 2px solid rgba(255, 140, 0, 0.5);
+}
+
+.dragons-cities-btn.secondary:hover {
+  background: rgba(22, 33, 62, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 140, 0, 0.4);
+}
+
+/* Model Attribution */
+.model-attribution {
+  text-align: center;
+  margin-top: 3rem;
+  padding: 1rem;
+  color: #888;
+  font-size: 0.9rem;
+  font-style: italic;
+  position: relative;
+  z-index: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dragons-cities-content {
+    padding: 1rem 2rem;
+  }
+  
+  .dragons-cities-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .dragons-description p {
+    font-size: 1.2rem;
+  }
+  
+  .dragons-cities-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .dragons-cities-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

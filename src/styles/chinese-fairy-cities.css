@@ -1,0 +1,249 @@
+/* Chinese Fairy Cities Experience Styles */
+.chinese-fairy-cities-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a0d0d 0%, #2d1b1b 50%, #3d2a2a 100%);
+  color: white;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.chinese-fairy-cities-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(220, 20, 60, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(255, 182, 193, 0.2) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Header */
+.chinese-fairy-cities-header {
+  text-align: center;
+  margin-bottom: 40px;
+  z-index: 2;
+  position: relative;
+}
+
+.chinese-fairy-cities-header h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  background: linear-gradient(45deg, #ffd700, #ff6347, #ffb6c1);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 3s ease-in-out infinite;
+}
+
+.chinese-fairy-cities-header p {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Content */
+.chinese-fairy-cities-content {
+  max-width: 800px;
+  width: 100%;
+  margin-bottom: 40px;
+  z-index: 2;
+  position: relative;
+}
+
+.fairy-description {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.fairy-description p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.fairy-image-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.fairy-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 20px;
+  box-shadow: 
+    0 20px 60px rgba(255, 215, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.fairy-image:hover {
+  transform: scale(1.02);
+  box-shadow: 
+    0 30px 80px rgba(255, 215, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+/* Actions */
+.chinese-fairy-cities-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+  z-index: 2;
+  position: relative;
+}
+
+.chinese-fairy-cities-btn {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chinese-fairy-cities-btn.primary {
+  background: linear-gradient(45deg, #ffd700, #ff6347);
+  color: white;
+  box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4);
+}
+
+.chinese-fairy-cities-btn.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(255, 215, 0, 0.6);
+}
+
+.chinese-fairy-cities-btn.secondary {
+  background: linear-gradient(45deg, #666, #888);
+  color: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.chinese-fairy-cities-btn.secondary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+}
+
+.chinese-fairy-cities-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Loading */
+.chinese-fairy-cities-loading {
+  text-align: center;
+  padding: 60px 20px;
+  z-index: 2;
+  position: relative;
+}
+
+.fairy-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255, 215, 0, 0.3);
+  border-top: 4px solid #ffd700;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 30px;
+}
+
+.chinese-fairy-cities-loading h2 {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  color: #ffd700;
+}
+
+.chinese-fairy-cities-loading p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error */
+.chinese-fairy-cities-error {
+  text-align: center;
+  padding: 60px 20px;
+  z-index: 2;
+  position: relative;
+}
+
+.chinese-fairy-cities-error h3 {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  color: #ff6b6b;
+}
+
+.chinese-fairy-cities-error p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 30px;
+}
+
+/* Model Attribution */
+.model-attribution {
+  text-align: center;
+  z-index: 2;
+  position: relative;
+}
+
+.model-attribution p {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .chinese-fairy-cities-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .chinese-fairy-cities-header p {
+    font-size: 1rem;
+  }
+  
+  .chinese-fairy-cities-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .chinese-fairy-cities-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

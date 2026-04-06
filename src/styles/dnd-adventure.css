@@ -1,0 +1,426 @@
+/* D&D Adventure Experience Styles */
+.dnd-adventure-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #2c1810 0%, #5d4037 30%, #8d6e63 70%, #a1887f 100%);
+  color: #fff;
+  font-family: 'Inter', 'Arial', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 60px;
+}
+
+/* Animated Background */
+.dnd-adventure-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 30% 40%, rgba(139, 69, 19, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 70% 60%, rgba(255, 193, 7, 0.1) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 40%, rgba(121, 85, 72, 0.05) 50%, transparent 60%);
+  pointer-events: none;
+  z-index: 1;
+  animation: mysticalFlow 30s ease-in-out infinite;
+}
+
+@keyframes mysticalFlow {
+  0%, 100% { opacity: 0.3; }
+  33% { opacity: 0.7; }
+  66% { opacity: 0.5; }
+}
+
+.dnd-adventure-container > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Loading State */
+.dnd-adventure-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.dnd-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(139, 69, 19, 0.3);
+  border-top: 4px solid #ff9800;
+  border-radius: 50%;
+  animation: dndSpinning 2s linear infinite;
+  margin-bottom: 30px;
+}
+
+@keyframes dndSpinning {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.dnd-adventure-loading h2 {
+  color: #fff;
+  font-size: 2rem;
+  margin-bottom: 15px;
+  font-weight: bold;
+  text-shadow: 0 0 20px rgba(255, 152, 0, 0.5);
+}
+
+.dnd-adventure-loading p {
+  color: #ffcc80;
+  font-size: 1.2rem;
+  font-style: italic;
+}
+
+/* Welcome State */
+.dnd-adventure-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.dnd-adventure-welcome h1 {
+  font-size: 3.5rem;
+  margin-bottom: 20px;
+  background: linear-gradient(45deg, #fff, #ff9800, #8d6e63);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(255, 152, 0, 0.5);
+  font-weight: bold;
+}
+
+.dnd-adventure-welcome p {
+  font-size: 1.3rem;
+  color: #ffcc80;
+  margin-bottom: 40px;
+  line-height: 1.6;
+}
+
+.adventure-instructions {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 15px;
+  padding: 30px;
+  margin-bottom: 40px;
+  border: 1px solid rgba(255, 152, 0, 0.3);
+}
+
+.adventure-instructions h3 {
+  color: #ff9800;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+.adventure-instructions ul {
+  text-align: left;
+  color: #fff;
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+
+.adventure-instructions li {
+  margin-bottom: 10px;
+}
+
+/* Header */
+.dnd-adventure-header {
+  text-align: center;
+  padding: 30px 20px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(255, 152, 0, 0.4);
+  box-shadow: 0 0 20px rgba(255, 152, 0, 0.3);
+}
+
+.dnd-adventure-header h1 {
+  font-size: 2.5rem;
+  margin: 0 0 10px 0;
+  background: linear-gradient(45deg, #fff, #ff9800);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: bold;
+}
+
+.scene-progress {
+  background: rgba(255, 152, 0, 0.2);
+  color: #ff9800;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  display: inline-block;
+}
+
+/* Content */
+.dnd-adventure-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.scene-text {
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 15px;
+  padding: 30px;
+  margin-bottom: 40px;
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.scene-text p {
+  font-size: 1.2rem;
+  line-height: 1.8;
+  color: #fff;
+  margin-bottom: 20px;
+  text-align: justify;
+}
+
+.scene-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* Dice Section */
+.dice-section {
+  text-align: center;
+}
+
+.dice-prompt h3 {
+  color: #ff9800;
+  font-size: 1.5rem;
+  margin-bottom: 30px;
+  font-weight: bold;
+}
+
+/* Dice Buttons */
+.dice-buttons {
+  display: grid;
+  gap: 15px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.d4-grid { grid-template-columns: repeat(2, 1fr); }
+.d6-grid { grid-template-columns: repeat(3, 1fr); }
+.d8-grid { grid-template-columns: repeat(4, 1fr); }
+.d10-grid { grid-template-columns: repeat(5, 1fr); }
+.d12-grid { grid-template-columns: repeat(4, 1fr); }
+.d20-ranges { grid-template-columns: repeat(2, 1fr); }
+
+.dice-button {
+  background: linear-gradient(45deg, rgba(255, 152, 0, 0.2), rgba(139, 69, 19, 0.2));
+  border: 2px solid rgba(255, 152, 0, 0.4);
+  border-radius: 10px;
+  padding: 15px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Inter', 'Arial', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.dice-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  background: linear-gradient(45deg, rgba(255, 152, 0, 0.4), rgba(139, 69, 19, 0.4));
+  border-color: rgba(255, 152, 0, 0.8);
+  box-shadow: 0 5px 20px rgba(255, 152, 0, 0.3);
+}
+
+.dice-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dice-number {
+  background: #ff9800;
+  color: #000;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.dice-range {
+  background: #ff9800;
+  color: #000;
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.dice-outcome {
+  font-size: 0.9rem;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.d20-range {
+  padding: 20px;
+}
+
+/* Adventure Complete */
+.adventure-complete {
+  text-align: center;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 15px;
+  padding: 40px;
+  border: 2px solid rgba(255, 152, 0, 0.5);
+}
+
+.adventure-complete h2 {
+  color: #ff9800;
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.adventure-complete p {
+  font-size: 1.3rem;
+  color: #fff;
+  margin-bottom: 30px;
+}
+
+/* Action Buttons */
+.dnd-adventure-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+  flex-wrap: wrap;
+}
+
+.dnd-adventure-btn {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 180px;
+  justify-content: center;
+  font-family: 'Inter', 'Arial', sans-serif;
+}
+
+.dnd-adventure-btn.large {
+  padding: 20px 40px;
+  font-size: 1.3rem;
+  min-width: 250px;
+}
+
+.dnd-adventure-btn.small {
+  padding: 10px 20px;
+  font-size: 1rem;
+  min-width: 120px;
+}
+
+.dnd-adventure-btn.primary {
+  background: linear-gradient(45deg, #ff9800, #ff5722);
+  color: #fff;
+  box-shadow: 0 5px 20px rgba(255, 152, 0, 0.4);
+}
+
+.dnd-adventure-btn.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(255, 152, 0, 0.6);
+  background: linear-gradient(45deg, #ff5722, #ff9800);
+}
+
+.dnd-adventure-btn.secondary {
+  background: rgba(255, 152, 0, 0.1);
+  color: #fff;
+  border: 2px solid rgba(255, 152, 0, 0.4);
+}
+
+.dnd-adventure-btn.secondary:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 152, 0, 0.2);
+  border-color: rgba(255, 152, 0, 0.6);
+}
+
+/* Footer */
+.dnd-adventure-footer {
+  text-align: center;
+  padding: 20px;
+  border-top: 1px solid rgba(255, 152, 0, 0.2);
+  margin-top: 40px;
+}
+
+/* Error State */
+.dnd-adventure-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.dnd-adventure-error h3 {
+  color: #f44336;
+  font-size: 2rem;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.dnd-adventure-error p {
+  color: #ffcdd2;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  max-width: 500px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dnd-adventure-welcome h1 {
+    font-size: 2.5rem;
+  }
+  
+  .dnd-adventure-header h1 {
+    font-size: 2rem;
+  }
+  
+  .scene-text p {
+    font-size: 1.1rem;
+  }
+  
+  .dice-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .d20-ranges {
+    grid-template-columns: 1fr;
+  }
+  
+  .dnd-adventure-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .dnd-adventure-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

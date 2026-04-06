@@ -1,0 +1,339 @@
+/* Aliens and Ancient Indians Experience Styles */
+.aliens-ancient-indians-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 25%, #2d2d5a 50%, #4a4a7a 75%, #6b6b9a 100%);
+  color: #f5f5f5;
+  font-family: 'Arial', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 60px;
+}
+
+/* Header */
+.aliens-ancient-indians-header {
+  text-align: center;
+  padding: 40px 20px 30px 20px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(107, 107, 154, 0.3);
+  box-shadow: 0 0 20px rgba(107, 107, 154, 0.2);
+}
+
+.aliens-ancient-indians-header h1 {
+  font-size: 3rem;
+  margin: 0 0 10px 0;
+  background: linear-gradient(45deg, #6b6b9a, #8a8ac7, #a9a9f5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(107, 107, 154, 0.5);
+}
+
+.aliens-ancient-indians-header p {
+  font-size: 1.2rem;
+  color: #d5d5d5;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Loading Screen */
+.aliens-ancient-indians-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.ufo-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(107, 107, 154, 0.2);
+  border-left: 4px solid #6b6b9a;
+  border-radius: 50%;
+  animation: ufoSpin 1.5s linear infinite;
+  margin-bottom: 30px;
+  box-shadow: 0 0 40px rgba(107, 107, 154, 0.4);
+}
+
+@keyframes ufoSpin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.aliens-ancient-indians-loading h2 {
+  color: #6b6b9a;
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.aliens-ancient-indians-loading p {
+  color: #d5d5d5;
+  font-size: 1.1rem;
+}
+
+/* Main Content - Side by Side Layout */
+.aliens-ancient-indians-content {
+  display: flex;
+  align-items: flex-start;
+  padding: 40px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: 40px;
+  min-height: 60vh;
+}
+
+/* Text Content - Left Side */
+.collaboration-content {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 20px;
+  padding: 40px;
+  border: 2px solid rgba(107, 107, 154, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.structure-name {
+  margin-bottom: 25px;
+}
+
+.structure-name h2 {
+  font-size: 2.2rem;
+  color: #6b6b9a;
+  margin: 0;
+  font-weight: 600;
+  text-shadow: 0 2px 10px rgba(107, 107, 154, 0.3);
+}
+
+.collaboration-text {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.collaboration-text p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #f5f5f5;
+  margin: 0;
+  text-align: left;
+  font-weight: 400;
+}
+
+/* Image Content - Right Side */
+.collaboration-image-container {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 20px;
+  padding: 20px;
+  border: 2px solid rgba(107, 107, 154, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.collaboration-image {
+  width: 100%;
+  height: auto;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(107, 107, 154, 0.2);
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+/* Action Buttons */
+.aliens-ancient-indians-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px 20px 20px 20px;
+  flex-wrap: wrap;
+}
+
+.aliens-ancient-indians-btn {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+  justify-content: center;
+}
+
+.aliens-ancient-indians-btn.primary {
+  background: linear-gradient(45deg, #6b6b9a, #8a8ac7);
+  color: #fff;
+  box-shadow: 0 5px 20px rgba(107, 107, 154, 0.4);
+}
+
+.aliens-ancient-indians-btn.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(107, 107, 154, 0.6);
+  background: linear-gradient(45deg, #8a8ac7, #a9a9f5);
+}
+
+.aliens-ancient-indians-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.aliens-ancient-indians-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5f5f5;
+  border: 2px solid rgba(107, 107, 154, 0.3);
+}
+
+.aliens-ancient-indians-btn.secondary:hover {
+  transform: translateY(-2px);
+  background: rgba(107, 107, 154, 0.2);
+  border-color: rgba(107, 107, 154, 0.5);
+}
+
+/* Error State */
+.aliens-ancient-indians-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.aliens-ancient-indians-error h3 {
+  color: #dc2626;
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.aliens-ancient-indians-error p {
+  color: #d5d5d5;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  max-width: 500px;
+}
+
+/* Model Attribution */
+.model-attribution {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  padding: 5px 15px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 10px;
+  border: 1px solid rgba(107, 107, 154, 0.2);
+}
+
+.model-attribution p {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #a5a5a5;
+  opacity: 0.8;
+}
+
+/* Background Effects */
+.aliens-ancient-indians-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(107, 107, 154, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(138, 138, 199, 0.1) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 40%, rgba(107, 107, 154, 0.05) 50%, transparent 60%);
+  pointer-events: none;
+  z-index: 1;
+  animation: cosmicGlow 20s ease-in-out infinite;
+}
+
+@keyframes cosmicGlow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+.aliens-ancient-indians-container > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .aliens-ancient-indians-content {
+    flex-direction: column;
+    padding: 30px 15px;
+    gap: 30px;
+  }
+  
+  .aliens-ancient-indians-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .collaboration-content {
+    padding: 30px;
+  }
+  
+  .structure-name h2 {
+    font-size: 2rem;
+  }
+  
+  .collaboration-text p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .aliens-ancient-indians-header h1 {
+    font-size: 2rem;
+  }
+  
+  .aliens-ancient-indians-content {
+    padding: 20px 15px;
+    gap: 20px;
+  }
+  
+  .collaboration-content {
+    padding: 25px;
+  }
+  
+  .structure-name h2 {
+    font-size: 1.8rem;
+  }
+  
+  .collaboration-text p {
+    font-size: 0.95rem;
+  }
+  
+  .collaboration-image-container {
+    padding: 15px;
+  }
+  
+  .aliens-ancient-indians-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .aliens-ancient-indians-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

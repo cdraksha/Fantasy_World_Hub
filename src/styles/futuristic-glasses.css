@@ -1,0 +1,295 @@
+/* Futuristic Glasses Experience Styles */
+.futuristic-glasses-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1e3a8a 100%);
+  color: #e0e6ed;
+  font-family: 'Arial', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 60px;
+}
+
+/* Header */
+.futuristic-glasses-header {
+  text-align: center;
+  padding: 40px 20px 30px 20px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+}
+
+.futuristic-glasses-header h1 {
+  font-size: 3rem;
+  margin: 0 0 10px 0;
+  background: linear-gradient(45deg, #3b82f6, #60a5fa, #93c5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+}
+
+.futuristic-glasses-header p {
+  font-size: 1.2rem;
+  color: #b0bec5;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Loading Screen */
+.futuristic-glasses-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.glasses-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(59, 130, 246, 0.2);
+  border-left: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: glassesSpin 1.5s linear infinite;
+  margin-bottom: 30px;
+  box-shadow: 0 0 40px rgba(59, 130, 246, 0.4);
+}
+
+@keyframes glassesSpin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.futuristic-glasses-loading h2 {
+  color: #3b82f6;
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.futuristic-glasses-loading p {
+  color: #b0bec5;
+  font-size: 1.1rem;
+}
+
+/* Main Content */
+.futuristic-glasses-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 30px;
+}
+
+/* Description */
+.glasses-description {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 20px;
+  padding: 25px 30px;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  text-align: center;
+  max-width: 800px;
+}
+
+.glasses-description p {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #e0e6ed;
+}
+
+/* Image Container */
+.glasses-image-container {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 20px;
+  padding: 20px;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 900px;
+  width: 100%;
+}
+
+.glasses-image {
+  width: 100%;
+  height: auto;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+/* Action Buttons */
+.futuristic-glasses-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px 20px 20px 20px;
+  flex-wrap: wrap;
+}
+
+.futuristic-glasses-btn {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+  justify-content: center;
+}
+
+.futuristic-glasses-btn.primary {
+  background: linear-gradient(45deg, #3b82f6, #60a5fa);
+  color: #fff;
+  box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4);
+}
+
+.futuristic-glasses-btn.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.6);
+  background: linear-gradient(45deg, #60a5fa, #93c5fd);
+}
+
+.futuristic-glasses-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.futuristic-glasses-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e6ed;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+}
+
+.futuristic-glasses-btn.secondary:hover {
+  transform: translateY(-2px);
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+/* Error State */
+.futuristic-glasses-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.futuristic-glasses-error h3 {
+  color: #ff6b35;
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.futuristic-glasses-error p {
+  color: #b0bec5;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  max-width: 500px;
+}
+
+/* Model Attribution */
+.model-attribution {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  padding: 5px 15px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 10px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.model-attribution p {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #90a4ae;
+  opacity: 0.8;
+}
+
+/* Background Effects */
+.futuristic-glasses-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(96, 165, 250, 0.1) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 40%, rgba(59, 130, 246, 0.05) 50%, transparent 60%);
+  pointer-events: none;
+  z-index: 1;
+  animation: techGlow 20s ease-in-out infinite;
+}
+
+@keyframes techGlow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+.futuristic-glasses-container > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .futuristic-glasses-content {
+    padding: 30px 15px;
+  }
+  
+  .futuristic-glasses-header h1 {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .futuristic-glasses-header h1 {
+    font-size: 2rem;
+  }
+  
+  .futuristic-glasses-content {
+    padding: 20px 15px;
+  }
+  
+  .glasses-description {
+    padding: 20px;
+  }
+  
+  .glasses-image-container {
+    padding: 15px;
+  }
+  
+  .futuristic-glasses-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .futuristic-glasses-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

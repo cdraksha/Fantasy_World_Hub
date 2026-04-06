@@ -1,0 +1,362 @@
+/* Past Life Stories - Mystical/soul memory theme */
+.past-life-stories-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #2c1810 0%, #4a2c2a 25%, #6b4423 50%, #8b4513 75%, #a0522d 100%);
+  color: #f5deb3;
+  padding: 2rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+.past-life-stories-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(218, 165, 32, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(205, 133, 63, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(245, 222, 179, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Loading State */
+.past-life-stories-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.memory-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(218, 165, 32, 0.3);
+  border-top: 4px solid #daa520;
+  border-radius: 50%;
+  animation: memorySpin 4s ease-in-out infinite;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.memory-spinner::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  border: 2px solid rgba(205, 133, 63, 0.3);
+  border-bottom: 2px solid #cd853f;
+  border-radius: 50%;
+  animation: memorySpin 3s ease-in-out infinite reverse;
+}
+
+.memory-spinner::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  border: 1px solid rgba(160, 82, 45, 0.3);
+  border-left: 1px solid #a0522d;
+  border-radius: 50%;
+  animation: memorySpin 2s ease-in-out infinite;
+}
+
+@keyframes memorySpin {
+  0% { transform: rotate(0deg) scale(1); opacity: 0.7; }
+  25% { transform: rotate(90deg) scale(1.05); opacity: 0.9; }
+  50% { transform: rotate(180deg) scale(1.1); opacity: 1; }
+  75% { transform: rotate(270deg) scale(1.05); opacity: 0.9; }
+  100% { transform: rotate(360deg) scale(1); opacity: 0.7; }
+}
+
+.past-life-stories-loading h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #daa520;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.past-life-stories-loading p {
+  font-size: 1.1rem;
+  color: #cd853f;
+  font-style: italic;
+}
+
+/* Error State */
+.past-life-stories-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.past-life-stories-error h3 {
+  color: #daa520;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.past-life-stories-error p {
+  color: #cd853f;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+/* Header */
+.past-life-stories-header {
+  text-align: center;
+  padding: 3rem 2rem 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.past-life-stories-header h1 {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  color: #daa520;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  font-weight: bold;
+}
+
+.past-life-stories-header p {
+  font-size: 1.3rem;
+  color: #cd853f;
+  font-style: italic;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Content Layout - Text Left, Image Right like Retro Futurism */
+.past-life-stories-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+/* Text Section */
+.past-life-text-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.past-life-story {
+  background: rgba(44, 24, 16, 0.4);
+  border: 2px solid rgba(218, 165, 32, 0.4);
+  border-radius: 20px;
+  padding: 2.5rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.past-life-story::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #daa520, #cd853f, #daa520, #cd853f);
+  border-radius: 20px;
+  z-index: -1;
+  animation: soulGlow 5s ease-in-out infinite alternate;
+}
+
+@keyframes soulGlow {
+  0% { opacity: 0.4; }
+  100% { opacity: 0.7; }
+}
+
+.past-life-story h3 {
+  font-size: 1.8rem;
+  color: #daa520;
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.story-content p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #f5deb3;
+  margin-bottom: 1.2rem;
+  font-weight: 400;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.story-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Image Section */
+.past-life-image-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.past-life-image-container {
+  background: rgba(44, 24, 16, 0.4);
+  border: 2px solid rgba(205, 133, 63, 0.4);
+  border-radius: 20px;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+}
+
+.past-life-image-container::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #cd853f, #daa520, #cd853f, #daa520);
+  border-radius: 20px;
+  z-index: -1;
+  animation: memoryShift 6s ease-in-out infinite;
+}
+
+@keyframes memoryShift {
+  0%, 100% { opacity: 0.4; }
+  33% { opacity: 0.6; }
+  66% { opacity: 0.8; }
+}
+
+.past-life-image {
+  width: 100%;
+  height: auto;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  object-fit: cover;
+}
+
+/* Action Buttons */
+.past-life-stories-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.past-life-stories-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.past-life-stories-btn.primary {
+  background: linear-gradient(135deg, #daa520 0%, #cd853f 100%);
+  color: #ffffff;
+  border: 2px solid #daa520;
+}
+
+.past-life-stories-btn.primary:hover {
+  background: linear-gradient(135deg, #cd853f 0%, #daa520 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(218, 165, 32, 0.4);
+}
+
+.past-life-stories-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.past-life-stories-btn.secondary {
+  background: rgba(44, 24, 16, 0.4);
+  color: #f5deb3;
+  border: 2px solid rgba(205, 133, 63, 0.5);
+}
+
+.past-life-stories-btn.secondary:hover {
+  background: rgba(44, 24, 16, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(205, 133, 63, 0.4);
+}
+
+/* Model Attribution */
+.model-attribution {
+  text-align: center;
+  margin-top: 3rem;
+  padding: 1rem;
+  color: #888;
+  font-size: 0.9rem;
+  font-style: italic;
+  position: relative;
+  z-index: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .past-life-stories-content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  .past-life-image-section {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .past-life-stories-content {
+    padding: 1rem 2rem;
+  }
+  
+  .past-life-stories-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .past-life-story {
+    padding: 2rem;
+  }
+  
+  .story-content p {
+    font-size: 1rem;
+  }
+  
+  .past-life-stories-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .past-life-stories-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

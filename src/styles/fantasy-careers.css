@@ -1,0 +1,281 @@
+/* Fantasy Careers Experience Styles */
+.fantasy-careers-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 30%, #0f3460 70%, #533483 100%);
+  color: #fff;
+  font-family: 'Inter', 'Arial', sans-serif;
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 60px;
+}
+
+/* Animated Background */
+.fantasy-careers-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 25% 25%, rgba(138, 43, 226, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(255, 215, 0, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 40%, rgba(138, 43, 226, 0.03) 50%, transparent 60%);
+  pointer-events: none;
+  z-index: 1;
+  animation: careerFlow 35s ease-in-out infinite;
+}
+
+@keyframes careerFlow {
+  0%, 100% { opacity: 0.4; }
+  33% { opacity: 0.7; }
+  66% { opacity: 0.5; }
+}
+
+.fantasy-careers-container > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Header */
+.fantasy-careers-header {
+  text-align: center;
+  padding: 40px 20px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(138, 43, 226, 0.4);
+  box-shadow: 0 0 30px rgba(138, 43, 226, 0.3);
+}
+
+.fantasy-careers-header h1 {
+  font-size: 3rem;
+  margin: 0 0 15px 0;
+  background: linear-gradient(45deg, #fff, #8a2be2, #ffd700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: bold;
+  text-shadow: 0 0 30px rgba(138, 43, 226, 0.5);
+}
+
+.fantasy-careers-header p {
+  font-size: 1.3rem;
+  color: #e6d3ff;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Content */
+.fantasy-careers-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.careers-description {
+  text-align: center;
+  margin-bottom: 30px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 15px;
+  padding: 25px;
+  border: 1px solid rgba(138, 43, 226, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.careers-description p {
+  font-size: 1.4rem;
+  line-height: 1.6;
+  color: #fff;
+  margin: 0;
+  font-weight: 300;
+}
+
+.careers-image-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 20px;
+  padding: 20px;
+  border: 2px solid rgba(138, 43, 226, 0.4);
+  backdrop-filter: blur(15px);
+  box-shadow: 0 0 40px rgba(138, 43, 226, 0.2);
+}
+
+.careers-image {
+  max-width: 100%;
+  max-height: 600px;
+  border-radius: 15px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease;
+}
+
+.careers-image:hover {
+  transform: scale(1.02);
+}
+
+/* Loading State */
+.fantasy-careers-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.careers-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(138, 43, 226, 0.3);
+  border-top: 4px solid #8a2be2;
+  border-radius: 50%;
+  animation: careersSpinning 2s linear infinite;
+  margin-bottom: 30px;
+}
+
+@keyframes careersSpinning {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.fantasy-careers-loading h2 {
+  color: #fff;
+  font-size: 2.2rem;
+  margin-bottom: 15px;
+  font-weight: bold;
+  text-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
+}
+
+.fantasy-careers-loading p {
+  color: #e6d3ff;
+  font-size: 1.2rem;
+  font-style: italic;
+}
+
+/* Error State */
+.fantasy-careers-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.fantasy-careers-error h3 {
+  color: #ff6b6b;
+  font-size: 2rem;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.fantasy-careers-error p {
+  color: #ffcccb;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  max-width: 500px;
+}
+
+/* Action Buttons */
+.fantasy-careers-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+  flex-wrap: wrap;
+}
+
+.fantasy-careers-btn {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+  justify-content: center;
+  font-family: 'Inter', 'Arial', sans-serif;
+}
+
+.fantasy-careers-btn.primary {
+  background: linear-gradient(45deg, #8a2be2, #9932cc);
+  color: #fff;
+  box-shadow: 0 5px 20px rgba(138, 43, 226, 0.4);
+}
+
+.fantasy-careers-btn.primary:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(138, 43, 226, 0.6);
+  background: linear-gradient(45deg, #9932cc, #8a2be2);
+}
+
+.fantasy-careers-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.fantasy-careers-btn.secondary {
+  background: rgba(138, 43, 226, 0.1);
+  color: #fff;
+  border: 2px solid rgba(138, 43, 226, 0.4);
+}
+
+.fantasy-careers-btn.secondary:hover {
+  transform: translateY(-2px);
+  background: rgba(138, 43, 226, 0.2);
+  border-color: rgba(138, 43, 226, 0.6);
+}
+
+/* Model Attribution */
+.model-attribution {
+  text-align: center;
+  padding: 20px;
+  margin-top: 30px;
+  border-top: 1px solid rgba(138, 43, 226, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.model-attribution p {
+  color: #e6d3ff;
+  font-size: 0.9rem;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .fantasy-careers-header h1 {
+    font-size: 2.2rem;
+  }
+  
+  .fantasy-careers-header p {
+    font-size: 1.1rem;
+  }
+  
+  .careers-description p {
+    font-size: 1.2rem;
+  }
+  
+  .fantasy-careers-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .fantasy-careers-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .careers-image-container {
+    padding: 15px;
+  }
+}

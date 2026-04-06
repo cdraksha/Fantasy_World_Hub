@@ -1,0 +1,313 @@
+/* Ancient Weapons - Medieval/forge theme */
+.ancient-weapons-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d1810 25%, #3d2817 50%, #4a2c1a 75%, #5d3a1a 100%);
+  color: #f4e4bc;
+  padding: 2rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+.ancient-weapons-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(255, 140, 0, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(184, 134, 11, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(139, 69, 19, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Loading State */
+.ancient-weapons-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.forge-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(255, 140, 0, 0.3);
+  border-top: 4px solid #ff8c00;
+  border-radius: 50%;
+  animation: forgeSpin 2s linear infinite;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.forge-spinner::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  border: 2px solid rgba(184, 134, 11, 0.3);
+  border-bottom: 2px solid #b8860b;
+  border-radius: 50%;
+  animation: forgeSpin 1.5s linear infinite reverse;
+}
+
+.forge-spinner::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  border: 1px solid rgba(139, 69, 19, 0.3);
+  border-left: 1px solid #8b4513;
+  border-radius: 50%;
+  animation: forgeSpin 1s linear infinite;
+}
+
+@keyframes forgeSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.ancient-weapons-loading h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #ff8c00;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.ancient-weapons-loading p {
+  font-size: 1.1rem;
+  color: #b8860b;
+  font-style: italic;
+}
+
+/* Error State */
+.ancient-weapons-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.ancient-weapons-error h3 {
+  color: #ff8c00;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.ancient-weapons-error p {
+  color: #b8860b;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+/* Header */
+.ancient-weapons-header {
+  text-align: center;
+  padding: 3rem 2rem 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.ancient-weapons-header h1 {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  color: #ff8c00;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-weight: bold;
+}
+
+.ancient-weapons-header p {
+  font-size: 1.3rem;
+  color: #b8860b;
+  font-style: italic;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Content Layout */
+.ancient-weapons-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+/* Description Box */
+.weapon-description {
+  background: rgba(26, 26, 26, 0.6);
+  border: 2px solid rgba(255, 140, 0, 0.4);
+  border-radius: 15px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.weapon-description::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #ff8c00, #b8860b, #ff8c00, #b8860b);
+  border-radius: 15px;
+  z-index: -1;
+  animation: forgeGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes forgeGlow {
+  0% { opacity: 0.4; }
+  100% { opacity: 0.7; }
+}
+
+.weapon-description h3 {
+  font-size: 1.8rem;
+  color: #ff8c00;
+  margin-bottom: 1rem;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.weapon-description p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #f4e4bc;
+  font-weight: 400;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+/* Image Container */
+.weapon-image-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.weapon-image {
+  max-width: 100%;
+  max-height: 600px;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 3px solid rgba(255, 140, 0, 0.3);
+  object-fit: contain;
+}
+
+/* Action Buttons */
+.ancient-weapons-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.ancient-weapons-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.ancient-weapons-btn.primary {
+  background: linear-gradient(135deg, #ff8c00 0%, #b8860b 100%);
+  color: #ffffff;
+  border: 2px solid #ff8c00;
+}
+
+.ancient-weapons-btn.primary:hover {
+  background: linear-gradient(135deg, #b8860b 0%, #ff8c00 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 140, 0, 0.4);
+}
+
+.ancient-weapons-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ancient-weapons-btn.secondary {
+  background: rgba(26, 26, 26, 0.6);
+  color: #f4e4bc;
+  border: 2px solid rgba(184, 134, 11, 0.5);
+}
+
+.ancient-weapons-btn.secondary:hover {
+  background: rgba(26, 26, 26, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(184, 134, 11, 0.4);
+}
+
+/* Model Attribution */
+.model-attribution {
+  text-align: center;
+  margin-top: 3rem;
+  padding: 1rem;
+  color: #888;
+  font-size: 0.9rem;
+  font-style: italic;
+  position: relative;
+  z-index: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .ancient-weapons-content {
+    padding: 1rem;
+  }
+  
+  .ancient-weapons-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .weapon-description {
+    padding: 1.5rem;
+  }
+  
+  .weapon-description h3 {
+    font-size: 1.5rem;
+  }
+  
+  .weapon-description p {
+    font-size: 1rem;
+  }
+  
+  .ancient-weapons-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .ancient-weapons-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .weapon-image {
+    max-height: 400px;
+  }
+}

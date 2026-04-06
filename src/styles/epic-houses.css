@@ -1,0 +1,251 @@
+/* Epic Houses - Modern architecture/home design theme */
+.epic-houses-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #404040 100%);
+  color: #f0f0f0;
+  padding: 2rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+.epic-houses-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(255, 165, 0, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(70, 130, 180, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Loading State */
+.epic-houses-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.houses-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(255, 165, 0, 0.3);
+  border-top: 4px solid #ffa500;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 2rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.epic-houses-loading h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #ffa500;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.epic-houses-loading p {
+  font-size: 1.1rem;
+  color: #4682b4;
+  font-style: italic;
+}
+
+/* Error State */
+.epic-houses-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.epic-houses-error h3 {
+  color: #ffa500;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.epic-houses-error p {
+  color: #4682b4;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+/* Header */
+.epic-houses-header {
+  text-align: center;
+  padding: 3rem 2rem 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+.epic-houses-header h1 {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  color: #ffa500;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-weight: bold;
+}
+
+.epic-houses-header p {
+  font-size: 1.3rem;
+  color: #4682b4;
+  font-style: italic;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Content Layout */
+.epic-houses-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  z-index: 1;
+  position: relative;
+}
+
+/* Description */
+.houses-description {
+  text-align: center;
+  margin-bottom: 3rem;
+  background: rgba(45, 45, 45, 0.3);
+  border: 2px solid rgba(255, 165, 0, 0.4);
+  border-radius: 15px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.houses-description p {
+  font-size: 1.4rem;
+  line-height: 1.6;
+  color: #f0f0f0;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Image Container */
+.houses-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(45, 45, 45, 0.3);
+  border: 2px solid rgba(70, 130, 180, 0.4);
+  border-radius: 15px;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.houses-image {
+  max-width: 100%;
+  max-height: 600px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  object-fit: contain;
+}
+
+/* Action Buttons */
+.epic-houses-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.epic-houses-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.epic-houses-btn.primary {
+  background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+  color: #1a1a1a;
+  border: 2px solid #ffa500;
+}
+
+.epic-houses-btn.primary:hover {
+  background: linear-gradient(135deg, #ff8c00 0%, #ffa500 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 165, 0, 0.4);
+}
+
+.epic-houses-btn.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.epic-houses-btn.secondary {
+  background: rgba(45, 45, 45, 0.3);
+  color: #f0f0f0;
+  border: 2px solid rgba(70, 130, 180, 0.5);
+}
+
+.epic-houses-btn.secondary:hover {
+  background: rgba(45, 45, 45, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(70, 130, 180, 0.4);
+}
+
+/* Model Attribution */
+.model-attribution {
+  text-align: center;
+  margin-top: 3rem;
+  padding: 1rem;
+  color: #888;
+  font-size: 0.9rem;
+  font-style: italic;
+  position: relative;
+  z-index: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .epic-houses-content {
+    padding: 1rem 2rem;
+  }
+  
+  .epic-houses-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .houses-description p {
+    font-size: 1.2rem;
+  }
+  
+  .epic-houses-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .epic-houses-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}
