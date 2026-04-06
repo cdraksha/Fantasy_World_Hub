@@ -1,138 +1,135 @@
-# 🚀 Space Cafe Simulation
+# 🌟 FantasyWorld Hub
 
-An immersive 3D space station cafe simulation with AI-powered characters and interactive image generation hotspots.
+An AI-powered immersive experiences platform featuring 88+ unique interactive experiences across multiple categories. From space exploration to ancient civilizations, from AI conversations to creative challenges - dive into worlds limited only by imagination.
 
 ## ✨ Features
 
-- **3D Space Station Environment** - Explore a detailed orbital cafe with Earth views
-- **AI Characters** - Chat with diverse space travelers (miners, scientists, tourists, pilots, etc.)
-- **Interactive Image Hotspots** - Click on image icons throughout the cafe to generate space-themed images
-- **Service Bots** - Interact with robotic staff members
-- **Real-time Business Metrics** - Track cafe revenue, occupancy, and customer activity
-- **Spatial Audio** - Immersive space station ambient sounds
-- **Character Personalities** - Each character has unique traits, conversation topics, and behaviors
+- **88+ Unique Experiences** - Explore diverse worlds from retro-futurism to ancient cities
+- **Multi-LLM Integration** - Powered by GPT 5.2, Gemini 3 Pro, Claude 4 Sonnet, Llama 3.1 70B, and Deepseek
+- **AI Roast Battle** - Watch 5 AIs roast each other with savage wit and clever comebacks
+- **Funny AI Chatbox** - Control conversations between different AI personalities
+- **Creativity Learning Platform** - Master creative thinking with interactive principles and challenges
+- **Multiple Content Types** - Text, image, video, and hybrid interactive experiences
+- **Responsive Design** - Beautiful UI that works on desktop and mobile
+- **Secure Architecture** - Environment variables properly protected
 
 ## 🛠️ Setup Instructions
 
 ### 1. Install Dependencies
 ```bash
-cd space-cafe
 npm install
 ```
 
 ### 2. Configure API Keys
-Copy the example environment file and add your API keys:
-```bash
-cp .env.example .env
-```
-
-Edit `.env` file with your actual API keys:
+Create a `.env` file in the root directory with your API keys:
 ```env
-VITE_OPENAI_API_KEY=your_openai_api_key_here
 VITE_SEGMIND_API_KEY=your_segmind_api_key_here
 ```
 
-**API Keys Needed:**
-- **OpenAI API Key**: Get from [OpenAI Platform](https://platform.openai.com/api-keys)
-- **Segmind API Key**: Get from [Segmind](https://segmind.com)
+**API Key Needed:**
+- **Segmind API Key**: Get from [Segmind](https://segmind.com) - Powers all AI models and image generation
 
 ### 3. Start the Development Server
 ```bash
 npm run dev
 ```
 
-The simulation will be available at `http://localhost:4646`
+The platform will be available at `http://localhost:5173`
 
 ## 🎮 How to Use
 
-### Navigation
-- **Mouse**: Look around the 3D environment
-- **Scroll**: Zoom in/out
-- **Drag**: Rotate camera view
+### Main Hub
+- Browse 88+ experience cards organized by category
+- Click any experience card to launch that world
+- Use the slideshow to discover the vision and creativity principles
+- Access the "Create Your Own Experience" tool for custom content
 
-### Interactions
-- **Click Characters**: Chat with AI-powered space travelers
-- **Click Service Bots**: Interact with robotic staff
-- **Click Image Icons**: Generate contextual space images at hotspots
-- **Continue Conversations**: Use "Continue..." button for extended chats
+### Experience Types
+- **Text Experiences** - AI-generated stories, conversations, and narratives
+- **Image Experiences** - Visual worlds with AI-generated artwork
+- **Video Experiences** - Dynamic video content creation
+- **Interactive Experiences** - Multi-step adventures with user choices
+- **Hybrid Experiences** - Combinations of text, images, and interactivity
 
-### Image Generation Hotspots
-Look for glowing icons throughout the cafe:
-- 🌍 **Earth View Window** - Generate Earth from space images
-- 🌌 **Deep Space Window** - Create galaxy and nebula scenes
-- ⛏️ **Mining Operations** - Visualize asteroid mining
-- 🚀 **Docking Bay** - Generate cargo ship scenes
-- 🏗️ **Station Interior** - Create futuristic interior shots
-- 👽 **Alien Encounters** - Generate alien spacecraft
-- 🛸 **Tourism Views** - Create luxury space travel scenes
+### Featured Experiences
+- 🤖 **AI Roast Battle** - Watch 5 AIs roast each other with witty burns
+- 💬 **Funny AI Chatbox** - Control conversations between AI personalities
+- �️ **Space Cafe** - Therapeutic observer experience in a cosmic setting
+- 🎭 **Retro Futurism** - Explore alternate timeline aesthetics
+- 🏰 **Ancient Cities** - Journey through historical civilizations
+- � **Impossible Coexistence** - Reality-bending scenarios
 
-## 🎭 Character Types
+## 🎭 Experience Categories
 
-### Human Characters
-- **Asteroid Miners** - Rugged workers with mining stories
-- **Research Scientists** - Brilliant minds studying cosmic phenomena
-- **Space Tourists** - Wealthy civilians on vacation
-- **Cargo Pilots** - Experienced transporters
-- **Station Engineers** - Technical experts maintaining systems
-- **Diplomatic Envoys** - Ambassadors between worlds
+### Futuristic & Sci-Fi
+- **Space Exploration** - Cosmic adventures and alien encounters
+- **Retro Futurism** - Alternate timeline aesthetics
+- **Orbital Megastructures** - Massive space constructions
+- **Future Memories** - Time-bending narratives
 
-### Service Bots
-- **Cleaning Bots** - Maintain station hygiene
-- **Service Bots** - Assist customers with orders
-- **Security Bots** - Monitor station safety
+### Historical & Cultural
+- **Ancient Cities** - Journey through past civilizations
+- **Ghibli Historical** - Animated history with magical realism
+- **Epic Dharmic Legends** - Hindu mythology and philosophy
+- **Bollywood Parody** - Humorous takes on Indian cinema
 
-## 🎨 Image Generation
+### Reality-Bending
+- **Impossible Coexistence** - Paradoxical scenarios
+- **Mind Bending Hindu** - Consciousness-expanding stories
+- **Alternate Reality** - What-if scenarios
+- **Plot Twist** - Narrative surprises and turns
 
-The simulation uses the Segmind API to generate contextual images based on:
-- Your location in the cafe
-- What you're "looking at" (windows, equipment, etc.)
-- Character interactions and conversations
-- Random events during character conversations
+## 🎨 AI Content Generation
 
-Generated images appear in the bottom-left corner and represent what you might "see" in that space.
+FantasyWorld Hub uses advanced AI models for dynamic content creation:
+- **Text Generation** - Stories, conversations, and narratives via multiple LLMs
+- **Image Generation** - Visual content using Segmind's Nano Banana model
+- **Video Generation** - Dynamic video creation with LTX-2-19B-I2V
+- **Multi-Modal Experiences** - Combinations of text, images, and video
 
-## 📊 Business Metrics
+Content is generated in real-time based on user choices and experience parameters.
 
-Monitor the cafe's performance in real-time:
-- **Revenue** - Credits earned from customer orders
-- **Customers Served** - Total number of satisfied customers
-- **Occupancy** - Current customer count (max 8)
-- **Active Orders** - Orders being processed
-- **Images Generated** - Total images created
+## 🧠 AI Models Integrated
+
+**Language Models:**
+- **GPT 5.2** - Advanced reasoning and analysis
+- **Gemini 3 Pro** - Creative and imaginative responses
+- **Claude 4 Sonnet** - Thoughtful and ethical AI
+- **Llama 3.1 70B** - Open-source powerhouse
+- **Deepseek** - Specialized problem-solving
+
+**Media Models:**
+- **Nano Banana** - High-quality image generation
+- **LTX-2-19B-I2V** - Image-to-video conversion
 
 ## 🔧 Technical Details
 
 ### Built With
-- **React 18** - UI framework
-- **Three.js** - 3D graphics
-- **@react-three/fiber** - React Three.js renderer
-- **@react-three/drei** - Three.js helpers
-- **OpenAI API** - Character conversations
-- **Segmind API** - Image generation
-- **Howler.js** - Audio management
-- **Vite** - Build tool
+- **React 18** - Modern UI framework with hooks
+- **Vite** - Fast build tool and development server
+- **Segmind API** - Multi-model AI platform (GPT, Gemini, Claude, Llama, Deepseek)
+- **CSS3** - Custom styling with responsive design
+- **JavaScript ES6+** - Modern JavaScript features
 
 ### Project Structure
 ```
-space-cafe/
+fantasy-world-hub/
 ├── src/
-│   ├── components/          # React components
-│   │   ├── SpaceCafe.jsx   # Main orchestrator
-│   │   ├── SpaceEnvironment.jsx # 3D environment
-│   │   ├── SpaceCharacter.jsx   # AI characters
-│   │   ├── ServiceBot.jsx       # Robot staff
-│   │   ├── SpeechBubble.jsx     # Chat interface
-│   │   └── BusinessMetrics.jsx  # Stats overlay
+│   ├── components/          # Experience components
+│   │   ├── App.jsx         # Main application router
+│   │   ├── *Experience.jsx # Individual experience components
+│   │   ├── CreativityLearningPage.jsx # Learning platform
+│   │   └── DiscoverTheVisionSlideshow.jsx # Vision slideshow
 │   ├── hooks/              # Custom React hooks
-│   │   ├── useSpaceCharacters.js # Character management
-│   │   ├── useOpenAI.js         # AI conversations
-│   │   ├── useSpaceAudio.js     # Audio system
-│   │   └── useImageGeneration.js # Image creation
+│   │   ├── use*Content.js  # Content generation hooks
+│   │   ├── useAIRoastBattleContent.js # Multi-LLM roasting
+│   │   └── useFunnyAIChatboxContent.js # AI conversations
 │   ├── data/
-│   │   └── personalities.js     # Character data
+│   │   └── experiences.js   # Experience metadata
+│   ├── styles/             # CSS files for each experience
 │   └── utils/
-│       └── audioUtils.js        # Audio utilities
-├── public/sounds/          # Audio files (placeholder)
+│       └── audioUtils.js   # Audio utilities
+├── public/                 # Static assets
 └── package.json
 ```
 
@@ -141,36 +138,47 @@ space-cafe/
 ### Common Issues
 
 1. **No API Response**
-   - Check your API keys in `.env`
-   - Ensure you have credits in your OpenAI/Segmind accounts
+   - Check your `VITE_SEGMIND_API_KEY` in `.env`
+   - Ensure you have credits in your Segmind account
+   - Verify the API key has access to required models
 
-2. **Audio Not Working**
-   - Click anywhere in the browser to enable audio
-   - Check browser audio permissions
+2. **Experience Not Loading**
+   - Check browser console for JavaScript errors
+   - Ensure stable internet connection
+   - Try refreshing the page
 
 3. **Performance Issues**
-   - Reduce browser zoom level
-   - Close other tabs to free up memory
+   - Close other browser tabs to free up memory
    - Try a different browser (Chrome recommended)
+   - Check if your device meets minimum requirements
 
-4. **3D Environment Not Loading**
-   - Ensure WebGL is enabled in your browser
-   - Update your graphics drivers
+4. **Image/Video Generation Slow**
+   - AI generation can take 10-30 seconds
+   - Check your Segmind account credits
+   - Some models may have higher latency
 
 ## 🎯 Future Enhancements
 
-- Real audio files for ambient space sounds
-- More character types and personalities
-- Multiplayer support
-- VR compatibility
-- Advanced AI conversations with memory
-- Custom image generation prompts
-- Save/load simulation states
+- Additional AI model integrations
+- User accounts and experience saving
+- Community sharing of custom experiences
+- Advanced creativity challenges
+- Mobile app version
+- Collaborative multi-user experiences
+- Enhanced personalization algorithms
+
+## 🤝 Contributing
+
+Interested in adding new experiences or improving existing ones?
+1. Fork the repository
+2. Create a feature branch
+3. Add your experience following the existing patterns
+4. Submit a pull request
 
 ## 📝 License
 
-This project is for educational and demonstration purposes.
+This project is for educational and demonstration purposes. Please respect API usage limits and terms of service.
 
 ---
 
-**Enjoy exploring the cosmos! 🌌**
+**Welcome to FantasyWorld Hub - Where Imagination Meets AI! 🌟**
