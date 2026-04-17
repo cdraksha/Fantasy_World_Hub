@@ -21,6 +21,7 @@ import useAbsurdSpeechGeneratorContent from './useAbsurdSpeechGeneratorContent';
 import useFuturisticSiegesContent from './useFuturisticSiegesContent';
 import useFantasyRealityContent from './useFantasyRealityContent';
 import usePortalDoorsContent from './usePortalDoorsContent';
+import useOvertonWindowCareersContent from './useOvertonWindowCareersContent';
 
 // Map experience IDs to their corresponding hooks
 export const EXPERIENCE_HOOKS = {
@@ -46,6 +47,7 @@ export const EXPERIENCE_HOOKS = {
   'futuristic-sieges': useFuturisticSiegesContent,
   'fantasy-reality': useFantasyRealityContent,
   'portal-doors': usePortalDoorsContent,
+  'overton-window-careers': useOvertonWindowCareersContent,
   // Add more mappings as needed
 };
 

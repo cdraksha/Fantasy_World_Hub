@@ -4,7 +4,7 @@ import { getExperienceHook, hasContentHook } from '../hooks/useExperienceContent
 import '../styles/discover-the-vision-slideshow.css';
 
 const TryLatestExperience = ({ onNavigateToHub }) => {
-  const [experienceContent, setExperienceContent] = useState('');
+  const [experienceContent, setExperienceContent] = useState(null);
   const [isEnteringExperience, setIsEnteringExperience] = useState(false);
   const latestExperience = getLatestExperience();
   
@@ -75,7 +75,7 @@ const TryLatestExperience = ({ onNavigateToHub }) => {
   };
 
   const generateAgain = async () => {
-    setExperienceContent('');
+    setExperienceContent(null);
     await generateExperience();
   };
 
@@ -216,6 +216,25 @@ const TryLatestExperience = ({ onNavigateToHub }) => {
                         />
                       </div>
                     )}
+                  </div>
+                ) : experienceContent.careers && experienceContent.images ? (
+                  <div style={{textAlign: 'center'}}>
+                    <p style={{marginBottom: '15px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)'}}>
+                      {Object.keys(experienceContent.careers).map(pos => experienceContent.careers[pos].label).join(' · ')}
+                    </p>
+                    <div style={{display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '6px'}}>
+                      {['left3','left2','left1','middle','right1','right2','right3'].map(pos => (
+                        <div key={pos} style={{flex: '0 0 auto', textAlign: 'center'}}>
+                          {experienceContent.images[pos]
+                            ? <img src={experienceContent.images[pos]} alt={experienceContent.careers[pos]?.label} style={{width: '72px', height: '72px', borderRadius: '8px', objectFit: 'cover', border: pos === 'middle' ? '2px solid #a78bfa' : '1px solid rgba(255,255,255,0.15)'}}/>
+                            : <div style={{width: '72px', height: '72px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'}}>🌌</div>
+                          }
+                          <div style={{fontSize: '0.55rem', color: pos === 'middle' ? '#c4b5fd' : 'rgba(255,255,255,0.5)', marginTop: '3px', maxWidth: '72px', wordBreak: 'break-word'}}>
+                            {experienceContent.careers[pos]?.label}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   experienceContent

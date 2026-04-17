@@ -624,7 +624,7 @@ const CreativityLearningPage = ({ onReturn }) => {
             messages: [
               {
                 role: 'system',
-                content: `Generate a WILD, CRAZY creative example for "${principle.title}". Use this EXACT theme: ${principle.id === 'adjacent-possible' ? 'Astronauts learning Bharatanatyam dance on the moon with Earth glowing in background' : principle.id === 'cultural-specificity' ? 'Japanese tea ceremony happening inside a crowded Mumbai local train during rush hour' : principle.id === 'goldilocks-complexity' ? 'iPhone interface that hides rocket science behind simple swipe gestures' : 'Mind-blowing impossible combination'}. Keep under 50 words. Return only the example text.`
+                content: `Generate a WILD, CRAZY creative example for "${principle.title}". Use this EXACT theme: ${principle.id === 'adjacent-possible' ? 'How the Overton Window Parallel Universe Careers experience combines political theory (Overton Window) with career exploration and AI image generation to create a completely new form of self-reflection' : principle.id === 'cultural-specificity' ? 'Japanese tea ceremony happening inside a crowded Mumbai local train during rush hour' : principle.id === 'goldilocks-complexity' ? 'iPhone interface that hides rocket science behind simple swipe gestures' : 'Mind-blowing impossible combination'}. Keep under 50 words. Return only the example text.`
               },
               {
                 role: 'user', 
@@ -654,7 +654,7 @@ const CreativityLearningPage = ({ onReturn }) => {
               'x-api-key': import.meta.env.VITE_SEGMIND_API_KEY
             },
             body: JSON.stringify({
-              prompt: `WILD, IMPOSSIBLE mashup: ${principle.id === 'adjacent-possible' ? 'Astronauts in space suits learning Bharatanatyam dance on the moon surface with Earth glowing in background, classical Indian dance poses in zero gravity' : principle.id === 'cultural-specificity' ? 'Japanese tea ceremony happening inside a crowded Mumbai local train during rush hour, traditional kimono and tea set amid Indian commuters' : principle.id === 'goldilocks-complexity' ? 'iPhone interface that hides rocket science behind simple swipe gestures, showing both the simple UI and complex engineering underneath' : 'Completely unexpected, surreal, mind-blowing combination'}. Vibrant, artistic, fantastical, detailed.`,
+              prompt: `WILD, IMPOSSIBLE mashup: ${principle.id === 'adjacent-possible' ? 'Overton Window parallel universe career paths, 7 portal doors each showing a different career reality, political spectrum of life choices, cinematic multiverse concept art, vivid colours, surreal' : principle.id === 'cultural-specificity' ? 'Japanese tea ceremony happening inside a crowded Mumbai local train during rush hour, traditional kimono and tea set amid Indian commuters' : principle.id === 'goldilocks-complexity' ? 'iPhone interface that hides rocket science behind simple swipe gestures, showing both the simple UI and complex engineering underneath' : 'Completely unexpected, surreal, mind-blowing combination'}. Vibrant, artistic, fantastical, detailed.`,
               negative_prompt: 'boring, predictable, normal, text, words, letters, ugly, blurry, low quality',
               width: 512,
               height: 512,
@@ -816,7 +816,7 @@ const CreativityLearningPage = ({ onReturn }) => {
                     <li>Combine elements that don't normally go together</li>
                     <li>Find bridges between disparate worlds of knowledge</li>
                   </ul>
-                  <p className="fun-fact"><strong>Fun Fact:</strong> Netflix combined video rental (Blockbuster) with subscription services (gym memberships) and streaming technology (YouTube) to create something entirely new.</p>
+                  <p className="fun-fact"><strong>Fun Fact:</strong> The Overton Window Parallel Universe Careers experience was born by combining political theory (Overton Window) + sci-fi multiverse + AI image generation — three completely unrelated domains merged into one new experience.</p>
                   <div className="pattern-box"><strong>Pattern:</strong> Creativity emerges from combining familiar elements in unfamiliar ways</div>
 
                   {/* Try It Out Section */}
@@ -825,7 +825,7 @@ const CreativityLearningPage = ({ onReturn }) => {
                     
                     {!adjacentSeeds[principle.id] && !isGeneratingSeeds[principle.id] ? (
                       <div className="seeds-generator">
-                        <p>Get your random ingredient to combine with your situation:</p>
+                        <p>Get your random ingredient to combine with your situation (like how Overton Window Careers combines political theory with career exploration):</p>
                         <button 
                           onClick={() => generateAdjacentSeeds(principle.id)}
                           className="generate-seeds-button"

@@ -927,6 +927,17 @@ export const EXPERIENCES = {
     modelsUsed: 'GPT 5.2, Gemini 3 Pro, Claude 4 Sonnet, Llama 3.1 70B, and Deepseek Chat for roasting and comeback generation',
     status: 'available',
     createdDate: 'Mar 2026'
+  },
+
+  'overton-window-careers': {
+    title: 'Overton Window — Parallel Universe Careers',
+    icon: '🪟',
+    contentType: 'Image',
+    description: 'Explore 7 parallel universe career paths arranged like the Overton Window. The centre is your current reality. The left side drifts from similar to radically different careers. The right side shows the exact opposite of each left career — creating a perfect mirror of possibilities across realities.',
+    example: 'A Marine Biologist sits at the centre. Left side drifts through Ocean Engineer → Desert Botanist → Space Miner. The right mirrors them with Mountain Logger → Urban Architect → Underground Farmer. 7 AI-generated images, all simultaneously rendered.',
+    modelsUsed: 'Segmind GPT-4 for career concept generation, Segmind Nano Banana for 7 parallel image generation',
+    status: 'available',
+    createdDate: 'Apr 2026'
   }
 };
 
@@ -937,6 +948,10 @@ export const getAvailableExperiences = () => getAllExperiences().filter(exp => e
 export const getComingSoonExperiences = () => getAllExperiences().filter(exp => exp.status === 'coming-soon');
 export const getLatestExperience = () => {
   const available = getAvailableExperiences();
+  const apr2026 = available.filter(exp => exp.createdDate === 'Apr 2026');
+  if (apr2026.length > 0) {
+    return apr2026[apr2026.length - 1];
+  }
   const mar2026 = available.filter(exp => exp.createdDate === 'Mar 2026');
   if (mar2026.length > 0) {
     return mar2026[mar2026.length - 1];

@@ -1,0 +1,406 @@
+/* Futuristic Dances Experience Styles */
+.futuristic-dances-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 25%, #330066 50%, #1a0033 75%, #0a0a0a 100%);
+  color: #ffffff;
+  font-family: 'Arial', sans-serif;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.futuristic-dances-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(255, 0, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 60%, rgba(255, 255, 0, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.futuristic-dances-container > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Loading State */
+.dance-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+}
+
+.dance-spinner {
+  width: 60px;
+  height: 60px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #ff00ff;
+  border-radius: 50%;
+  animation: danceSpinnerRotate 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes danceSpinnerRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.dance-loading p {
+  font-size: 18px;
+  color: #cccccc;
+  margin: 0;
+}
+
+/* Header */
+.dance-header {
+  text-align: center;
+  padding: 40px 20px;
+  background: linear-gradient(90deg, transparent, rgba(255, 0, 255, 0.1), transparent);
+  border-bottom: 1px solid rgba(255, 0, 255, 0.3);
+}
+
+.dance-header h1 {
+  font-size: 3rem;
+  margin: 0 0 15px 0;
+  background: linear-gradient(45deg, #ff00ff, #00ffff, #ffff00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+  animation: danceGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes danceGlow {
+  0% { filter: brightness(1); }
+  100% { filter: brightness(1.2); }
+}
+
+.dance-header p {
+  font-size: 1.2rem;
+  color: #cccccc;
+  margin: 0;
+  opacity: 0.9;
+}
+
+/* Main Content */
+.dance-main-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Image Section */
+.dance-image-section {
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 40px;
+}
+
+.dance-image-container {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 
+    0 0 50px rgba(255, 0, 255, 0.3),
+    0 0 100px rgba(0, 255, 255, 0.2);
+  background: linear-gradient(45deg, rgba(255, 0, 255, 0.1), rgba(0, 255, 255, 0.1));
+  padding: 3px;
+}
+
+.dance-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 17px;
+  transition: transform 0.3s ease;
+}
+
+.dance-image:hover {
+  transform: scale(1.02);
+}
+
+.dance-image-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  padding: 30px 20px 20px;
+  border-radius: 0 0 17px 17px;
+}
+
+.dance-description {
+  color: #ffffff;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.dance-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  border: 2px dashed rgba(255, 0, 255, 0.3);
+  border-radius: 20px;
+  background: rgba(255, 0, 255, 0.05);
+  text-align: center;
+}
+
+.dance-placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  animation: danceBounce 2s ease-in-out infinite;
+}
+
+@keyframes danceBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.dance-placeholder p {
+  color: #cccccc;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Controls */
+.dance-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.generate-dance-btn {
+  background: linear-gradient(45deg, #ff00ff, #00ffff);
+  color: #000000;
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 5px 20px rgba(255, 0, 255, 0.3);
+  min-width: 200px;
+  justify-content: center;
+}
+
+.generate-dance-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 0, 255, 0.4);
+}
+
+.generate-dance-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-top: 2px solid #000000;
+  border-radius: 50%;
+  animation: danceSpinnerRotate 1s linear infinite;
+}
+
+/* Error Display */
+.dance-error {
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+  width: 100%;
+}
+
+.dance-error p {
+  color: #ff6666;
+  margin: 0 0 10px 0;
+}
+
+.dismiss-error-btn {
+  background: rgba(255, 0, 0, 0.2);
+  color: #ff6666;
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  padding: 5px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.dismiss-error-btn:hover {
+  background: rgba(255, 0, 0, 0.3);
+}
+
+/* History Section */
+.dance-history-section {
+  width: 100%;
+  max-width: 1200px;
+  margin: 60px auto 40px;
+  padding: 0 20px;
+}
+
+.dance-history-section h3 {
+  text-align: center;
+  color: #ffffff;
+  font-size: 1.5rem;
+  margin-bottom: 30px;
+  text-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+}
+
+.dance-history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.dance-history-item {
+  position: relative;
+  border-radius: 15px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(45deg, rgba(255, 0, 255, 0.1), rgba(0, 255, 255, 0.1));
+  padding: 2px;
+}
+
+.dance-history-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(255, 0, 255, 0.3);
+}
+
+.history-thumbnail {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 13px;
+  display: block;
+}
+
+.history-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+  padding: 20px 10px 10px;
+  border-radius: 0 0 13px 13px;
+}
+
+.history-description {
+  color: #ffffff;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Bottom Controls */
+.dance-bottom-controls {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1000;
+}
+
+.return-hub-btn {
+  background: rgba(0, 0, 0, 0.8);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 12px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.return-hub-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dance-header h1 {
+    font-size: 2rem;
+  }
+  
+  .dance-header p {
+    font-size: 1rem;
+  }
+  
+  .dance-main-content {
+    padding: 20px 15px;
+  }
+  
+  .generate-dance-btn {
+    font-size: 1rem;
+    padding: 12px 25px;
+  }
+  
+  .dance-history-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+  }
+  
+  .history-thumbnail {
+    height: 120px;
+  }
+  
+  .dance-bottom-controls {
+    bottom: 15px;
+    left: 15px;
+  }
+  
+  .return-hub-btn {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dance-header {
+    padding: 30px 15px;
+  }
+  
+  .dance-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .dance-main-content {
+    padding: 20px 10px;
+  }
+  
+  .dance-history-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+  }
+  
+  .history-thumbnail {
+    height: 100px;
+  }
+}

@@ -87,6 +87,7 @@ import ResearchSynergyMap from './components/ResearchSynergyMap';
 import CreativityLearningPage from './components/CreativityLearningPage'
 import CreateExperiencePage from './components/CreateExperiencePage';
 import HydrokineticPart1Page from './components/HydrokineticPart1Page';
+import OvertonWindowCareersPage from './components/OvertonWindowCareersPage';
 import HydrokineticPart2Page from './components/HydrokineticPart2Page';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
@@ -98,6 +99,7 @@ function App() {
   const [showCreativityPage, setShowCreativityPage] = useState(false);
   const [showCreatePage, setShowCreatePage] = useState(false);
   const [showHydrokineticPart1, setShowHydrokineticPart1] = useState(false);
+  const [showOvertonWindowCareers, setShowOvertonWindowCareers] = useState(false);
   const [showHydrokineticPart2, setShowHydrokineticPart2] = useState(false);
   const [showTiberiusInterviewImproved, setShowTiberiusInterviewImproved] = useState(false);
   const [showVideoGeneration, setShowVideoGeneration] = useState(false);
@@ -124,6 +126,11 @@ function App() {
     const experienceParam = urlParams.get('experience');
     const creativityParam = urlParams.get('creativity');
     const createParam = urlParams.get('create');
+    const overtonWindowCareersParam = urlParams.get('overton-window-careers');
+    if (overtonWindowCareersParam === 'true') {
+      setShowOvertonWindowCareers(true);
+    }
+
     const hydrokineticPart1Param = urlParams.get('hydrokinetic-part1');
     if (hydrokineticPart1Param === 'true') {
       setShowHydrokineticPart1(true);
@@ -171,6 +178,9 @@ function App() {
       case 'creativity-learning':
         window.open(`${window.location.origin}${window.location.pathname}?creativity=true`, '_blank');
         break;
+      case 'overton-window-careers':
+        window.open(`${window.location.origin}${window.location.pathname}?overton-window-careers=true`, '_blank');
+        break;
       case 'hydrokinetic-part1':
         window.open(`${window.location.origin}${window.location.pathname}?hydrokinetic-part1=true`, '_blank');
         break;
@@ -205,6 +215,13 @@ function App() {
   const hideCreatePage = () => {
     setShowCreatePage(false)
   }
+
+  const hideOvertonWindowCareersPage = () => {
+    setShowOvertonWindowCareers(false);
+    const url = new URL(window.location);
+    url.searchParams.delete('overton-window-careers');
+    window.history.replaceState({}, '', url);
+  };
 
   const hideHydrokineticPart1Page = () => {
     setShowHydrokineticPart1(false);
@@ -246,6 +263,10 @@ function App() {
   // Create Experience Page routing
   if (showCreatePage) {
     return <CreateExperiencePage onReturn={hideCreatePage} />;
+  }
+
+  if (showOvertonWindowCareers) {
+    return <OvertonWindowCareersPage onReturn={hideOvertonWindowCareersPage} />;
   }
 
   if (showHydrokineticPart1) {
