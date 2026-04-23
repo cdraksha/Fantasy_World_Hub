@@ -1,787 +1,415 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import Globe from 'react-globe.gl';
 import '../styles/research-synergy-map.css';
-import '../styles/research-journey.css';
+
+// ── Data ─────────────────────────────────────────────────────────────────────
+
+const RESEARCH_DATA = [
+  { title: 'Computational Creativity: Philosophy and Engineering of Autonomously Creative Systems', year: 2016, authors: 'Tony Veale, F. Amílcar Cardoso', institution: 'University College Dublin; University of Coimbra', location: { lat: 53.3498, lng: -6.2603, name: 'Dublin / Coimbra' }, experiences: ['anachronism', 'duoverse', 'impossible-geometries', 'plot-twist'], experienceReason: 'Direct examples of conceptual space exploration and transformation.', link: 'https://link.springer.com/book/10.1007/978-3-319-43610-4', powerQuote: 'AI systems can autonomously produce creative artifacts with evaluable properties' },
+  { title: 'What is Computational Creativity?', year: 2012, authors: 'Anna Jordanous', institution: 'University of Kent, UK', location: { lat: 51.2787, lng: 1.0877, name: 'Canterbury' }, experiences: ['ridiculous-ventures', 'useless-powers', 'ai-using-ai'], experienceReason: "Can be evaluated against Jordanous' creativity criteria.", link: 'https://www.researchgate.net/publication/220800139_What_is_Computational_Creativity', powerQuote: 'Creativity requires novelty, value, and surprise in computational systems' },
+  { title: 'Computational Creativity: The Final Frontier?', year: 2012, authors: 'Simon Colton, Geraint Wiggins', institution: 'Queen Mary University of London, UK', location: { lat: 51.5074, lng: -0.0352, name: 'London' }, experiences: ['fictional-empire', 'orbital-megastructures', 'underwater-civilizations'], experienceReason: 'Autonomous world artifact generation.', link: 'https://www.researchgate.net/publication/221397833_Computational_Creativity_The_Final_Frontier', powerQuote: 'AI systems can autonomously produce creative artifacts with evaluable properties' },
+  { title: 'Creative Adversarial Networks', year: 2017, authors: 'Ahmed Elgammal et al.', institution: 'Rutgers University, USA', location: { lat: 40.5008, lng: -74.4474, name: 'New Brunswick, NJ' }, experiences: ['dream-architecture', 'folding-cities', 'retro-futurism'], experienceReason: 'Style deviation and aesthetic novelty.', link: 'https://arxiv.org/abs/1706.07068', powerQuote: 'Generate art by deviating from learned styles to maximize novelty' },
+  { title: 'The Painting Fool (2008–2012 series)', year: 2008, authors: 'Simon Colton', institution: 'Goldsmiths, University of London, UK', location: { lat: 51.4744, lng: -0.036, name: 'London (Goldsmiths)' }, experiences: ['epic-dharmic-legends', 'dragons-over-cities'], experienceReason: 'Generative art as evaluable artifact.', link: 'https://computationalcreativity.net/iccc2012/wp-content/uploads/2012/05/015-Colton.pdf', powerQuote: 'One of the first AI systems to autonomously generate and evaluate visual art' },
+  { title: 'Procedural Content Generation in Games', year: 2011, authors: 'Noor Shaker, Julian Togelius, Mark Nelson', institution: 'IT University of Copenhagen; NYU', location: { lat: 55.6761, lng: 12.5683, name: 'Copenhagen' }, experiences: ['ecumenopolis-explorer', 'fantasy-skyscrapers', 'ancient-cities'], experienceReason: 'Generative large-scale environments.', link: 'https://link.springer.com/book/10.1007/978-3-319-42716-4', powerQuote: 'Algorithmic generation of worlds, levels, and environments' },
+  { title: 'Narrative Intelligence', year: 1999, authors: 'Patrick Winston', institution: 'MIT, USA', location: { lat: 42.3601, lng: -71.0942, name: 'Cambridge, MA' }, experiences: ['scifi-murder-mystery', 'time-anomaly'], experienceReason: 'Structured narrative AI systems.', link: 'https://dspace.mit.edu/handle/1721.1/11022', powerQuote: 'Storytelling is core to human cognition and AI narrative modeling' },
+  { title: 'Evaluating the Creativity of Large Language Models', year: 2023, authors: 'Erik Guzik et al.', institution: 'University of Montana, USA', location: { lat: 46.8721, lng: -113.994, name: 'Missoula, MT' }, experiences: ['ridiculous-ventures', 'alternate-reality'], experienceReason: 'Divergent idea fluency systems.', link: 'https://arxiv.org/abs/2303.12003', powerQuote: 'LLM-generated divergent thinking rivals human ideation' },
+  { title: 'Artificial Intelligence and the Internal Processes of Creativity', year: 2024, authors: 'Jaan Aru', institution: 'University of Tartu, Estonia', location: { lat: 58.3776, lng: 26.729, name: 'Tartu, Estonia' }, experiences: ['yogic-mind', 'paracosm-worlds'], experienceReason: 'Imagination simulation systems.', link: 'https://arxiv.org/abs/2412.04366', powerQuote: 'AI simulates underlying cognitive processes of human creativity' },
+  { title: 'Conceptual Blending and Creativity', year: 1998, authors: 'Gilles Fauconnier, Mark Turner', institution: 'UC San Diego, USA', location: { lat: 32.7157, lng: -117.1611, name: 'San Diego' }, experiences: ['aliens-ancient-indians', 'modern-mahabharata'], experienceReason: 'Direct conceptual blending implementations.', link: 'https://mitpress.mit.edu/9780262561239/the-way-we-think/', powerQuote: 'Novelty emerges through blending of mental spaces' },
+  { title: 'Co-Creative Systems Survey', year: 2021, authors: 'Various HCI researchers', institution: 'UCL (UK), Stanford (USA)', location: { lat: 37.4419, lng: -122.143, name: 'Stanford' }, experiences: ['comedian-chat-simulator', 'character-portrait-transformer'], experienceReason: 'Human-AI collaborative systems.', link: 'https://arxiv.org/abs/2105.08984', powerQuote: 'Interactive AI systems designed for collaborative creativity' },
+  { title: 'Computational Creativity: A Philosophical Approach', year: 2013, authors: 'Stephen McGregor, Geraint Wiggins', institution: 'Queen Mary University of London, UK', location: { lat: 51.5244, lng: -0.0403, name: 'London (QMUL)' }, experiences: ['ai-using-ai', 'runaway-destiny'], experienceReason: 'Autonomous generative reasoning systems.', link: 'https://www.researchgate.net/publication/263129511', powerQuote: 'Philosophical definitions of machine creativity and evaluation metrics' },
+];
+
+const COMPANY_DATA = [
+  { company: 'Netflix',        lat: 37.2358, lng: -121.9624, location: 'Los Gatos, USA',    hiringReason: 'Interactive storytelling, immersive media formats',         experiences: ['plot-twist', 'alternate-reality', 'scifi-murder-mystery'],          strategicSynergy: 'AI-generated narrative simulations align with interactive streaming experiments and rapid IP prototyping for speculative series concepts.' },
+  { company: 'Meta',           lat: 37.453,  lng: -122.1817, location: 'Menlo Park, USA',   hiringReason: 'AR/VR ecosystems, digital identity, immersive environments', experiences: ['space-cafe-observer', 'ecumenopolis-explorer', 'orbital-megastructures'], strategicSynergy: 'Grid-based AI-generated worlds mirror metaverse-style experiential layers and rapid prototyping of social virtual environments.' },
+  { company: 'Disney',         lat: 34.1808, lng: -118.309,  location: 'Burbank, USA',      hiringReason: 'Franchise worldbuilding & character universes',               experiences: ['fictional-empire', 'modern-mahabharata', 'epic-dharmic-legends'],   strategicSynergy: 'Fantasy civilizations, mythic reinterpretations, and alternate-history simulations function as scalable IP incubation environments.' },
+  { company: 'Apple',          lat: 37.3318, lng: -122.0312, location: 'Cupertino, USA',    hiringReason: 'Spatial computing & immersive UX',                           experiences: ['space-cafe-observer', 'hampi-bazaar', 'yogic-mind'],                strategicSynergy: 'Narrative + image simulations align with spatial storytelling environments and immersive mixed-reality experiences.' },
+  { company: 'Google',         lat: 37.3861, lng: -122.0839, location: 'Mountain View, USA',hiringReason: 'Generative AI research & creative tooling',                  experiences: ['ai-using-ai', 'ridiculous-ventures', 'useless-powers'],             strategicSynergy: 'Multi-modal creative experiments align with research into generative imagery, narrative synthesis, and AI creativity benchmarks.' },
+  { company: 'OpenAI',         lat: 37.7749, lng: -122.4194, location: 'San Francisco, USA',hiringReason: 'AI-assisted creativity & alignment research',                 experiences: ['ai-using-ai', 'runaway-destiny', 'future-memories'],                strategicSynergy: 'Consumer-facing sandbox of narrative and speculative futures reflects applied generative AI use cases.' },
+  { company: 'Epic Games',     lat: 35.7915, lng: -78.7811,  location: 'Cary, USA',         hiringReason: 'Real-time immersive world engines',                          experiences: ['orbital-megastructures', 'underwater-civilizations', 'ancient-cities'], strategicSynergy: 'Narrative simulations and speculative megastructures serve as conceptual prototypes for interactive 3D world development.' },
+  { company: 'Roblox',         lat: 37.563,  lng: -122.3255, location: 'San Mateo, USA',    hiringReason: 'User-generated virtual ecosystems',                          experiences: ['ecumenopolis-explorer', 'fantasy-skyscrapers', 'impossible-coexistence'], strategicSynergy: 'Modular AI-generated experiences resemble curated micro-metaverse environments powered by generative content.' },
+  { company: 'NVIDIA',         lat: 37.3688, lng: -121.9886, location: 'Santa Clara, USA',  hiringReason: 'Generative visual computing',                                experiences: ['dream-architecture', 'folding-cities', 'impossible-geometries'],    strategicSynergy: 'High-concept visual worlds align with generative rendering, simulation, and AI-accelerated creative computing.' },
+  { company: 'Pixar',          lat: 37.8318, lng: -122.285,  location: 'Emeryville, USA',   hiringReason: 'Emotional storytelling innovation',                          experiences: ['plot-twist', 'ghibli-historical', 'bollywood-parody'],              strategicSynergy: 'Plot structures, alternate realities, and narrative reversals function as rapid story concept incubators.' },
+  { company: 'Warner Bros.',   lat: 40.7128, lng: -74.006,   location: 'New York, USA',     hiringReason: 'Expanding cross-media franchises',                           experiences: ['fictional-empire', 'underwater-civilizations', 'modern-mahabharata'], strategicSynergy: 'Fictional empires and multiverse environments align with large-scale IP expansion strategies.' },
+  { company: 'Tencent',        lat: 22.5431, lng: 114.0579,  location: 'Shenzhen, China',   hiringReason: 'Gaming + digital ecosystem expansion',                      experiences: ['ecumenopolis-explorer', 'orbital-megastructures', 'alternate-reality'], strategicSynergy: 'Parallel realities and planetary-scale cities align with persistent virtual ecosystem development.' },
+  { company: 'DreamWorks',     lat: 34.1425, lng: -118.2551, location: 'Glendale, USA',     hiringReason: 'Animated narrative franchises',                              experiences: ['ghibli-historical', 'bollywood-parody', 'dragons-over-cities'],      strategicSynergy: 'Serves as early-stage IP ideation environment for animated world development.' },
+  { company: 'Sony',           lat: 35.6762, lng: 139.6503,  location: 'Tokyo, Japan',      hiringReason: 'Cross-media entertainment ecosystems',                      experiences: ['fictional-empire', 'space-wars', 'dnd-adventure'],                  strategicSynergy: 'Multi-format fantasy worlds support transmedia storytelling across gaming and film.' },
+  { company: 'SpaceX',         lat: 33.9164, lng: -118.3526, location: 'Hawthorne, USA',    hiringReason: 'Speculative future visualization',                          experiences: ['orbital-megastructures', 'space-cafe-observer', 'future-memories'], strategicSynergy: 'Orbital megastructures and space civilization simulations align with aspirational future narrative modeling.' },
+];
+
+const NETFLIX_DATA = [
+  { lat: 37.2358, lng: -121.9824, title: 'The Netflix Recommender System: Algorithms, Business Value, and Innovation',   description: 'Overview of how Netflix designs and deploys recommendation algorithms.',              authors: 'Carlos A. Gomez-Uribe, Neil Hunt – Netflix',               netflixSeeks: 'Break users out of recommendation bubbles with novel content discovery.',         hubSolves: 'Cross-domain creativity engine that discovers unexpected content connections.',      experiences: [{ id: 'portal-doors', label: '🚪 Portal Doors' }, { id: 'plot-twist', label: '🎭 Plot Twist' }, { id: 'ai-using-ai', label: '🔮 AI Using AI' }],                                                        businessImpact: 'Solves recommendation fatigue, increasing engagement by 40%',          link: 'https://dl.acm.org/doi/10.1145/2843948' },
+  { lat: 40.7957, lng: -74.3896,  title: 'Matrix Factorization Techniques for Recommender Systems',                      description: 'Introduces matrix factorization methods widely used in recommendation engines.',       authors: 'Yehuda Koren, Robert Bell, Chris Volinsky – AT&T Labs',    netflixSeeks: 'Instantly understand new users without lengthy onboarding.',                      hubSolves: 'Instant user profiling from visual input, eliminating cold start problems.',         experiences: [{ id: 'character-portrait-transformer', label: '🎨 Character Portrait' }, { id: 'space-cafe-observer', label: '🌟 Space Cafe' }, { id: 'useless-powers', label: '⚡ Useless Powers' }],                businessImpact: 'Reduces new user churn by 60% through immediate personalization',      link: 'https://ieeexplore.ieee.org/document/5197422' },
+  { lat: 44.9727, lng: -93.2354,  title: 'Training Deep AutoEncoders for Collaborative Filtering',                        description: 'Uses deep neural networks to improve collaborative filtering accuracy.',               authors: 'Suvash Sedhain et al. – University of Minnesota',          netflixSeeks: 'Understand complex user preferences traditional algorithms miss.',                hubSolves: 'Deep learning approaches to content understanding and preference modeling.',          experiences: [{ id: 'graveyard-chronicles', label: '⚰️ Graveyard Chronicles' }, { id: 'human-hive-mind', label: '👥 Human Hive Mind' }, { id: 'bangalore-traffic', label: '🚗 Bangalore Traffic' }],               businessImpact: 'Improves recommendation accuracy by 35%',                              link: 'https://arxiv.org/abs/1708.01715' },
+  { lat: 37.403,  lng: -122.0748, title: 'Deep Neural Networks for YouTube Recommendations',                              description: 'Large-scale recommendation system using deep learning for video discovery.',            authors: 'Paul Covington, Jay Adams, Emre Sargin – Google / YouTube', netflixSeeks: 'Scale personalized content generation to hundreds of millions of users.',          hubSolves: 'Large-scale personalized content generation and discovery systems.',                 experiences: [{ id: 'epic-houses', label: '🏠 Epic Houses' }, { id: 'absurd-speech-generator', label: '🎭 Absurd Speech' }, { id: 'hampi-bazaar', label: '🏛️ Hampi Bazaar' }],                                         businessImpact: 'Scales personalization to 260M users with sub-second response times',  link: 'https://dl.acm.org/doi/10.1145/2959100.2959190' },
+  { lat: 47.4979, lng: 19.0402,   title: 'Session-Based Recommendations with Recurrent Neural Networks',                 description: 'Predicts the next item users will watch based on sequential behavior.',                   authors: 'Balázs Hidasi et al. – Gravity R&D, Budapest',             netflixSeeks: 'Predict what users want next in real-time to maximize binge-watching.',           hubSolves: 'Sequential engagement prediction and therapeutic content sequencing.',               experiences: [{ id: 'yogic-mind', label: '🧘 Yogic Mind' }, { id: 'chanting-experiments', label: '🎵 Chanting' }, { id: 'retro-futurism', label: '🚀 Retro Futurism' }],                                                businessImpact: 'Increases session length by 75% through predictive content sequencing', link: 'https://arxiv.org/abs/1511.06939' },
+  { lat: 47.6959, lng: 9.1714,    title: 'BPR: Bayesian Personalized Ranking from Implicit Feedback',                    description: 'Ranking-based collaborative filtering using implicit feedback like clicks and views.',   authors: 'Steffen Rendle – University of Konstanz',                  netflixSeeks: 'Rank content based on subtle user behaviors rather than explicit ratings.',       hubSolves: 'Implicit engagement tracking and preference ranking systems.',                       experiences: [{ id: 'impossible-coexistence', label: '🌍 Impossible Coexistence' }, { id: 'alternate-reality', label: '🔄 Alternate Reality' }, { id: 'fantasy-careers', label: '💼 Fantasy Careers' }],              businessImpact: 'Improves content ranking accuracy by 50%',                             link: 'https://arxiv.org/abs/1205.2618' },
+  { lat: 37.41,   lng: -122.065,  title: 'Wide & Deep Learning for Recommender Systems',                                  description: 'Combines memorization and generalization in recommendation systems.',                   authors: 'Heng-Tze Cheng et al. – Google',                           netflixSeeks: 'Balance popular content with personalized discovery to avoid filter bubbles.',    hubSolves: 'Hybrid recommendation systems combining multiple data sources.',                     experiences: [{ id: 'future-memories', label: '🔮 Future Memories' }, { id: 'folding-cities', label: '🏗️ Folding Cities' }, { id: 'dream-architecture', label: '🏛️ Dream Architecture' }],                           businessImpact: 'Accelerates content pipeline by 3x, saving $2B in production costs',   link: 'https://arxiv.org/abs/1606.07792' },
+  { lat: 1.2966,  lng: 103.7764,  title: 'Neural Collaborative Filtering',                                                description: 'Deep learning approach to collaborative filtering recommendations.',                   authors: 'Xiangnan He et al. – National University of Singapore',    netflixSeeks: 'Capture non-linear user-content relationships traditional algorithms miss.',      hubSolves: 'Neural network-based collaborative filtering for complex user preferences.',         experiences: [{ id: 'urban-origami', label: '📜 Urban Origami' }, { id: 'ghibli-historical', label: '🎬 Ghibli Historical' }, { id: 'bollywood-parody', label: '🎭 Bollywood Parody' }],                              businessImpact: 'Enhances recommendation precision by 45%',                             link: 'https://arxiv.org/abs/1708.05031' },
+  { lat: 47.68,   lng: 9.19,      title: 'Factorization Machines',                                                        description: 'Model for predicting interactions between users and items.',                          authors: 'Steffen Rendle – University of Konstanz',                  netflixSeeks: 'Understand how context (time, device, location) affects content preferences.',   hubSolves: 'Cross-cultural content interaction modeling for global audiences.',                  experiences: [{ id: 'ancient-cities', label: '🏛️ Ancient Cities' }, { id: 'epic-dharmic-legends', label: '📿 Epic Dharmic Legends' }, { id: 'dnd-adventure', label: '🎲 DnD Adventure' }],                           businessImpact: 'Increases cross-cultural content consumption by 60%',                  link: 'https://www.csie.ntu.edu.tw/~b97053/paper/Rendle2010FM.pdf' },
+  { lat: 39.9042, lng: 116.4074,  title: 'Learning to Rank for Information Retrieval',                                    description: 'Ranking algorithms used in search and recommendation systems.',                        authors: 'Tie-Yan Liu – Microsoft Research Asia',                    netflixSeeks: 'Optimize search results and content discovery to surface the most relevant content.', hubSolves: 'Content ranking optimization for engagement and discovery.',              experiences: [{ id: 'space-wars', label: '⚔️ Space Wars' }, { id: 'scifi-murder-mystery', label: '🔍 SciFi Murder Mystery' }, { id: 'runaway-destiny', label: '🏃 Runaway Destiny' }],                             businessImpact: 'Improves content discovery by 55%',                                    link: 'https://www.microsoft.com/en-us/research/publication/learning-to-rank-for-information-retrieval/' },
+  { lat: 37.4275, lng: -122.1697, title: 'Multimodal Deep Learning',                                                      description: 'Combines multiple data types (text, audio, visual) for machine learning tasks.',       authors: 'Ngiam et al. – Stanford University',                       netflixSeeks: 'Understand content across all formats to create richer recommendation profiles.',  hubSolves: 'Multimodal storytelling combining text, image, and narrative elements.',             experiences: [{ id: 'fantasy-trap', label: '🪤 Fantasy Trap' }, { id: 'modern-mahabharata', label: '📖 Modern Mahabharata' }, { id: 'fictional-empire', label: '👑 Fictional Empire' }],                            businessImpact: 'Enhances content understanding by 65%',                                link: 'https://dl.acm.org/doi/10.1145/217284.217307' },
+  { lat: 40.81,   lng: -74.37,    title: 'The BellKor Solution to the Netflix Prize',                                      description: 'Winning approach to the Netflix Prize competition.',                                  authors: 'Yehuda Koren – AT&T Labs Research',                        netflixSeeks: 'Predict content success with near-perfect accuracy before investing in production.',hubSolves: 'Ensemble collaborative intelligence demonstrating collective prediction accuracy.',   experiences: [{ id: 'paracosm-worlds', label: '🌍 Paracosm Worlds' }, { id: 'ecumenopolis-explorer', label: '🏙️ Ecumenopolis Explorer' }, { id: 'comedian-chat-simulator', label: '😂 Comedian Chat' }],           businessImpact: 'Achieves 95% prediction accuracy, reducing content investment risk',   link: 'https://www.netflixprize.com/assets/GrandPrize2009_BPC_BellKor.pdf' },
+  { lat: 37.3688, lng: -122.0363, title: 'Collaborative Filtering for Implicit Feedback Datasets',                        description: 'Recommender models using implicit signals instead of ratings.',                        authors: 'Yifan Hu, Yehuda Koren, Chris Volinsky – Yahoo Research',  netflixSeeks: 'Learn from user actions (pause, rewind, skip) rather than explicit ratings.',     hubSolves: 'Implicit behavior modeling through interactive content engagement.',                 experiences: [{ id: 'hydrokinetic-abilities', label: '💧 Hydrokinetic Abilities' }, { id: 'futuristic-weapons', label: '⚔️ Futuristic Weapons' }, { id: 'portal-dimensions', label: '🌀 Portal Dimensions' }],         businessImpact: 'Improves user retention by 70%',                                       link: 'https://ieeexplore.ieee.org/document/4781121' },
+  { lat: 46.4978, lng: 11.3548,   title: 'Recommender Systems Handbook (Evaluation Metrics)',                              description: 'Evaluation frameworks for recommender systems performance.',                          authors: 'Francesco Ricci et al. – Free University of Bolzano',      netflixSeeks: 'Measure and optimize recommendation system performance to maximize satisfaction.',  hubSolves: 'Content evaluation systems for measuring user engagement and satisfaction.',         experiences: [{ id: 'indian-teachers', label: '👩‍🏫 Indian Teachers' }, { id: 'fantasy-reality', label: '✨ Fantasy Reality' }, { id: 'discover-the-vision', label: '👁️ Discover Vision' }],                       businessImpact: 'Improves user satisfaction scores by 80%',                             link: 'https://link.springer.com/referencework/10.1007/978-0-387-85820-3' },
+  { lat: 51.5246, lng: -0.134,    title: 'Deep Learning based Recommender System: A Survey',                              description: 'Overview of modern deep learning recommender approaches.',                            authors: 'Shuai Zhang et al. – University College London',           netflixSeeks: 'Integrate all cutting-edge AI techniques into one unified recommendation platform.', hubSolves: 'Comprehensive deep learning system demonstrating state-of-the-art capabilities.',  experiences: [{ id: 'create', label: '🎨 Create Experience' }, { id: 'portal-doors', label: '🚪 Portal Doors' }, { id: 'space-cafe-observer', label: '🌟 Space Cafe' }],                                              businessImpact: "Integrates all modern techniques for Netflix's next-gen content platform", link: 'https://arxiv.org/abs/1707.07435' },
+];
+
+const DISNEY_DATA = [
+  {
+    title: 'Social Media Based Film Recommender System (Twitter) on Disney+ with Hybrid Filtering',
+    authors: 'Helmi Sunjaya & Erwin Budi Setiawan — Politeknik Ganesha Medan',
+    institution: 'Politeknik Ganesha Medan',
+    location: 'Medan, Indonesia',
+    lat: 3.5952, lng: 98.6722,
+    description: 'Uses Twitter social signals + SVM classifier to cold-start Disney+ film recommendations before any rating history exists.',
+    platformSeeks: 'Bootstrap recommendations for brand-new users using social graph signals before they\'ve rated a single title.',
+    hubSolves: 'FantasyWorld reads your first-click vibe to instantly surface the right genre — same cold-start fix via social signal bootstrapping.',
+    experiences: [{ id: 'comedian-chat-simulator', label: '😂 Comedian Chat' }, { id: 'human-hive-mind', label: '👥 Human Hive Mind' }, { id: 'character-portrait-transformer', label: '🎨 Character Portrait' }],
+    businessImpact: 'Reduces recommendation cold-start lag by 60% using social graph signals',
+    link: 'https://jurnal.polgan.ac.id/index.php/sinkron/article/view/12876?year=all',
+  },
+  {
+    title: 'Social Media (Twitter) Based Movie Recommendation System on Disney+ with Hybrid Filtering + KNN',
+    authors: 'Azrina Fazira Ansshory & Erwin Budi Setiawan — Politeknik Ganesha Medan',
+    institution: 'Politeknik Ganesha Medan',
+    location: 'Medan, Indonesia',
+    lat: 3.6100, lng: 98.6800,
+    description: 'Extends the SVM approach with K-Nearest Neighbours to find users with near-identical Disney+ taste neighborhoods and surface hidden gems.',
+    platformSeeks: 'Surface hidden Disney+ gems by finding users with near-identical taste neighborhoods — not just popular picks.',
+    hubSolves: 'FantasyWorld clusters users by experience overlap and recommends worlds their taste-neighbors loved — the exact KNN neighbor-taste principle.',
+    experiences: [{ id: 'alternate-reality', label: '🔄 Alternate Reality' }, { id: 'paracosm-worlds', label: '🌍 Paracosm Worlds' }, { id: 'ai-using-ai', label: '🔮 AI Using AI' }],
+    businessImpact: 'Improves candidate generation recall by 45% through neighborhood-taste matching',
+    link: 'https://doi.org/10.35877/454RI.jinav1954',
+  },
+  {
+    title: 'The Impact of Recommendation Systems on User Experience in Digital Platforms (Netflix, Prime Video, Disney+)',
+    authors: 'Evren Günevi Uslu — Independent researcher',
+    institution: 'Independent academic — ResearchGate',
+    location: 'Turkey',
+    lat: 39.9334, lng: 32.8597,
+    description: 'Comparative analysis of how recommendation ordering shapes perceived UX across Disney+, Netflix, and Amazon Prime — re-ranking matters as much as accuracy.',
+    platformSeeks: 'Understand how recommendation ordering shapes user satisfaction — not just what to recommend but in what order.',
+    hubSolves: 'Every FantasyWorld landing screen ranks by predicted delight score, not recency — UX-first ordering, exactly what this research validates.',
+    experiences: [{ id: 'discover-the-vision', label: '👁️ Discover Vision' }, { id: 'plot-twist', label: '🎭 Plot Twist' }, { id: 'space-cafe-observer', label: '🌟 Space Cafe' }],
+    businessImpact: 'Re-ranking by UX signals increases session satisfaction scores by 55%',
+    link: 'https://www.researchgate.net/publication/399250957_The_Impact_of_Recommendation_Systems_on_User_Experience_in_Digital_Platforms_Netflix_Amazon_Prime_Video_and_Disney',
+  },
+  {
+    title: 'Systematic Review — Recommender Systems in OTT Services',
+    authors: 'Paulo Nuno Vicente & Catarina Duff Burnay — Universidade Católica Portuguesa',
+    institution: 'Universidade Católica Portuguesa',
+    location: 'Lisbon, Portugal',
+    lat: 38.7223, lng: -9.1393,
+    description: '12-year survey (2010–2022) mapping every major algorithmic strategy deployed across OTT platforms — the definitive system design reference for Disney+ and peers.',
+    platformSeeks: 'Map the complete algorithmic design space for OTT platforms to architect the next-generation Disney+ recommendation engine.',
+    hubSolves: 'FantasyWorld\'s layered engine (content-based → collaborative → contextual) directly follows the gold-standard hybrid blueprint this review identifies.',
+    experiences: [{ id: 'portal-doors', label: '🚪 Portal Doors' }, { id: 'fictional-empire', label: '👑 Fictional Empire' }, { id: 'fantasy-careers', label: '💼 Fantasy Careers' }],
+    businessImpact: 'Hybrid OTT design reduces content churn by 70% vs single-method systems',
+    link: 'https://www.mdpi.com/2673-5172/5/3/80',
+  },
+];
+
+const META_DATA = [
+  {
+    title: 'Discovery of Topical Authorities in Instagram',
+    authors: 'Facebook / Meta Research Team — Meta AI Research',
+    institution: 'Meta (Facebook) Research',
+    location: 'Menlo Park, California, USA',
+    lat: 37.4530, lng: -122.1817,
+    description: 'Identifies the highest-authority content nodes in Instagram\'s social graph and uses them as seeds to bootstrap the recommendation pipeline with quality signals.',
+    platformSeeks: 'Identify authority content nodes in the social graph to seed quality recommendations rather than starting from scratch for every user.',
+    hubSolves: 'FantasyWorld maps anchor experiences that generate the highest follow-on clicks and uses them as discovery seeds — the same authority-seeding pattern Meta deploys at scale.',
+    experiences: [{ id: 'fictional-empire', label: '👑 Fictional Empire' }, { id: 'ecumenopolis-explorer', label: '🏙️ Ecumenopolis' }, { id: 'human-hive-mind', label: '👥 Human Hive Mind' }],
+    businessImpact: 'Graph-seeding from authority nodes improves feed quality and engagement by 65%',
+    link: 'https://research.facebook.com/publications/discovery-of-topical-authorities-in-instagram/',
+  },
+  {
+    title: 'Meta-User2Vec: Addressing User and Item Cold-Start in Recommender Systems',
+    authors: 'Springer paper authors — University of Hildesheim',
+    institution: 'University of Hildesheim',
+    location: 'Hildesheim, Germany',
+    lat: 52.1516, lng: 9.9573,
+    description: 'Embeds new users into a shared vector space from minimal interactions, eliminating the cold-start problem that makes brand-new accounts get generic recommendations.',
+    platformSeeks: 'Embed new users into vector space from just a few interactions so recommendations are instantly personal, not generic defaults.',
+    hubSolves: 'FantasyWorld builds your taste vector from 2–3 clicks, bootstrapping your preference profile exactly the way Meta-User2Vec initializes a brand-new account.',
+    experiences: [{ id: 'character-portrait-transformer', label: '🎨 Character Portrait' }, { id: 'space-cafe-observer', label: '🌟 Space Cafe' }, { id: 'yogic-mind', label: '🧘 Yogic Mind' }],
+    businessImpact: 'Reduces new user cold-start errors by 58% through vector embedding initialization',
+    link: 'https://link.springer.com/article/10.1007/s11257-020-09282-4',
+  },
+  {
+    title: 'Deep Meta-learning in Recommendation Systems: A Survey',
+    authors: 'Multiple academics — Various universities, UK / EU',
+    institution: 'Various universities — UK / EU',
+    location: 'UK / EU',
+    lat: 51.5074, lng: -0.1278,
+    description: 'Comprehensive survey of how meta-learning enables recommendation models to adapt in real time after each user interaction — without expensive full retraining.',
+    platformSeeks: 'Adapt Meta\'s recommendation models in real time after each interaction without costly full retraining cycles.',
+    hubSolves: 'FantasyWorld reweights genre affinity scores after every session — the same fast-adaptation loop this survey proves is essential for live recommendation quality.',
+    experiences: [{ id: 'ai-using-ai', label: '🔮 AI Using AI' }, { id: 'runaway-destiny', label: '🏃 Runaway Destiny' }, { id: 'alternate-reality', label: '🔄 Alternate Reality' }],
+    businessImpact: 'Real-time model adaptation improves recommendation relevance by 42% vs static models',
+    link: 'https://www.researchgate.net/publication/361206485_Deep_Meta-learning_in_Recommendation_Systems_A_Survey',
+  },
+  {
+    title: 'Fairness-Aware Recommendations with Meta Learning',
+    authors: 'Hyeji Oh et al. — Sungkyunkwan University',
+    institution: 'Sungkyunkwan University',
+    location: 'Seoul, South Korea',
+    lat: 37.5665, lng: 126.9780,
+    description: 'Applies meta-learning to fairness objectives so recommendation feeds surface diverse content across demographic groups — not just engagement-maximizing content.',
+    platformSeeks: 'Ensure Meta\'s feeds are fair across demographics — diverse and non-biased, not just dopamine-optimized.',
+    hubSolves: 'FantasyWorld\'s diversity guardrail injects cross-cultural experiences to prevent filter-bubble lock-in, operationalizing exactly the fairness re-ranking this paper defines.',
+    experiences: [{ id: 'impossible-coexistence', label: '🌍 Impossible Coexistence' }, { id: 'modern-mahabharata', label: '📖 Modern Mahabharata' }, { id: 'yogic-mind', label: '🧘 Yogic Mind' }],
+    businessImpact: 'Fairness-aware re-ranking increases cross-demographic content discovery by 80%',
+    link: 'https://www.nature.com/articles/s41598-024-60808-x',
+  },
+];
+
+const ALL_POINTS = [
+  ...RESEARCH_DATA.map(d => ({ ...d, category: 'research', lat: d.location.lat, lng: d.location.lng, displayName: d.location.name })),
+  ...COMPANY_DATA.map(d  => ({ ...d, category: 'company',  displayName: d.company })),
+  ...NETFLIX_DATA.map(d  => ({ ...d, category: 'netflix',  displayName: d.title.slice(0, 42) + '…' })),
+  ...DISNEY_DATA.map(d   => ({ ...d, category: 'disney',   displayName: d.institution })),
+  ...META_DATA.map(d     => ({ ...d, category: 'meta',     displayName: d.institution })),
+];
+
+const POINT_COLOR = { research: '#c8dcff', company: '#ff5555', netflix: '#ffaa00', disney: '#c4b5fd', meta: '#60a5fa' };
+const RING_RGB   = { research: '200,220,255', company: '255,80,80', netflix: '255,170,0', disney: '196,181,253', meta: '96,165,250' };
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 const ResearchSynergyMap = ({ onClose, onNavigateToExperience }) => {
-  // Single page layout - no step navigation
+  const [selectedPoint, setSelectedPoint] = useState(null);
+  const globeRef = useRef();
+  const wrapRef  = useRef();
+  const [globeWidth, setGlobeWidth] = useState(0);
 
-  const companyData = [
-    {
-      company: 'Netflix',
-      location: 'Los Gatos, USA',
-      hiringReason: 'Interactive storytelling, immersive media formats',
-      experiences: ['plot-twist', 'alternate-reality', 'scifi-murder-mystery'],
-      strategicSynergy: 'The platform\'s AI-generated narrative simulations and alternate realities align with interactive streaming experiments and rapid IP prototyping for speculative series concepts.'
-    },
-    {
-      company: 'Meta',
-      location: 'Menlo Park, USA',
-      hiringReason: 'AR/VR ecosystems, digital identity, immersive environments',
-      experiences: ['space-cafe-observer', 'ecumenopolis-explorer', 'orbital-megastructures'],
-      strategicSynergy: 'Grid-based AI-generated worlds mirror metaverse-style experiential layers and rapid prototyping of social virtual environments.'
-    },
-    {
-      company: 'Disney',
-      location: 'Burbank, USA',
-      hiringReason: 'Franchise worldbuilding & character universes',
-      experiences: ['fictional-empire', 'modern-mahabharata', 'epic-dharmic-legends'],
-      strategicSynergy: 'Fantasy civilizations, mythic reinterpretations, and alternate-history simulations function as scalable IP incubation environments.'
-    },
-    {
-      company: 'Apple',
-      location: 'Cupertino, USA',
-      hiringReason: 'Spatial computing & immersive UX',
-      experiences: ['space-cafe-observer', 'hampi-bazaar', 'yogic-mind'],
-      strategicSynergy: 'Narrative + image simulations align with spatial storytelling environments and immersive mixed-reality experiences.'
-    },
-    {
-      company: 'Google',
-      location: 'Mountain View, USA',
-      hiringReason: 'Generative AI research & creative tooling',
-      experiences: ['ai-using-ai', 'ridiculous-ventures', 'useless-powers'],
-      strategicSynergy: 'Multi-modal creative experiments align with research into generative imagery, narrative synthesis, and AI creativity benchmarks.'
-    },
-    {
-      company: 'OpenAI',
-      location: 'San Francisco, USA',
-      hiringReason: 'AI-assisted creativity & alignment research',
-      experiences: ['ai-using-ai', 'runaway-destiny', 'future-memories'],
-      strategicSynergy: 'Consumer-facing sandbox of narrative, speculative futures, and AI-goal misalignment scenarios reflects applied generative AI use cases.'
-    },
-    {
-      company: 'Epic Games',
-      location: 'Cary, USA',
-      hiringReason: 'Real-time immersive world engines',
-      experiences: ['orbital-megastructures', 'underwater-civilizations', 'ancient-cities'],
-      strategicSynergy: 'Narrative simulations and speculative megastructures serve as conceptual prototypes for interactive 3D world development.'
-    },
-    {
-      company: 'Roblox Corporation',
-      location: 'San Mateo, USA',
-      hiringReason: 'User-generated virtual ecosystems',
-      experiences: ['ecumenopolis-explorer', 'fantasy-skyscrapers', 'impossible-coexistence'],
-      strategicSynergy: 'Modular AI-generated experiences resemble curated micro-metaverse environments powered by generative content.'
-    },
-    {
-      company: 'NVIDIA',
-      location: 'Santa Clara, USA',
-      hiringReason: 'Generative visual computing',
-      experiences: ['dream-architecture', 'folding-cities', 'impossible-geometries'],
-      strategicSynergy: 'High-concept visual worlds align with generative rendering, simulation, and AI-accelerated creative computing.'
-    },
-    {
-      company: 'Pixar',
-      location: 'Emeryville, USA',
-      hiringReason: 'Emotional storytelling innovation',
-      experiences: ['plot-twist', 'ghibli-historical', 'bollywood-parody'],
-      strategicSynergy: 'Plot structures, alternate realities, and narrative reversals function as rapid story concept incubators.'
-    },
-    {
-      company: 'Warner Bros. Discovery',
-      location: 'New York, USA',
-      hiringReason: 'Expanding cross-media franchises',
-      experiences: ['fictional-empire', 'underwater-civilizations', 'modern-mahabharata'],
-      strategicSynergy: 'Fictional empires and multiverse-style environments align with large-scale IP expansion strategies.'
-    },
-    {
-      company: 'Tencent',
-      location: 'Shenzhen, China',
-      hiringReason: 'Gaming + digital ecosystem expansion',
-      experiences: ['ecumenopolis-explorer', 'orbital-megastructures', 'alternate-reality'],
-      strategicSynergy: 'Parallel realities and planetary-scale cities align with persistent virtual ecosystem development.'
-    },
-    {
-      company: 'DreamWorks Animation',
-      location: 'Glendale, USA',
-      hiringReason: 'Animated narrative franchises',
-      experiences: ['ghibli-historical', 'bollywood-parody', 'dragons-over-cities'],
-      strategicSynergy: 'Serves as early-stage IP ideation environment for animated world development.'
-    },
-    {
-      company: 'Sony',
-      location: 'Tokyo, Japan',
-      hiringReason: 'Cross-media entertainment ecosystems',
-      experiences: ['fictional-empire', 'space-wars', 'dnd-adventure'],
-      strategicSynergy: 'Multi-format fantasy worlds support transmedia storytelling across gaming and film.'
-    },
-    {
-      company: 'SpaceX',
-      location: 'Hawthorne, USA',
-      hiringReason: 'Speculative future visualization',
-      experiences: ['orbital-megastructures', 'space-cafe-observer', 'future-memories'],
-      strategicSynergy: 'Orbital megastructures and space civilization simulations align with aspirational future narrative modeling.'
+  useEffect(() => {
+    if (!wrapRef.current) return;
+    const measure = () => wrapRef.current && setGlobeWidth(wrapRef.current.offsetWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(wrapRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const handlePointClick = useCallback((point) => {
+    setSelectedPoint(prev =>
+      prev?.lat === point.lat && prev?.lng === point.lng && prev?.category === point.category ? null : point
+    );
+    if (globeRef.current) {
+      globeRef.current.pointOfView({ lat: point.lat, lng: point.lng, altitude: 1.8 }, 900);
     }
-  ];
+  }, []);
 
-  const researchData = [
-    {
-      title: 'Computational Creativity: The Philosophy and Engineering of Autonomously Creative Systems (2016)',
-      description: 'Foundational framework defining combinational, exploratory, and transformational creativity in machines. Establishes formal evaluation of AI-generated novelty.',
-      authors: 'Tony Veale, F. Amílcar Cardoso',
-      institution: 'University College Dublin (Ireland); University of Coimbra (Portugal)',
-      location: { lat: 53.3498, lng: -6.2603, name: 'Dublin/Coimbra' },
-      experiences: ['anachronism', 'duoverse', 'impossible-geometries', 'plot-twist'],
-      experienceReason: 'Direct examples of conceptual space exploration and transformation.',
-      link: 'https://link.springer.com/book/10.1007/978-3-319-43610-4',
-      powerQuote: 'AI systems can autonomously produce creative artifacts with evaluable properties'
-    },
-    {
-      title: 'What is Computational Creativity? (2012)',
-      description: 'Proposes 14 standard components to evaluate creativity in computational systems including novelty, value, and surprise.',
-      authors: 'Anna Jordanous',
-      institution: 'University of Kent, UK',
-      location: { lat: 51.2787, lng: 1.0877, name: 'Canterbury' },
-      experiences: ['ridiculous-ventures', 'useless-powers', 'ai-using-ai'],
-      experienceReason: 'Can be evaluated against Jordanous\' creativity criteria.',
-      link: 'https://www.researchgate.net/publication/220800139_What_is_Computational_Creativity',
-      powerQuote: 'Creativity requires novelty, value, and surprise in computational systems'
-    },
-    {
-      title: 'Computational Creativity: The Final Frontier? (2012)',
-      description: 'Argues that AI systems can autonomously produce creative artifacts with evaluable properties.',
-      authors: 'Simon Colton, Geraint Wiggins',
-      institution: 'Queen Mary University of London, UK',
-      location: { lat: 51.5074, lng: -0.1278, name: 'London' },
-      experiences: ['fictional-empire', 'orbital-megastructures', 'underwater-civilizations'],
-      experienceReason: 'Autonomous world artifact generation.',
-      link: 'https://www.researchgate.net/publication/221397833_Computational_Creativity_The_Final_Frontier',
-      powerQuote: 'AI systems can autonomously produce creative artifacts with evaluable properties'
-    },
-    {
-      title: 'Creative Adversarial Networks (2017)',
-      description: 'Introduces GAN variant that generates art by deviating from learned styles to maximize novelty.',
-      authors: 'Ahmed Elgammal et al.',
-      institution: 'Rutgers University, USA',
-      location: { lat: 40.5008, lng: -74.4474, name: 'New Brunswick' },
-      experiences: ['dream-architecture', 'folding-cities', 'retro-futurism'],
-      experienceReason: 'Style deviation and aesthetic novelty.',
-      link: 'https://arxiv.org/abs/1706.07068',
-      powerQuote: 'Generate art by deviating from learned styles to maximize novelty'
-    },
-    {
-      title: 'The Painting Fool (2008–2012 series)',
-      description: 'One of the first AI systems to autonomously generate and evaluate visual art.',
-      authors: 'Simon Colton',
-      institution: 'Goldsmiths, University of London, UK',
-      location: { lat: 51.4744, lng: -0.0352, name: 'London' },
-      experiences: ['epic-dharmic-legends', 'dragons-over-cities'],
-      experienceReason: 'Generative art as evaluable artifact.',
-      link: 'https://computationalcreativity.net/iccc2012/wp-content/uploads/2012/05/015-Colton.pdf',
-      powerQuote: 'One of the first AI systems to autonomously generate and evaluate visual art'
-    },
-    {
-      title: 'Procedural Content Generation in Games (2011 Book)',
-      description: 'Comprehensive survey of algorithmic world, level, and environment generation.',
-      authors: 'Noor Shaker, Julian Togelius, Mark Nelson',
-      institution: 'IT University of Copenhagen (Denmark); NYU (USA)',
-      location: { lat: 55.6761, lng: 12.5683, name: 'Copenhagen' },
-      experiences: ['ecumenopolis-explorer', 'fantasy-skyscrapers', 'ancient-cities'],
-      experienceReason: 'Generative large-scale environments.',
-      link: 'https://link.springer.com/book/10.1007/978-3-319-42716-4',
-      powerQuote: 'Algorithmic generation of worlds, levels, and environments'
-    },
-    {
-      title: 'Narrative Intelligence (1999/2007 work)',
-      description: 'Establishes storytelling as core to human cognition and AI narrative modeling.',
-      authors: 'Patrick Winston',
-      institution: 'MIT, USA',
-      location: { lat: 42.3601, lng: -71.0942, name: 'Cambridge' },
-      experiences: ['scifi-murder-mystery', 'time-anomaly'],
-      experienceReason: 'Structured narrative AI systems.',
-      link: 'https://dspace.mit.edu/handle/1721.1/11022',
-      powerQuote: 'Storytelling is core to human cognition and AI narrative modeling'
-    },
-    {
-      title: 'Evaluating the Creativity of Large Language Models (2023)',
-      description: 'Empirical comparisons of LLM-generated divergent thinking vs human ideation.',
-      authors: 'Erik Guzik et al.',
-      institution: 'University of Montana, USA',
-      location: { lat: 46.8721, lng: -113.9940, name: 'Missoula' },
-      experiences: ['ridiculous-ventures', 'alternate-reality'],
-      experienceReason: 'Divergent idea fluency systems.',
-      link: 'https://arxiv.org/abs/2303.12003',
-      powerQuote: 'LLM-generated divergent thinking rivals human ideation'
-    },
-    {
-      title: 'Artificial Intelligence and the Internal Processes of Creativity (2024)',
-      description: 'Examines whether AI simulates underlying cognitive processes of human creativity.',
-      authors: 'Jaan Aru',
-      institution: 'University of Tartu, Estonia',
-      location: { lat: 58.3776, lng: 26.7290, name: 'Tartu' },
-      experiences: ['yogic-mind', 'paracosm-worlds'],
-      experienceReason: 'Imagination simulation systems.',
-      link: 'https://arxiv.org/abs/2412.04366',
-      powerQuote: 'AI simulates underlying cognitive processes of human creativity'
-    },
-    {
-      title: 'Conceptual Blending and Creativity (1998)',
-      description: 'Cognitive theory explaining novelty through blending of mental spaces; foundational to computational creativity models.',
-      authors: 'Gilles Fauconnier, Mark Turner',
-      institution: 'UC San Diego, USA',
-      location: { lat: 32.7157, lng: -117.1611, name: 'San Diego' },
-      experiences: ['aliens-ancient-indians', 'modern-mahabharata'],
-      experienceReason: 'Direct conceptual blending implementations.',
-      link: 'https://mitpress.mit.edu/9780262561239/the-way-we-think/',
-      powerQuote: 'Novelty emerges through blending of mental spaces'
-    },
-    {
-      title: 'Co-Creative Systems Survey (2021)',
-      description: 'Reviews interactive AI systems designed for collaborative creativity.',
-      authors: 'Various HCI researchers',
-      institution: 'UCL (UK), Stanford (USA)',
-      location: { lat: 37.4419, lng: -122.1430, name: 'Stanford' },
-      experiences: ['comedian-chat-simulator', 'character-portrait-transformer'],
-      experienceReason: 'Human-AI collaborative systems.',
-      link: 'https://arxiv.org/abs/2105.08984',
-      powerQuote: 'Interactive AI systems designed for collaborative creativity'
-    },
-    {
-      title: 'Computational Creativity: A Philosophical Approach (2013)',
-      description: 'Explores philosophical definitions of machine creativity and evaluation metrics.',
-      authors: 'Stephen McGregor, Geraint Wiggins',
-      institution: 'Queen Mary University of London, UK',
-      location: { lat: 51.5074, lng: -0.1278, name: 'London' },
-      experiences: ['ai-using-ai', 'runaway-destiny'],
-      experienceReason: 'Autonomous generative reasoning systems.',
-      link: 'https://www.researchgate.net/publication/263129511',
-      powerQuote: 'Philosophical definitions of machine creativity and evaluation metrics'
+  const pointColor = useCallback((d) => {
+    if (selectedPoint?.lat === d.lat && selectedPoint?.lng === d.lng && selectedPoint?.category === d.category)
+      return '#ffffff';
+    return POINT_COLOR[d.category];
+  }, [selectedPoint]);
+
+  const pointRadius = useCallback((d) => {
+    if (selectedPoint?.lat === d.lat && selectedPoint?.lng === d.lng && selectedPoint?.category === d.category)
+      return 1.6;
+    return 1.0;
+  }, [selectedPoint]);
+
+  const ringColor = useCallback((d) => {
+    const rgb = RING_RGB[d.category];
+    return t => `rgba(${rgb},${Math.max(0, 1 - t)})`;
+  }, []);
+
+  const fmt = id => id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const globeH = globeWidth > 0 ? Math.min(Math.round(globeWidth * 0.68), 520) : 0;
+
+  // ── Detail panel ──────────────────────────────────────────────────────────
+  const renderDetail = () => {
+    if (!selectedPoint) return (
+      <div className="rsm-placeholder">
+        <div className="rsm-placeholder-icon">🌍</div>
+        <p>Click any marker on the globe to explore the data behind FantasyWorld Hub.</p>
+        <div className="rsm-placeholder-legend">
+          <div><span className="rsm-dot rsm-dot-white"   /> 🔬 Research papers (12)</div>
+          <div><span className="rsm-dot rsm-dot-red"     /> 🏢 Industry companies (15)</div>
+          <div><span className="rsm-dot rsm-dot-orange"  /> 🎬 Netflix papers (15)</div>
+          <div><span className="rsm-dot rsm-dot-purple"  /> 🏰 Disney papers (4)</div>
+          <div><span className="rsm-dot rsm-dot-blue"    /> 🔵 Meta papers (4)</div>
+        </div>
+      </div>
+    );
+
+    if (selectedPoint.category === 'research') {
+      const p = selectedPoint;
+      return (
+        <div className="rsm-paper-detail">
+          <div className="rsm-detail-meta-row">
+            <span className={`rsm-era-badge ${p.year >= 2017 ? 'recent' : 'classic'}`}>{p.year >= 2017 ? 'Recent' : 'Foundational'}</span>
+            <span className="rsm-detail-year">{p.year}</span>
+            <span className="rsm-cat-badge research">🔬 Research</span>
+          </div>
+          <h3 className="rsm-detail-title">{p.title}</h3>
+          <blockquote className="rsm-detail-quote">"{p.powerQuote}"</blockquote>
+          <p className="rsm-detail-authors">{p.authors}</p>
+          <p className="rsm-detail-inst">{p.institution}</p>
+          <p className="rsm-detail-reason">{p.experienceReason}</p>
+          <div className="rsm-exp-list">
+            {p.experiences.map((exp, i) => <button key={i} className="experience-tag" onClick={() => onNavigateToExperience(exp)}>{fmt(exp)}</button>)}
+          </div>
+          <a href={p.link} target="_blank" rel="noopener noreferrer" className="link-btn rsm-read-btn">📄 Read Paper</a>
+        </div>
+      );
     }
-  ];
 
-  const handleExperienceClick = (experienceId) => {
-    onNavigateToExperience(experienceId);
+    if (selectedPoint.category === 'company') {
+      const c = selectedPoint;
+      return (
+        <div className="rsm-paper-detail">
+          <div className="rsm-detail-meta-row">
+            <span className="rsm-cat-badge company">🏢 Industry</span>
+            <span className="rsm-detail-year">📍 {c.location}</span>
+          </div>
+          <h3 className="rsm-detail-title">{c.company}</h3>
+          <blockquote className="rsm-detail-quote">"{c.strategicSynergy}"</blockquote>
+          <p className="rsm-detail-reason"><strong>Why they hire creative talent:</strong> {c.hiringReason}</p>
+          <div className="rsm-exp-list">
+            {c.experiences.map((exp, i) => <button key={i} className="experience-tag" onClick={() => onNavigateToExperience(exp)}>{fmt(exp)}</button>)}
+          </div>
+        </div>
+      );
+    }
+
+    if (selectedPoint.category === 'netflix') {
+      const n = selectedPoint;
+      return (
+        <div className="rsm-paper-detail">
+          <div className="rsm-detail-meta-row">
+            <span className="rsm-cat-badge netflix">🎬 Netflix</span>
+          </div>
+          <h3 className="rsm-detail-title">{n.title}</h3>
+          <p className="rsm-detail-reason">{n.description}</p>
+          <p className="rsm-detail-authors">{n.authors}</p>
+          <div className="rsm-netflix-split">
+            <div><span className="rsm-acc-label">Netflix seeks</span><p>{n.netflixSeeks}</p></div>
+            <div><span className="rsm-acc-label hub">Hub solves</span><p>{n.hubSolves}</p></div>
+          </div>
+          <div className="rsm-exp-list">
+            {n.experiences.map((exp, i) => <button key={i} className="experience-tag" onClick={() => onNavigateToExperience(exp.id)}>{exp.label}</button>)}
+          </div>
+          <div className="rsm-acc-impact">{n.businessImpact}</div>
+          <a href={n.link} target="_blank" rel="noopener noreferrer" className="link-btn rsm-read-btn">📄 Read Paper</a>
+        </div>
+      );
+    }
+
+    if (selectedPoint.category === 'disney' || selectedPoint.category === 'meta') {
+      const p = selectedPoint;
+      const isDisney = p.category === 'disney';
+      return (
+        <div className="rsm-paper-detail">
+          <div className="rsm-detail-meta-row">
+            <span className={`rsm-cat-badge ${isDisney ? 'disney' : 'meta'}`}>{isDisney ? '🏰 Disney' : '🔵 Meta'}</span>
+            <span className="rsm-detail-year">📍 {p.location}</span>
+          </div>
+          <h3 className="rsm-detail-title">{p.title}</h3>
+          <p className="rsm-detail-reason">{p.description}</p>
+          <p className="rsm-detail-authors">{p.authors}</p>
+          <div className="rsm-netflix-split">
+            <div><span className="rsm-acc-label">{isDisney ? 'Disney seeks' : 'Meta seeks'}</span><p>{p.platformSeeks}</p></div>
+            <div><span className="rsm-acc-label hub">Hub solves</span><p>{p.hubSolves}</p></div>
+          </div>
+          <div className="rsm-exp-list">
+            {p.experiences.map((exp, i) => <button key={i} className="experience-tag" onClick={() => onNavigateToExperience(exp.id)}>{exp.label}</button>)}
+          </div>
+          <div className="rsm-acc-impact">{p.businessImpact}</div>
+          <a href={p.link} target="_blank" rel="noopener noreferrer" className="link-btn rsm-read-btn">📄 Read Paper</a>
+        </div>
+      );
+    }
   };
-
-  const formatExperienceName = (experienceId) => {
-    return experienceId.split('-').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
-  };
-
 
   return (
     <div className="research-synergy-overlay">
-      <div className="research-synergy-container single-page">
+      <div className="research-synergy-container">
+
         <div className="synergy-header">
-          <h1>FantasyWorld Hub — AI & Creativity Research</h1>
+          <h1>FantasyWorld Hub — AI &amp; Creativity Research</h1>
         </div>
 
-        {/* Intro Section */}
-        <section className="intro-section">
-          <div className="intro-hero">
-            <h2>🎯 Why Research Matters for Your Experience</h2>
-            <p className="intro-tagline">
-              Every AI experience you enjoy here isn't just entertainment—it's a practical implementation 
-              of cutting-edge computational creativity research.
+        <section className="rsm-intro-cards">
+          {[
+            { icon: '🧠', title: 'Science-Backed Creativity', desc: 'Each experience validates real academic theories about how AI can be creative' },
+            { icon: '🔬', title: 'Living Research Lab',       desc: "You're participating in computational creativity research" },
+            { icon: '🚀', title: 'Cutting-Edge AI',           desc: 'The latest breakthroughs, not just random content generation' },
+          ].map(({ icon, title, desc }, i) => (
+            <div key={i} className="intro-card">
+              <div className="card-icon">{icon}</div>
+              <h3>{title}</h3>
+              <p>{desc}</p>
+            </div>
+          ))}
+        </section>
+
+        {/* ── Globe ──────────────────────────────────────────────────────── */}
+        <section className="rsm-globe-section">
+          <div className="rsm-section-header">
+            <h2>🌍 All Research on the Globe</h2>
+            <p>
+              50 data points — click any dot to explore.&nbsp;&nbsp;
+              <span className="rsm-legend-item"><span className="rsm-dot rsm-dot-white"  />🔬 Research</span>&nbsp;&nbsp;
+              <span className="rsm-legend-item"><span className="rsm-dot rsm-dot-red"    />🏢 Companies</span>&nbsp;&nbsp;
+              <span className="rsm-legend-item"><span className="rsm-dot rsm-dot-orange" />🎬 Netflix</span>&nbsp;&nbsp;
+              <span className="rsm-legend-item"><span className="rsm-dot rsm-dot-purple" />🏰 Disney</span>&nbsp;&nbsp;
+              <span className="rsm-legend-item"><span className="rsm-dot rsm-dot-blue"   />🔵 Meta</span>
             </p>
           </div>
-          
-          <div className="intro-cards">
-            <div className="intro-card">
-              <div className="card-icon">🧠</div>
-              <h3>Science-Backed Creativity</h3>
-              <p>Each experience validates real academic theories about how AI can be creative</p>
+          <div className="rsm-globe-layout">
+            <div className="rsm-globe-wrap" ref={wrapRef}>
+              {globeWidth > 0 && (
+                <Globe
+                  ref={globeRef}
+                  globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
+                  bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+                  backgroundColor="rgba(0,0,0,0)"
+                  atmosphereColor="#88bbff"
+                  atmosphereAltitude={0.18}
+                  width={globeWidth}
+                  height={globeH}
+                  // Glowing dots
+                  pointsData={ALL_POINTS}
+                  pointLat={d => d.lat}
+                  pointLng={d => d.lng}
+                  pointColor={pointColor}
+                  pointRadius={pointRadius}
+                  pointAltitude={0.01}
+                  pointLabel={d => `<div style="color:#fff;background:rgba(10,10,30,0.88);padding:7px 11px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);font-family:Inter,sans-serif;font-size:12px;pointer-events:none;max-width:180px"><strong>${d.displayName}</strong></div>`}
+                  onPointClick={handlePointClick}
+                  // Pulsing rings for glow effect
+                  ringsData={ALL_POINTS}
+                  ringLat={d => d.lat}
+                  ringLng={d => d.lng}
+                  ringColor={ringColor}
+                  ringMaxRadius={d => selectedPoint?.lat === d.lat && selectedPoint?.category === d.category ? 5 : 3}
+                  ringPropagationSpeed={d => 1.2 + (Math.abs(d.lat % 1.5))}
+                  ringRepeatPeriod={d => 1000 + (Math.abs((d.lat + d.lng) * 7) % 900)}
+                  ringAltitude={0.005}
+                />
+              )}
             </div>
-            <div className="intro-card">
-              <div className="card-icon">🔬</div>
-              <h3>Living Research Lab</h3>
-              <p>You're not just playing—you're participating in computational creativity research</p>
-            </div>
-            <div className="intro-card">
-              <div className="card-icon">🚀</div>
-              <h3>Cutting-Edge AI</h3>
-              <p>Experience the latest breakthroughs in AI creativity, not just random content generation</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Benefits Section */}
-        <section className="benefits-section">
-          <div className="benefits-hero">
-            <h2>💡 What This Means for You</h2>
-            <p className="benefits-tagline">Here's why research validation makes your experience better:</p>
-          </div>
-
-          <div className="benefits-grid">
-            <div className="benefit-item">
-              <div className="benefit-number">01</div>
-              <h3>Higher Quality Content</h3>
-              <p>Research-backed experiences are more engaging, coherent, and meaningful than random AI outputs</p>
-            </div>
-            <div className="benefit-item">
-              <div className="benefit-number">02</div>
-              <h3>Continuous Innovation</h3>
-              <p>We implement the latest academic breakthroughs, so you get cutting-edge AI creativity</p>
-            </div>
-            <div className="benefit-item">
-              <div className="benefit-number">03</div>
-              <h3>Trustworthy AI</h3>
-              <p>Every feature has scientific backing—no black box magic, just proven creativity frameworks</p>
-            </div>
-            <div className="benefit-item">
-              <div className="benefit-number">04</div>
-              <h3>Educational Value</h3>
-              <p>Learn about AI creativity while having fun</p>
+            <div className="rsm-detail-panel">
+              {renderDetail()}
             </div>
           </div>
         </section>
-
-        {/* Overall Research Container */}
-        <div className="overall-research-container" style={{maxWidth: '1600px', margin: '0 auto', padding: '40px 20px', overflowX: 'auto'}}>
-          
-          {/* Research Table Section */}
-          <section className="table-section">
-            <div className="table-header">
-              <h2>🔬 Complete Research Validation</h2>
-              <p>Click any experience tag to try it, or follow paper links to read the original research.</p>
-            </div>
-
-            <div className="table-view">
-              <div className="research-table-container" style={{overflowX: 'auto', minWidth: '100%'}}>
-                <table className="research-table" style={{minWidth: '1200px', width: '100%'}}>
-                  <thead>
-                    <tr>
-                      <th>Research Paper</th>
-                      <th>What It's About</th>
-                      <th>Author(s)</th>
-                      <th>Institution / Location</th>
-                      <th>Matching Experiences & Why</th>
-                      <th>Link</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {researchData.map((paper, index) => (
-                      <tr key={index}>
-                        <td className="paper-title">
-                          <strong>{paper.title}</strong>
-                        </td>
-                        <td className="paper-description">
-                          {paper.description}
-                        </td>
-                        <td className="paper-authors">
-                          {paper.authors}
-                        </td>
-                        <td className="paper-institution">
-                          {paper.institution}
-                        </td>
-                        <td className="matching-experiences">
-                          <div className="experience-list">
-                            {paper.experiences.map((exp, expIndex) => (
-                              <button
-                                key={expIndex}
-                                className="experience-tag"
-                                onClick={() => handleExperienceClick(exp)}
-                                title={`Go to ${formatExperienceName(exp)} experience`}
-                              >
-                                {formatExperienceName(exp)}
-                              </button>
-                            ))}
-                          </div>
-                          <div className="experience-reason">
-                            {paper.experienceReason}
-                          </div>
-                        </td>
-                        <td className="paper-link">
-                          <a 
-                            href={paper.link} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="link-btn"
-                          >
-                            📄 Read Paper
-                          </a>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </section>
-
-          {/* Company Synergy Section */}
-          <section className="company-section">
-            <div className="table-header">
-              <h2>🏢 Industry Strategic Synergies</h2>
-              <p>Companies that hire creative talent and how FantasyWorld Hub aligns with their strategic needs.</p>
-            </div>
-
-            <div className="table-view">
-              <div className="research-table-container" style={{overflowX: 'auto', minWidth: '100%'}}>
-                <table className="research-table" style={{minWidth: '1000px', width: '100%'}}>
-                  <thead>
-                    <tr>
-                      <th>Company</th>
-                      <th>HQ Location</th>
-                      <th>Why They Hire Creative Talent</th>
-                      <th>Strategic Synergy with FantasyWorld Hub</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {companyData.map((company, index) => (
-                      <tr key={index}>
-                        <td className="paper-title">
-                          <strong>{company.company}</strong>
-                        </td>
-                        <td className="paper-authors">
-                          {company.location}
-                        </td>
-                        <td className="paper-description">
-                          {company.hiringReason}
-                        </td>
-                        <td className="matching-experiences">
-                          <div className="experience-list">
-                            {company.experiences.map((exp, expIndex) => (
-                              <button
-                                key={expIndex}
-                                className="experience-tag"
-                                onClick={() => handleExperienceClick(exp)}
-                                title={`Go to ${formatExperienceName(exp)} experience`}
-                              >
-                                {formatExperienceName(exp)}
-                              </button>
-                            ))}
-                          </div>
-                          <div className="experience-reason">
-                            {company.strategicSynergy}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-
-          {/* Netflix Research Validation Framework */}
-          <section className="table-section">
-            <div className="table-header">
-              <h2>🎬 Netflix Research Validation Framework</h2>
-              <p>
-                Let's take Netflix as an example. I've built 25+ creative experiences that solve Netflix's biggest challenges: 
-                instant user personalization, cross-cultural content discovery, and predictive content validation. While Netflix 
-                spends $15B annually guessing what audiences want, my hub demonstrates working solutions that predict viewer 
-                preferences, generate personalized content, and validate creative concepts before expensive production. Each 
-                experience represents a capability Netflix could integrate tomorrow to increase engagement, reduce churn, and 
-                outpace Disney+ and Amazon Prime.
-              </p>
-            </div>
-
-            <div className="table-view">
-              <div className="research-table-container" style={{overflowX: 'auto', minWidth: '100%'}}>
-                <table className="research-table" style={{minWidth: '1600px', width: '100%'}}>
-                  <thead>
-                    <tr>
-                      <th>Research Paper</th>
-                      <th>What It's About</th>
-                      <th>Author(s)</th>
-                      <th>Netflix Data Sources</th>
-                      <th>What is Netflix looking for with this research and data? What is FantasyWorld Hub solving?</th>
-                      <th>FantasyWorld Hub Experience</th>
-                      <th>Netflix Business Impact</th>
-                      <th>Link</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="paper-title"><strong>The Netflix Recommender System: Algorithms, Business Value, and Innovation</strong></td>
-                      <td className="paper-description">Overview of how Netflix designs and deploys recommendation algorithms and experimentation frameworks</td>
-                      <td className="paper-authors">Carlos A. Gomez-Uribe, Neil Hunt – Netflix</td>
-                      <td className="paper-description">260M+ user viewing histories, click-through rates, completion percentages, A/B testing results</td>
-                      <td className="paper-description">Netflix seeks: Break users out of recommendation bubbles with novel content discovery that surprises and delights.<br/><br/>FantasyWorld Hub solves: Cross-domain creativity engine that discovers unexpected content connections.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('portal-doors')}>🚪 Portal Doors</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('plot-twist')}>🎭 Plot Twist</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('dragons-over-cities')}>🏛️ Dragons Over Cities</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('ai-using-ai')}>🔮 AI Using AI</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Solves recommendation fatigue by finding novel content combinations, increasing engagement by 40%</td>
-                      <td className="paper-link"><a href="https://dl.acm.org/doi/10.1145/2843948" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>Matrix Factorization Techniques for Recommender Systems</strong></td>
-                      <td className="paper-description">Introduces matrix factorization methods widely used in recommendation engines</td>
-                      <td className="paper-authors">Yehuda Koren, Robert Bell, Chris Volinsky – AT&T Labs Research</td>
-                      <td className="paper-description">User-item interaction matrices, implicit feedback signals, rating prediction datasets</td>
-                      <td className="paper-description">Netflix seeks: Instantly understand new users without lengthy onboarding or rating collection periods.<br/><br/>FantasyWorld Hub solves: Instant user profiling from visual input, eliminating cold start problems.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('character-portrait-transformer')}>🎨 Character Portrait Transformer</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('space-cafe-observer')}>🌟 Space Cafe Observer</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('useless-powers')}>⚡ Useless Powers</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('mind-bending-hindu')}>🏛️ Mind-Bending Hindu</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Reduces new user churn by 60% through immediate personalization from profile photos</td>
-                      <td className="paper-link"><a href="https://ieeexplore.ieee.org/document/5197422" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>Training Deep AutoEncoders for Collaborative Filtering</strong></td>
-                      <td className="paper-description">Uses deep neural networks to improve collaborative filtering accuracy</td>
-                      <td className="paper-authors">Suvash Sedhain et al. – University of Minnesota</td>
-                      <td className="paper-description">Deep feature representations, latent user preferences, content embeddings</td>
-                      <td className="paper-description">Netflix seeks: Understand complex user preferences that traditional algorithms miss through deep pattern recognition.<br/><br/>FantasyWorld Hub solves: Deep learning approaches to content understanding and user preference modeling.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('graveyard-chronicles')}>⚰️ Graveyard Chronicles</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('human-hive-mind')}>👥 Human Hive Mind</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('bangalore-traffic')}>🚗 Bangalore Traffic</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('futuristic-glasses')}>🚀 Futuristic Glasses</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Improves recommendation accuracy by 35% through advanced neural collaborative filtering</td>
-                      <td className="paper-link"><a href="https://arxiv.org/abs/1708.01715" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>Deep Neural Networks for YouTube Recommendations</strong></td>
-                      <td className="paper-description">Large-scale recommendation system using deep learning for video discovery</td>
-                      <td className="paper-authors">Paul Covington, Jay Adams, Emre Sargin – Google / YouTube</td>
-                      <td className="paper-description">Billions of video interactions, watch time data, user engagement signals</td>
-                      <td className="paper-description">Netflix seeks: Scale personalized content generation to hundreds of millions of users without performance degradation.<br/><br/>FantasyWorld Hub solves: Large-scale personalized content generation and discovery systems.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('epic-houses')}>🏠 Epic Houses</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('absurd-speech-generator')}>🎭 Absurd Speech</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('create')}>🎨 Create Experience</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('hampi-bazaar')}>🏛️ Hampi Bazaar</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Scales personalization to 260M users while maintaining sub-second response times</td>
-                      <td className="paper-link"><a href="https://dl.acm.org/doi/10.1145/2959100.2959190" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>Session-Based Recommendations with Recurrent Neural Networks</strong></td>
-                      <td className="paper-description">Predicts the next item users will watch based on sequential behavior</td>
-                      <td className="paper-authors">Balázs Hidasi et al. – Gravity R&D</td>
-                      <td className="paper-description">Sequential viewing patterns, session duration data, binge-watching behavior analytics</td>
-                      <td className="paper-description">Netflix seeks: Predict what users want next in real-time to maximize binge-watching and session duration.<br/><br/>FantasyWorld Hub solves: Sequential engagement prediction and therapeutic content sequencing.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('yogic-mind')}>🧘 Yogic Mind</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('chanting-experiments')}>🎵 Chanting Experiments</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('retro-futurism')}>🚀 Retro Futurism</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('anachronism')}>⏰ Anachronism</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Increases session length by 75% through predictive content sequencing</td>
-                      <td className="paper-link"><a href="https://arxiv.org/abs/1511.06939" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>BPR: Bayesian Personalized Ranking from Implicit Feedback</strong></td>
-                      <td className="paper-description">Ranking-based collaborative filtering using implicit feedback like clicks and views</td>
-                      <td className="paper-authors">Steffen Rendle – University of Konstanz</td>
-                      <td className="paper-description">Implicit user interactions, click patterns, viewing completion rates</td>
-                      <td className="paper-description">Netflix seeks: Rank content based on subtle user behaviors rather than explicit ratings or thumbs up/down.<br/><br/>FantasyWorld Hub solves: Implicit engagement tracking and preference ranking systems.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('impossible-coexistence')}>🌍 Impossible Coexistence</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('alternate-reality')}>🔄 Alternate Reality</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('orbital-megastructures')}>🛰️ Orbital Megastructures</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('fantasy-careers')}>💼 Fantasy Careers</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Improves content ranking accuracy by 50% using implicit behavioral signals</td>
-                      <td className="paper-link"><a href="https://arxiv.org/abs/1205.2618" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>Wide & Deep Learning for Recommender Systems</strong></td>
-                      <td className="paper-description">Combines memorization and generalization in recommendation systems</td>
-                      <td className="paper-authors">Heng-Tze Cheng et al. – Google</td>
-                      <td className="paper-description">Content metadata, user demographic data, cross-platform consumption patterns</td>
-                      <td className="paper-description">Netflix seeks: Balance popular content with personalized discovery to avoid filter bubbles while maximizing engagement.<br/><br/>FantasyWorld Hub solves: Hybrid recommendation systems combining multiple data sources.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('future-memories')}>🔮 Future Memories</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('folding-cities')}>🏗️ Folding Cities</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('dream-architecture')}>🏛️ Dream Architecture</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('impossible-geometries')}>📐 Impossible Geometries</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Accelerates content pipeline by 3x while maintaining quality, saving $2B in production costs</td>
-                      <td className="paper-link"><a href="https://arxiv.org/abs/1606.07792" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>Neural Collaborative Filtering</strong></td>
-                      <td className="paper-description">Deep learning approach to collaborative filtering recommendations</td>
-                      <td className="paper-authors">Xiangnan He et al. – National University of Singapore</td>
-                      <td className="paper-description">User-item interaction networks, neural embedding representations</td>
-                      <td className="paper-description">Netflix seeks: Capture non-linear user-content relationships that traditional collaborative filtering algorithms miss.<br/><br/>FantasyWorld Hub solves: Neural network-based collaborative filtering for complex user preferences.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('urban-origami')}>📜 Urban Origami</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('ghibli-historical')}>🎬 Ghibli Historical</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('bollywood-parody')}>🎭 Bollywood Parody</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('underwater-civilizations')}>🌊 Underwater Civilizations</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Enhances recommendation precision by 45% through deep collaborative filtering</td>
-                      <td className="paper-link"><a href="https://arxiv.org/abs/1708.05031" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>Factorization Machines</strong></td>
-                      <td className="paper-description">Model for predicting interactions between users and items</td>
-                      <td className="paper-authors">Steffen Rendle – University of Konstanz</td>
-                      <td className="paper-description">Sparse feature interactions, contextual recommendation data</td>
-                      <td className="paper-description">Netflix seeks: Understand how context (time, device, location) affects content preferences for global audiences.<br/><br/>FantasyWorld Hub solves: Cross-cultural content interaction modeling for global audiences.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('ancient-cities')}>🏛️ Ancient Cities</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('epic-dharmic-legends')}>📿 Epic Dharmic Legends</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('dnd-adventure')}>🎲 DnD Adventure</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('robotic-fusion')}>🤖 Robotic Fusion</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Increases cross-cultural content consumption by 60% through contextual recommendations</td>
-                      <td className="paper-link"><a href="https://www.csie.ntu.edu.tw/~b97053/paper/Rendle2010FM.pdf" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>Learning to Rank for Information Retrieval</strong></td>
-                      <td className="paper-description">Ranking algorithms used in search and recommendation systems</td>
-                      <td className="paper-authors">Tie-Yan Liu – Microsoft Research Asia</td>
-                      <td className="paper-description">Search query data, content relevance scores, user click-through patterns</td>
-                      <td className="paper-description">Netflix seeks: Optimize search results and content discovery to surface the most relevant content first.<br/><br/>FantasyWorld Hub solves: Content ranking optimization for engagement and discovery.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('space-wars')}>⚔️ Space Wars</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('scifi-murder-mystery')}>🔍 SciFi Murder Mystery</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('runaway-destiny')}>🏃 Runaway Destiny</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('ridiculous-ventures')}>🎪 Ridiculous Ventures</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Improves content discovery by 55% through advanced ranking algorithms</td>
-                      <td className="paper-link"><a href="https://www.microsoft.com/en-us/research/publication/learning-to-rank-for-information-retrieval/" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>Multimodal Deep Learning</strong></td>
-                      <td className="paper-description">Combines multiple data types (text, audio, visual) for machine learning tasks</td>
-                      <td className="paper-authors">Ngiam et al. – Stanford University</td>
-                      <td className="paper-description">Video frames, audio tracks, subtitle text, metadata combinations</td>
-                      <td className="paper-description">Netflix seeks: Understand content across all formats (video, audio, text) to create richer recommendation profiles.<br/><br/>FantasyWorld Hub solves: Multimodal storytelling combining text, image, and narrative elements.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('fantasy-trap')}>🪤 Fantasy Trap</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('modern-mahabharata')}>📖 Modern Mahabharata</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('fictional-empire')}>👑 Fictional Empire</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('aliens-ancient-indians')}>👽 Aliens Ancient Indians</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Enhances content understanding by 65% through multimodal AI integration</td>
-                      <td className="paper-link"><a href="https://dl.acm.org/doi/10.1145/217284.217307" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>The BellKor Solution to the Netflix Prize</strong></td>
-                      <td className="paper-description">Winning approach to the Netflix Prize competition</td>
-                      <td className="paper-authors">Yehuda Koren – AT&T Labs Research</td>
-                      <td className="paper-description">Historical Netflix rating data, ensemble model predictions</td>
-                      <td className="paper-description">Netflix seeks: Predict content success with near-perfect accuracy before investing millions in production.<br/><br/>FantasyWorld Hub solves: Ensemble collaborative intelligence demonstrating collective prediction accuracy.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('paracosm-worlds')}>🌍 Paracosm Worlds</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('ecumenopolis-explorer')}>🏙️ Ecumenopolis Explorer</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('comedian-chat-simulator')}>😂 Comedian Chat</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('interview-generator')}>🎤 Interview Generator</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Achieves 95% prediction accuracy through ensemble methods, reducing content investment risk</td>
-                      <td className="paper-link"><a href="https://www.netflixprize.com/assets/GrandPrize2009_BPC_BellKor.pdf" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>Collaborative Filtering for Implicit Feedback Datasets</strong></td>
-                      <td className="paper-description">Recommender models using implicit signals instead of ratings</td>
-                      <td className="paper-authors">Yifan Hu, Yehuda Koren, Chris Volinsky – Yahoo Research</td>
-                      <td className="paper-description">Implicit user behavior, viewing completion data, engagement signals</td>
-                      <td className="paper-description">Netflix seeks: Learn from user actions (pause, rewind, skip) rather than relying on explicit ratings.<br/><br/>FantasyWorld Hub solves: Implicit behavior modeling through interactive content engagement.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('hydrokinetic-abilities')}>💧 Hydrokinetic Abilities</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('hydrokinetic-abilities-video')}>🎬 Hydrokinetic Video</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('futuristic-weapons')}>⚔️ Futuristic Weapons</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('portal-dimensions')}>🌀 Portal Dimensions</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Improves user retention by 70% through implicit feedback optimization</td>
-                      <td className="paper-link"><a href="https://ieeexplore.ieee.org/document/4781121" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>Recommender Systems Handbook (Chapter: Evaluation Metrics)</strong></td>
-                      <td className="paper-description">Evaluation frameworks for recommender systems performance</td>
-                      <td className="paper-authors">Francesco Ricci et al. – Free University of Bolzano</td>
-                      <td className="paper-description">Performance metrics, evaluation datasets, recommendation quality measures</td>
-                      <td className="paper-description">Netflix seeks: Measure and optimize recommendation system performance to maximize user satisfaction and engagement.<br/><br/>FantasyWorld Hub solves: Content evaluation systems for measuring user engagement and satisfaction.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('indian-teachers')}>👩‍🏫 Indian Teachers</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('fantasy-reality')}>✨ Fantasy Reality</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('discover-the-vision')}>👁️ Discover Vision</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('try-latest-experience')}>🎯 Try Latest</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Optimizes recommendation quality metrics, improving user satisfaction scores by 80%</td>
-                      <td className="paper-link"><a href="https://link.springer.com/referencework/10.1007/978-0-387-85820-3" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                    <tr>
-                      <td className="paper-title"><strong>Deep Learning based Recommender System: A Survey</strong></td>
-                      <td className="paper-description">Overview of modern deep learning recommender approaches</td>
-                      <td className="paper-authors">Shuai Zhang et al. – University College London</td>
-                      <td className="paper-description">Deep learning architectures, neural network performance data</td>
-                      <td className="paper-description">Netflix seeks: Integrate all cutting-edge AI techniques into one unified recommendation platform.<br/><br/>FantasyWorld Hub solves: Comprehensive deep learning recommendation system demonstrating state-of-the-art capabilities.</td>
-                      <td className="matching-experiences">
-                        <div className="experience-list">
-                          <button className="experience-tag" onClick={() => handleExperienceClick('create')}>🎨 Create Experience</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('portal-doors')}>🚪 Portal Doors</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('character-portrait-transformer')}>🎨 Character Transformer</button>
-                          <button className="experience-tag" onClick={() => handleExperienceClick('space-cafe-observer')}>🌟 Space Cafe</button>
-                        </div>
-                      </td>
-                      <td className="paper-description">Integrates all modern recommendation techniques, creating Netflix's next-generation content platform</td>
-                      <td className="paper-link"><a href="https://arxiv.org/abs/1707.07435" target="_blank" rel="noopener noreferrer" className="link-btn">📄 Read Paper</a></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="netflix-conclusion">
-              <p>
-                Netflix's competitive advantage comes from turning creative experiments into scalable algorithms. My hub is a 
-                working laboratory of 25+ validated innovations that solve their core challenges: Portal Doors demonstrates 
-                cross-domain creativity that could revolutionize content discovery, Character Portrait Transformer shows instant 
-                personalization that eliminates cold-start problems, and Create Your Own Experience proves AI-human collaboration 
-                that could accelerate their $15B content pipeline. The research validates what I've already built—Netflix just 
-                needs to scale it to 260 million subscribers.
-              </p>
-            </div>
-          </section>
-          
-        </div>
-
 
         <footer className="about-data-footer">
           <h3>About Our Data</h3>
-          <p>
-            This research validation framework demonstrates how FantasyWorld Hub's 70+ AI experiences align with foundational 
-            computational creativity research spanning 1998-2024. Each experience serves as a practical 
-            implementation of established creativity theories, transforming our platform into a living 
-            research laboratory that validates academic frameworks through interactive entertainment.
-          </p>
-          <p>
-            The Netflix Research Validation Framework specifically showcases data collected across multiple dimensions: 
-            user engagement patterns from 70+ AI experiences, real-time API performance metrics, A/B testing results 
-            across multiple content variants, cross-modal preference analytics, and session-based retention optimization. 
-            This comprehensive dataset validates how academic research translates into measurable business impact, 
-            demonstrating 40-75% improvements in engagement, retention, and content discovery metrics.
-          </p>
+          <p>42 data points across 3 categories: 12 computational creativity research papers (1998–2024), 15 global industry companies, and 15 Netflix-specific recommendation research papers. Each pin is geographically placed at its institution or headquarters.</p>
         </footer>
 
         <div className="return-to-hub-container">
-          <button className="return-to-hub-btn" onClick={onClose}>
-            ← Return to Hub
-          </button>
+          <button className="return-to-hub-btn" onClick={onClose}>← Return to Hub</button>
         </div>
+
       </div>
     </div>
   );

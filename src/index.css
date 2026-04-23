@@ -97,15 +97,10 @@ body {
 
 .experience-hub-heading {
   font-size: 3rem;
-  background: linear-gradient(45deg, #ffcc80, #ffd700, #ff6b6b, #667eea, #feca57);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #ffffff;
   text-align: center;
   margin-bottom: 50px;
   font-weight: 700;
-  text-shadow: 0 0 30px rgba(255, 204, 128, 0.6);
-  animation: hubHeadingGlow 3s ease-in-out infinite alternate;
   letter-spacing: 2px;
   position: relative;
 }
@@ -117,21 +112,9 @@ body {
   left: 50%;
   transform: translateX(-50%);
   width: 200px;
-  height: 3px;
-  background: linear-gradient(45deg, #ffcc80, #ffd700, #ff6b6b);
+  height: 2px;
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 2px;
-  box-shadow: 0 0 20px rgba(255, 204, 128, 0.5);
-}
-
-@keyframes hubHeadingGlow {
-  0% { 
-    text-shadow: 0 0 30px rgba(255, 204, 128, 0.6), 0 0 60px rgba(255, 215, 0, 0.3);
-    transform: scale(1);
-  }
-  100% { 
-    text-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 0 80px rgba(255, 107, 107, 0.4);
-    transform: scale(1.02);
-  }
 }
 
 .about-button, .vision-button {
@@ -255,14 +238,10 @@ body {
 
 .hub-title {
   font-size: 4rem;
-  font-weight: bold;
+  font-weight: 700;
   text-align: center;
   margin-bottom: 20px;
-  background: linear-gradient(45deg, #fff, #ffc107, #ff9800);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 0 30px rgba(255, 193, 7, 0.5);
+  color: #ffffff;
   letter-spacing: 3px;
 }
 
@@ -531,69 +510,21 @@ body {
   cursor: pointer;
 }
 
-/* Upload card styling - light red background */
-.experience-card.upload-card {
-  background: linear-gradient(135deg, 
-    rgba(42, 15, 15, 0.95) 0%,
-    rgba(59, 30, 30, 0.9) 50%,
-    rgba(85, 51, 51, 0.85) 100%);
-  box-shadow: 
-    0 15px 40px rgba(0, 0, 0, 0.4),
-    0 5px 15px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 0 1px rgba(255, 128, 128, 0.3);
-}
-
-/* Interactive card styling - light green background */
-.experience-card.interactive-card {
-  background: linear-gradient(135deg, 
-    rgba(15, 42, 15, 0.95) 0%,
-    rgba(30, 59, 30, 0.9) 50%,
-    rgba(51, 85, 51, 0.85) 100%);
-  box-shadow: 
-    0 15px 40px rgba(0, 0, 0, 0.4),
-    0 5px 15px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 0 1px rgba(128, 255, 128, 0.3);
-}
-
-/* Text + Image card styling - light yellow background */
-.experience-card.text-image-card {
-  background: linear-gradient(135deg, 
-    rgba(42, 42, 15, 0.95) 0%,
-    rgba(59, 59, 30, 0.9) 50%,
-    rgba(85, 85, 51, 0.85) 100%);
-  box-shadow: 
-    0 15px 40px rgba(0, 0, 0, 0.4),
-    0 5px 15px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 0 1px rgba(255, 255, 128, 0.3);
-}
-
-/* Video card styling - light orange background */
-.experience-card.video-card {
-  background: linear-gradient(135deg, 
-    rgba(42, 25, 15, 0.95) 0%,
-    rgba(59, 40, 30, 0.9) 50%,
-    rgba(85, 65, 51, 0.85) 100%);
-  box-shadow: 
-    0 15px 40px rgba(0, 0, 0, 0.4),
-    0 5px 15px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 0 1px rgba(255, 165, 128, 0.3);
-}
-
-/* Text card styling - light purple background */
+/* All card type variants use the same base style */
+.experience-card.upload-card,
+.experience-card.interactive-card,
+.experience-card.text-image-card,
+.experience-card.video-card,
 .experience-card.text-card {
-  background: linear-gradient(135deg, 
-    rgba(35, 15, 42, 0.95) 0%,
-    rgba(50, 30, 59, 0.9) 50%,
-    rgba(70, 51, 85, 0.85) 100%);
-  box-shadow: 
+  background: linear-gradient(135deg,
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(30, 41, 59, 0.9) 50%,
+    rgba(51, 65, 85, 0.85) 100%);
+  box-shadow:
     0 15px 40px rgba(0, 0, 0, 0.4),
     0 5px 15px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 0 1px rgba(200, 128, 255, 0.3);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 1px rgba(255, 255, 255, 0.07);
 }
 
 .experience-card::before {
@@ -603,10 +534,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(255, 204, 128, 0.1) 0%,
-    rgba(255, 215, 0, 0.05) 50%,
-    rgba(255, 107, 107, 0.1) 100%);
+  background: rgba(255, 255, 255, 0.03);
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -671,14 +599,12 @@ body {
 }
 
 .experience-card.available:hover {
-  transform: translateY(-12px) scale(1.03);
-  box-shadow: 
-    0 30px 60px rgba(0, 0, 0, 0.5),
-    0 15px 30px rgba(0, 0, 0, 0.3),
-    0 0 40px rgba(255, 204, 128, 0.4),
-    0 0 80px rgba(255, 215, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 0 0 2px rgba(255, 204, 128, 0.5);
+  transform: translateY(-6px);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.5),
+    0 8px 20px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
 .experience-card.available:hover::before {
@@ -722,65 +648,23 @@ body {
 }
 
 .enter-btn {
-  background: linear-gradient(135deg, #ffcc80 0%, #ffd700 50%, #ff6b6b 100%);
-  background-size: 200% 200%;
-  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 12px 28px;
-  color: white;
+  color: #ffffff;
   border-radius: 25px;
   cursor: pointer;
-  font-size: 1rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 
-    0 8px 25px rgba(255, 204, 128, 0.4),
-    0 0 30px rgba(255, 215, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  animation: buttonPulse 4s ease-in-out infinite alternate;
-  position: relative;
-  overflow: hidden;
-}
-
-.enter-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  transition: left 0.6s ease;
-}
-
-.enter-btn:hover::before {
-  left: 100%;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.25s ease;
 }
 
 .enter-btn:hover {
-  background-position: 100% 100%;
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 
-    0 15px 40px rgba(255, 204, 128, 0.6),
-    0 0 50px rgba(255, 215, 0, 0.5),
-    0 0 80px rgba(255, 107, 107, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  animation-duration: 1.5s;
-}
-
-@keyframes buttonPulse {
-  0% { 
-    box-shadow: 
-      0 8px 25px rgba(255, 204, 128, 0.4),
-      0 0 30px rgba(255, 215, 0, 0.3);
-  }
-  100% { 
-    box-shadow: 
-      0 12px 35px rgba(255, 204, 128, 0.6),
-      0 0 50px rgba(255, 215, 0, 0.5);
-  }
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .experience-button.disabled {
@@ -897,14 +781,16 @@ body {
 .step-number {
   width: 35px;
   height: 35px;
-  background: linear-gradient(45deg, #667eea, #764ba2);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  font-size: 1.1rem;
+  font-weight: 600;
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .step-text {
@@ -1144,36 +1030,12 @@ body {
 .card-header h3 {
   margin: 0 0 40px 0;
   font-size: 1.2rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.2;
   color: #ffffff;
-  text-shadow: 
-    0 0 20px rgba(255, 204, 128, 0.8),
-    0 0 40px rgba(255, 215, 0, 0.6),
-    0 0 60px rgba(255, 107, 107, 0.4);
-  background: linear-gradient(135deg, #ffcc80, #ffd700, #ff6b6b);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: titleGlow 4s ease-in-out infinite alternate;
   flex: 1;
   text-align: left;
-  transition: all 0.3s ease;
   max-width: 70%;
-}
-
-@keyframes titleGlow {
-  0% { 
-    text-shadow: 
-      0 0 20px rgba(255, 204, 128, 0.8),
-      0 0 40px rgba(255, 215, 0, 0.6);
-  }
-  100% { 
-    text-shadow: 
-      0 0 30px rgba(255, 204, 128, 1),
-      0 0 60px rgba(255, 215, 0, 0.8),
-      0 0 80px rgba(255, 107, 107, 0.6);
-  }
 }
 
 .card-tags-horizontal {
@@ -1201,37 +1063,24 @@ body {
 }
 
 .experience-type {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.2));
-  color: #a78bfa;
-  padding: 6px 12px;
-  border-radius: 15px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 1px solid rgba(102, 126, 234, 0.4);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.55);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .creation-timestamp {
-  background: linear-gradient(135deg, rgba(240, 147, 251, 0.3), rgba(207, 159, 255, 0.2));
-  color: #e879f9;
-  padding: 6px 12px;
-  border-radius: 15px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 1px solid rgba(240, 147, 251, 0.4);
-  box-shadow: 0 2px 8px rgba(240, 147, 251, 0.2);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  margin-top: 6px;
-  transition: all 0.3s ease;
-}
-
-.experience-card:hover .inspiration-tag,
-.experience-card:hover .experience-type,
-.experience-card:hover .creation-timestamp {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 204, 128, 0.4);
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.4);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 0;
 }
 
 .experience-emoji {
