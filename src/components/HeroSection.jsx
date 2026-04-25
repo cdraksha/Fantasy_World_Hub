@@ -181,67 +181,160 @@ function drawRealKatana(ctx, tipX, tipY, angle, BL, alpha, glow, trail) {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Portal Jump
+//  Portal Jump — 5 worlds + cut flashes + white burst
 // ─────────────────────────────────────────────────────────────
 function runPortalJump(canvas, W, H, onComplete) {
   if (!canvas) { if (onComplete) onComplete(); return; }
   canvas.width = W; canvas.height = H;
   canvas.style.display = 'block';
   const ctx = canvas.getContext('2d');
-  const TOTAL = 950;
+
+  const off = document.createElement('canvas');
+  off.width = W; off.height = H;
+  const oc = off.getContext('2d');
+
+  const SRCS = ['/worlds/L.jpg', '/worlds/S.jpg', '/worlds/C.jpg', '/worlds/J.jpg', '/worlds/K.jpg'];
+
+  const SEG = [
+    { k: 'w', id: 0, s: 0,    e: 900  },
+    { k: 'f',         s: 900,  e: 950  },
+    { k: 'w', id: 1, s: 950,  e: 1850 },
+    { k: 'f',         s: 1850, e: 1900 },
+    { k: 'w', id: 2, s: 1900, e: 2800 },
+    { k: 'f',         s: 2800, e: 2850 },
+    { k: 'w', id: 3, s: 2850, e: 3750 },
+    { k: 'f',         s: 3750, e: 3800 },
+    { k: 'w', id: 4, s: 3800, e: 4700 },
+    { k: 'b',         s: 4700, e: 5000 },
+  ];
+  const END = 5000;
   let start = null;
-  const cx = W / 2, cy = H / 2, MIN = Math.min(W, H);
+  const cx = W / 2, cy = H / 2;
+  const maxR = Math.hypot(cx, cy);
+
+  function drawCover(img, zoom) {
+    if (!img.naturalWidth) return;
+    const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight) * (zoom || 1);
+    const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
+    oc.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+  }
+
+  // Deterministic per-frame shake so each frame is consistent
+  function srand(seed) { const x = Math.sin(seed + 1) * 10000; return x - Math.floor(x); }
+
+  // Layered arc glow ring — visible against white background
+  function drawRing(r, ringW, alpha) {
+    for (let i = 5; i >= 1; i--) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255,230,130,${(alpha * 0.18) / i})`;
+      ctx.lineWidth = ringW * i * 2;
+      ctx.stroke();
+    }
+    // Bright core edge
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255,248,200,${alpha * 0.95})`;
+    ctx.lineWidth = Math.max(2, ringW * 0.2);
+    ctx.stroke();
+  }
+
+  let loaded = 0;
+  const imgs = SRCS.map(src => {
+    const img = new Image();
+    img.onload = img.onerror = () => { loaded++; if (loaded === SRCS.length) requestAnimationFrame(frame); };
+    img.src = src;
+    return img;
+  });
 
   function frame(ts) {
     if (!start) start = ts;
-    const p = Math.min(1, (ts - start) / TOTAL);
-    ctx.clearRect(0, 0, W, H);
+    const elapsed = ts - start;
 
-    if (p < 0.62) {
-      const pp = p / 0.62;
-      const scale = 1 + pp * pp * 9;
-      const rot = pp * Math.PI * 1.8;
-      ctx.save();
-      ctx.translate(cx, cy); ctx.scale(scale, scale); ctx.translate(-cx, -cy);
-      ctx.fillStyle = '#05001a'; ctx.fillRect(0, 0, W, H);
-      ctx.translate(cx, cy); ctx.rotate(rot);
-      for (let r = 6; r >= 1; r--) {
-        const radius = (r / 6) * MIN * 0.38;
-        const hue = 255 + r * 18 + pp * 120;
-        const g = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-        g.addColorStop(0, 'rgba(255,255,255,0)');
-        g.addColorStop(0.65, `hsla(${hue},100%,68%,${0.18 + r * 0.05})`);
-        g.addColorStop(1, `hsla(${hue + 25},100%,80%,${0.55 + pp * 0.3})`);
-        ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2);
-        ctx.fillStyle = g; ctx.fill();
-      }
-      for (let i = 0; i < 8; i++) {
-        const a = (i / 8) * Math.PI * 2;
-        ctx.beginPath(); ctx.moveTo(0, 0);
-        ctx.lineTo(Math.cos(a) * MIN * 0.36, Math.sin(a) * MIN * 0.36);
-        ctx.strokeStyle = `hsla(${270 + i * 22},100%,82%,${0.14 + pp * 0.22})`;
-        ctx.lineWidth = 1.5 + pp * 4; ctx.stroke();
-      }
-      ctx.restore();
-      const eg = ctx.createRadialGradient(cx, cy, 0, cx, cy, MIN * (0.06 + pp * 0.12));
-      eg.addColorStop(0, `rgba(255,255,255,${0.7 + pp * 0.3})`);
-      eg.addColorStop(0.5, `rgba(200,150,255,${pp * 0.4})`);
-      eg.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = eg; ctx.fillRect(0, 0, W, H);
-    } else {
-      const wp = (p - 0.62) / 0.38;
-      ctx.fillStyle = `rgba(255,255,255,${1 - Math.pow(1 - wp, 2)})`;
-      ctx.fillRect(0, 0, W, H);
-    }
-
-    if (p >= 1) {
+    if (elapsed >= END) {
+      canvas.style.filter = '';
       canvas.style.display = 'none';
       if (onComplete) onComplete();
       return;
     }
+
+    ctx.clearRect(0, 0, W, H);
+    const seg = SEG.find(s => elapsed >= s.s && elapsed < s.e);
+    if (!seg) { requestAnimationFrame(frame); return; }
+    const p = (elapsed - seg.s) / (seg.e - seg.s);
+
+    if (seg.k === 'f') {
+      // Golden shockwave ring punches across white screen
+      canvas.style.filter = '';
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, W, H);
+      const r = p * (maxR + 80);
+      const ringW = 60 * (1 - p * 0.55);
+      // Alpha peaks at p=0.35, fades out
+      const ringAlpha = p < 0.35 ? p / 0.35 : 1 - (p - 0.35) / 0.65;
+      drawRing(r, ringW, ringAlpha);
+
+    } else if (seg.k === 'b') {
+      // Thanos final burst — ring sweeps out then holds white
+      canvas.style.filter = '';
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, W, H);
+      if (p < 0.5) {
+        const bp = p / 0.5;
+        const r = bp * (maxR + 80);
+        const ringW = 65 * (1 - bp * 0.5);
+        const ringAlpha = bp < 0.4 ? bp / 0.4 : 1 - (bp - 0.4) / 0.6;
+        drawRing(r, ringW, ringAlpha * 1.1);
+      }
+      // After p=0.5 just holds white — cards appear through it
+
+    } else {
+      // ── World segment ──────────────────────────────────────────
+      const img = imgs[seg.id];
+
+      // Slow push-in zoom: 100% → 107%
+      const zoom = 1 + p * 0.07;
+
+      oc.clearRect(0, 0, W, H);
+      drawCover(img, zoom);
+
+      // Dark vignette drawn onto offscreen
+      const vg = oc.createRadialGradient(cx, cy, H * 0.28, cx, cy, maxR);
+      vg.addColorStop(0, 'rgba(0,0,0,0)');
+      vg.addColorStop(1, 'rgba(0,0,0,0.60)');
+      oc.fillStyle = vg;
+      oc.fillRect(0, 0, W, H);
+
+      // Entry slam: hard random jitter decaying over first ~100ms (11% of 900ms)
+      let sx = 0, sy = 0;
+      if (p < 0.11) {
+        const slamDecay = 1 - p / 0.11;
+        const seed = Math.floor(elapsed / 16);
+        sx = (srand(seed)     - 0.5) * 22 * slamDecay;
+        sy = (srand(seed + 7) - 0.5) * 13 * slamDecay;
+      }
+
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.drawImage(off, 0, 0);
+      ctx.restore();
+
+      // Burn to white: last ~180ms (20% of 900ms) — world dissolves into energy
+      if (p > 0.80) {
+        const burnP = (p - 0.80) / 0.20;
+        ctx.fillStyle = `rgba(255,255,255,${burnP * 0.90})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // CA: slams in at 10px, clears by ~100ms (11%)
+      const caVal = p < 0.11 ? Math.round(10 * (1 - p / 0.11)) : 0;
+      canvas.style.filter = caVal > 0
+        ? `drop-shadow(${caVal}px 0 0 rgba(255,10,10,0.72)) drop-shadow(-${caVal}px 0 0 rgba(10,10,255,0.72)) contrast(1.25)`
+        : '';
+    }
+
     requestAnimationFrame(frame);
   }
-  requestAnimationFrame(frame);
 }
 
 
