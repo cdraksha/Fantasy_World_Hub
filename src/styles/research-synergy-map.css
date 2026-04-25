@@ -1,125 +1,48 @@
-/* ===== Research Synergy Map — Victorian Atmosphere ===== */
+/* ===== Research Synergy Map ===== */
 
-@keyframes rsmLanternPulse {
-  0%,100% { opacity: 1; }
-  30%      { opacity: 0.88; }
-  55%      { opacity: 0.94; }
-  75%      { opacity: 0.82; }
-  80%      { opacity: 0.96; }
-}
 @keyframes rsmFogDrift {
   0%   { opacity: 0.45; transform: translateX(-2%) scaleX(1.00); }
   100% { opacity: 0.90; transform: translateX( 2%) scaleX(1.06); }
-}
-@keyframes rsmIn {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes accExpand {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-/* ── Portal-circle entrance — ink void expanding from center ── */
-@keyframes rsmPortalOpen {
-  0%   {
-    clip-path: circle(0% at 50% 50%);
-    filter: brightness(0) sepia(1);
-  }
-  35%  {
-    clip-path: circle(18% at 50% 50%);
-    filter: brightness(0.4) sepia(0.9);
-  }
-  70%  {
-    clip-path: circle(65% at 50% 50%);
-    filter: brightness(0.75) sepia(0.4);
-  }
-  100% {
-    clip-path: circle(150% at 50% 50%);
-    filter: brightness(1) sepia(0);
-  }
+@keyframes rsmZoomIn {
+  from { opacity: 0; transform: scale(1.10); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
-/* Amber flash ring that pulses outward at the start */
-@keyframes rsmRingPulse {
-  0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.05); }
-  60%  { opacity: 0.6; }
-  100% { opacity: 0;   transform: translate(-50%, -50%) scale(1.4); }
+/* ── Black hole canvas overlay ── */
+.rsm-bh-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99999;
+  pointer-events: none;
 }
 
-/* ── Overlay shell — Victorian library atmosphere ── */
+/* Content hidden during animation / revealed after */
+.rsm-entering {
+  opacity: 0;
+  pointer-events: none;
+}
+.rsm-entered {
+  animation: rsmZoomIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Overlay shell ── */
 .research-synergy-overlay {
   position: fixed;
   inset: 0;
   z-index: 10000;
   overflow-y: auto;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-
-  /* Layered atmosphere: bookshelf lines + dark ceiling + amber lantern + deep ink */
   background:
-    /* Faint book-spine verticals at top */
-    repeating-linear-gradient(90deg,
-      transparent                    0px,
-      transparent                   22px,
-      rgba(38,22,8,0.28)            22px,
-      rgba(38,22,8,0.28)            23px,
-      transparent                   23px,
-      transparent                   40px,
-      rgba(28,16,6,0.20)            40px,
-      rgba(28,16,6,0.20)            41px,
-      transparent                   41px,
-      transparent                   58px,
-      rgba(42,26,10,0.24)           58px,
-      rgba(42,26,10,0.24)           59px,
-      transparent                   59px,
-      transparent                   72px
-    ),
-    /* Dark ceiling / shelf shadow */
-    linear-gradient(180deg,
-      rgba(3,2,1,0.97)   0%,
-      rgba(6,4,2,0.80)  12%,
-      rgba(10,6,3,0.40) 22%,
-      transparent        35%
-    ),
-    /* Horizontal shelf plank */
-    linear-gradient(180deg,
-      transparent 14%,
-      rgba(55,32,10,0.22) 14.5%,
-      rgba(55,32,10,0.22) 15.5%,
-      transparent 16%
-    ),
-    /* Amber lantern glow from below — strong */
-    radial-gradient(ellipse 80% 60% at 50% 110%,
-      rgba(220,140,20,0.55) 0%,
-      rgba(180,100,12,0.28)  35%,
-      transparent            62%
-    ),
-    /* Warm side rim lights */
-    radial-gradient(ellipse 40% 80% at  0% 60%, rgba(160,90,10,0.18) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 80% at 100% 60%, rgba(160,90,10,0.18) 0%, transparent 70%),
-    /* Warm mid glow */
-    radial-gradient(ellipse 60% 40% at 50% 50%, rgba(80,40,5,0.30) 0%, transparent 70%),
-    /* Base ink — warm brown-black */
-    #0c0600;
-
-  animation:
-    rsmPortalOpen 0.75s cubic-bezier(0.16, 1, 0.3, 1) both,
-    rsmLanternPulse 7s ease-in-out 0.75s infinite;
-}
-
-/* Amber ring that bursts outward on enter */
-.research-synergy-overlay::before {
-  content: '';
-  position: fixed;
-  left: 50%; top: 50%;
-  width: min(100vw, 100vh);
-  height: min(100vw, 100vh);
-  border-radius: 50%;
-  border: 3px solid rgba(200,150,30,0.85);
-  box-shadow: 0 0 30px rgba(220,160,20,0.5), inset 0 0 30px rgba(220,160,20,0.3);
-  pointer-events: none;
-  z-index: 9999;
-  animation: rsmRingPulse 0.65s cubic-bezier(0.2, 0.8, 0.4, 1) both;
+    linear-gradient(rgba(4,3,2,0.80), rgba(4,3,2,0.80)),
+    url('/research/F.jpg') center / cover no-repeat;
+  background-attachment: fixed;
 }
 
 /* Fog layer — drifts at the bottom */
@@ -142,11 +65,10 @@
 .research-synergy-container {
   position: relative;
   z-index: 1;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 0 40px 60px;
   color: #e8dfc8;
-  animation: rsmIn 0.6s ease-out both;
 }
 
 /* ── Victorian top banner ── */
@@ -190,44 +112,48 @@
   font-family: Georgia, 'Times New Roman', serif;
 }
 
-/* ── Intro Cards ── */
-.rsm-intro-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 52px;
+/* ── Research Summary ── */
+.rsm-summary-section {
+  margin: 56px 0 48px;
+  padding: 32px 36px;
+  background: rgba(10,7,3,0.72);
+  border: 1px solid rgba(200,145,40,0.22);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
 }
 
-.intro-card {
-  background: rgba(28,18,8,0.70);
-  border: 1px solid rgba(190,135,35,0.18);
-  border-radius: 14px;
-  padding: 22px 20px;
-  text-align: center;
-  transition: border-color 0.3s, transform 0.3s, background 0.3s;
-  backdrop-filter: blur(8px);
+.rsm-summary-section h2 {
+  font-size: clamp(1.1rem, 2.2vw, 1.55rem);
+  font-weight: 700;
+  color: #f0d080;
+  margin: 0 0 22px;
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.02em;
 }
 
-.intro-card:hover {
-  border-color: rgba(200,145,40,0.42);
-  background: rgba(38,24,10,0.80);
-  transform: translateY(-3px);
+.rsm-summary-list {
+  list-style: none;
+  margin: 0; padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.intro-card .card-icon { font-size: 1.8rem; margin-bottom: 10px; }
+.rsm-summary-list li {
+  font-size: 0.92rem;
+  color: rgba(232,223,200,0.78);
+  line-height: 1.65;
+  padding-left: 22px;
+  position: relative;
+}
 
-.intro-card h3 {
-  font-size: 0.95rem;
-  font-weight: 600;
+.rsm-summary-list li::before {
+  content: '◆';
+  position: absolute;
+  left: 0;
   color: #c8960c;
-  margin: 0 0 8px;
-}
-
-.intro-card p {
-  font-size: 0.82rem;
-  color: rgba(232,223,200,0.58);
-  margin: 0;
-  line-height: 1.5;
+  font-size: 0.6rem;
+  top: 5px;
 }
 
 /* ── Section Header ── */
@@ -284,17 +210,17 @@
 }
 
 .rsm-globe-wrap {
-  flex: 1;
+  flex: 2;
   min-width: 0;
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
   background: rgba(232,223,196,0.06);
-  border: 1px solid rgba(180,130,20,0.28);
+  border: 1px solid rgba(180,130,20,0.35);
   position: relative;
   box-shadow:
-    inset 0 0 80px rgba(0,0,0,0.55),
-    0 0 60px rgba(200,140,15,0.10),
-    0 0 0 1px rgba(180,120,10,0.12);
+    inset 0 0 100px rgba(0,0,0,0.60),
+    0 0 80px rgba(200,140,15,0.14),
+    0 0 0 1px rgba(180,120,10,0.15);
 }
 
 /* Parchment tint over the WebGL globe */
@@ -302,9 +228,9 @@
   display: none;
 }
 
-/* Make react-globe.gl look parchment/antique */
+/* Globe: dark atmosphere, colors preserved so dots show correctly */
 .rsm-globe-wrap > div {
-  filter: sepia(0.85) hue-rotate(-18deg) saturate(0.45) brightness(0.80) contrast(1.15);
+  filter: brightness(0.82) contrast(1.12) saturate(1.1);
 }
 
 /* Orbital particle canvas — sits on top of globe, pointer-events none */

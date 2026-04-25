@@ -2,6 +2,131 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Globe from 'react-globe.gl';
 import '../styles/research-synergy-map.css';
 
+// ── Hyperspace warp entrance animation ───────────────────────────────────────
+function runWarpIntro(canvas, W, H, eImg, onComplete) {
+  if (!canvas) { if (onComplete) onComplete(); return; }
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const TAU = Math.PI * 2, cx = W / 2, cy = H / 2;
+  const maxR = Math.hypot(cx, cy);
+  let start = null;
+
+  // Deterministic warp lines — angles spread evenly, varied speed/thickness
+  const LINES = Array.from({ length: 260 }, (_, i) => {
+    const s = i * 137.508;
+    return {
+      angle:  (i / 260) * TAU,
+      speed:  0.28 + (Math.sin(s) * 0.5 + 0.5) * 0.72,
+      width:  0.4  + (Math.cos(s * 2.3) * 0.5 + 0.5) * 1.4,
+      hue:    180  + (Math.sin(s * 3.7) * 0.5 + 0.5) * 60, // blue-cyan range
+    };
+  });
+
+  const P1 = 1300, P2 = 1800, TOTAL = 2200;
+
+  function drawRing(r, rW, alpha) {
+    for (let i = 4; i >= 1; i--) {
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU);
+      ctx.strokeStyle = `rgba(255,230,130,${(alpha * 0.18) / i})`;
+      ctx.lineWidth = rW * i * 2; ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU);
+    ctx.strokeStyle = `rgba(255,248,200,${alpha * 0.95})`;
+    ctx.lineWidth = Math.max(2, rW * 0.2); ctx.stroke();
+  }
+
+  function drawE(zoom) {
+    if (!eImg || !eImg.naturalWidth) return;
+    const scale = Math.max(W / eImg.naturalWidth, H / eImg.naturalHeight) * (zoom || 1);
+    const dw = eImg.naturalWidth * scale, dh = eImg.naturalHeight * scale;
+    ctx.drawImage(eImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+  }
+
+  function frame(ts) {
+    if (!start) start = ts;
+    const elapsed = ts - start;
+
+    if (elapsed >= TOTAL) {
+      canvas.style.transition = 'opacity 0.18s';
+      canvas.style.opacity = '0';
+      setTimeout(() => { if (onComplete) onComplete(); }, 200);
+      return;
+    }
+
+    ctx.clearRect(0, 0, W, H);
+
+    if (elapsed < P1) {
+      // ── Phase 1: Hyperspace warp ──────────────────────────────
+      const p = elapsed / P1; // 0 → 1
+      const ease = p * p * (3 - 2 * p); // smoothstep acceleration
+
+      ctx.fillStyle = '#000008'; ctx.fillRect(0, 0, W, H);
+
+      // Deep-space center glow — grows as warp intensifies
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR * 0.55 * ease);
+      glow.addColorStop(0, `rgba(80,140,255,${0.28 * ease})`);
+      glow.addColorStop(0.5, `rgba(20,60,180,${0.12 * ease})`);
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+
+      // Warp lines — shoot from center outward with quadratic length growth
+      LINES.forEach(line => {
+        const len   = ease * ease * maxR * line.speed;
+        const tail  = len * 0.18; // line starts a bit in from center
+        if (len < 3) return;
+
+        const x1 = cx + Math.cos(line.angle) * tail;
+        const y1 = cy + Math.sin(line.angle) * tail;
+        const x2 = cx + Math.cos(line.angle) * len;
+        const y2 = cy + Math.sin(line.angle) * len;
+
+        const alpha = 0.15 + ease * 0.65;
+        const lw    = line.width * (0.5 + ease * 1.2);
+
+        // Each line is a gradient from dim (tail) to bright (tip)
+        const grad = ctx.createLinearGradient(x1, y1, x2, y2);
+        grad.addColorStop(0, `hsla(${line.hue},100%,70%,0)`);
+        grad.addColorStop(1, `hsla(${line.hue},100%,88%,${alpha})`);
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+        ctx.strokeStyle = grad; ctx.lineWidth = lw; ctx.stroke();
+      });
+
+      // White flash building in the last 15%
+      if (p > 0.85) {
+        const fp = (p - 0.85) / 0.15;
+        ctx.fillStyle = `rgba(255,255,255,${fp * 0.92})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+    } else if (elapsed < P2) {
+      // ── Phase 2: Ring punches out, E.jpg revealed ────────────
+      const p = (elapsed - P1) / (P2 - P1);
+
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+
+      const revealR = p * maxR * 1.5;
+      if (eImg && eImg.naturalWidth) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(cx, cy, revealR, 0, TAU); ctx.clip();
+        drawE(1 + p * 0.04);
+        ctx.restore();
+      }
+
+      drawRing(p * (maxR + 80), 65 * (1 - p * 0.5), p < 0.4 ? p / 0.4 : 1 - (p - 0.4) / 0.6);
+
+    } else {
+      // ── Phase 3: E.jpg zooms in, canvas fades to page ────────
+      const p = (elapsed - P2) / (TOTAL - P2);
+      drawE(1 + p * 0.06);
+      canvas.style.opacity = String(Math.max(0, 1 - p));
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+}
+
 // ── Data ─────────────────────────────────────────────────────────────────────
 
 const RESEARCH_DATA = [
@@ -180,10 +305,22 @@ const RING_RGB   = { research: '200,220,255', company: '255,80,80', netflix: '25
 
 const ResearchSynergyMap = ({ onClose, onNavigateToExperience }) => {
   const [selectedPoint, setSelectedPoint] = useState(null);
-  const globeRef   = useRef();
-  const wrapRef    = useRef();
-  const orbitRef   = useRef();
+  const [entering, setEntering] = useState(true);
+  const globeRef    = useRef();
+  const wrapRef     = useRef();
+  const orbitRef    = useRef();
+  const bhCanvasRef = useRef();
   const [globeWidth, setGlobeWidth] = useState(0);
+
+  useEffect(() => {
+    const canvas = bhCanvasRef.current;
+    if (!canvas) return;
+    const W = window.innerWidth, H = window.innerHeight;
+    const eImg = new Image();
+    eImg.onload  = () => runWarpIntro(canvas, W, H, eImg,  () => setEntering(false));
+    eImg.onerror = () => runWarpIntro(canvas, W, H, null, () => setEntering(false));
+    eImg.src = '/research/E.jpg';
+  }, []);
 
   useEffect(() => {
     if (!wrapRef.current) return;
@@ -359,7 +496,7 @@ const ResearchSynergyMap = ({ onClose, onNavigateToExperience }) => {
   }, []);
 
   const fmt = id => id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-  const globeH = globeWidth > 0 ? Math.min(Math.round(globeWidth * 0.68), 520) : 0;
+  const globeH = globeWidth > 0 ? Math.min(Math.round(globeWidth * 0.85), 720) : 0;
 
   // ── Detail panel ──────────────────────────────────────────────────────────
   const renderDetail = () => {
@@ -468,25 +605,12 @@ const ResearchSynergyMap = ({ onClose, onNavigateToExperience }) => {
 
   return (
     <div className="research-synergy-overlay">
-      <div className="research-synergy-container">
+      <canvas ref={bhCanvasRef} className="rsm-bh-canvas" />
+      <div className={`research-synergy-container${entering ? ' rsm-entering' : ' rsm-entered'}`}>
 
         <div className="synergy-header">
           <h1>FantasyWorld Hub — AI &amp; Creativity Research</h1>
         </div>
-
-        <section className="rsm-intro-cards">
-          {[
-            { icon: '🧠', title: 'Science-Backed Creativity', desc: 'Each experience validates real academic theories about how AI can be creative' },
-            { icon: '🔬', title: 'Living Research Lab',       desc: "You're participating in computational creativity research" },
-            { icon: '🚀', title: 'Cutting-Edge AI',           desc: 'The latest breakthroughs, not just random content generation' },
-          ].map(({ icon, title, desc }, i) => (
-            <div key={i} className="intro-card">
-              <div className="card-icon">{icon}</div>
-              <h3>{title}</h3>
-              <p>{desc}</p>
-            </div>
-          ))}
-        </section>
 
         {/* ── Globe ──────────────────────────────────────────────────────── */}
         <section className="rsm-globe-section">
@@ -539,6 +663,17 @@ const ResearchSynergyMap = ({ onClose, onNavigateToExperience }) => {
               {renderDetail()}
             </div>
           </div>
+        </section>
+
+        <section className="rsm-summary-section">
+          <h2>What This Research Shows</h2>
+          <ul className="rsm-summary-list">
+            <li>50+ data points — 12 foundational computational creativity papers spanning 1998–2024, mapped to their exact institutions worldwide</li>
+            <li>Every FantasyWorld experience is directly traceable to peer-reviewed academic research on how AI systems generate and evaluate creative output</li>
+            <li>15 global companies — Netflix, Disney, Meta, SpaceX, Epic and more — are actively building products that this research predicts and enables</li>
+            <li>AI systems can now evaluate their own creativity against human aesthetic standards, not just generate content blindly</li>
+            <li>Recommendation AI and generative creativity are converging into a single field — this project sits at that exact intersection</li>
+          </ul>
         </section>
 
         <footer className="about-data-footer">
