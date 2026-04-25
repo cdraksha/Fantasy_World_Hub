@@ -180,8 +180,9 @@ const RING_RGB   = { research: '200,220,255', company: '255,80,80', netflix: '25
 
 const ResearchSynergyMap = ({ onClose, onNavigateToExperience }) => {
   const [selectedPoint, setSelectedPoint] = useState(null);
-  const globeRef = useRef();
-  const wrapRef  = useRef();
+  const globeRef   = useRef();
+  const wrapRef    = useRef();
+  const orbitRef   = useRef();
   const [globeWidth, setGlobeWidth] = useState(0);
 
   useEffect(() => {
@@ -191,6 +192,144 @@ const ResearchSynergyMap = ({ onClose, onNavigateToExperience }) => {
     const ro = new ResizeObserver(measure);
     ro.observe(wrapRef.current);
     return () => ro.disconnect();
+  }, []);
+
+  // ── Orbital particle canvas (parchment globe-loader style) ──
+  useEffect(() => {
+    const canvas = orbitRef.current;
+    if (!canvas) return;
+    const TAU = Math.PI * 2;
+    const RNG = (a, b) => a + Math.random() * (b - a);
+    let raf;
+
+    const resize = () => {
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+
+    const FLECKS = Array.from({ length: 80 }, (_, i) => ({
+      angle:  RNG(0, TAU),
+      radius: RNG(52, 120),
+      speed:  RNG(0.003, 0.012) * (Math.random() < 0.5 ? 1 : -1),
+      tiltX:  RNG(0.55, 1.0),
+      size:   RNG(0.4, 1.8),
+      alpha:  RNG(0.12, 0.65),
+      type:   i < 25 ? 'wisp' : i < 55 ? 'dot' : 'fleck',
+      wispLen: RNG(3, 9),
+      phase:  RNG(0, TAU),
+    }));
+
+    const NUM_ARMS = 4, PTS = 200;
+    const spiralPts = [];
+    for (let arm = 0; arm < NUM_ARMS; arm++) {
+      const off = (arm / NUM_ARMS) * TAU;
+      for (let i = 0; i < PTS; i++) {
+        const t = i / PTS;
+        spiralPts.push({
+          theta0: t * TAU * 2.2 + off,
+          r: 56 + Math.pow(t, 0.7) * 68,
+          opacity: Math.pow(1 - t, 1.5) * 0.30,
+          sz: 0.35 + (1 - t) * 1.6,
+        });
+      }
+    }
+
+    const TICKS = 36, MAJOR = 6;
+    let frame = 0, vortex = 0;
+
+    const ink = a => `rgba(14,11,7,${a})`;
+
+    function draw() {
+      frame++;
+      vortex -= 0.005;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      const cx = W / 2, cy = H / 2;
+      ctx.clearRect(0, 0, W, H);
+
+      // Spiral arms
+      spiralPts.forEach(pt => {
+        const theta = pt.theta0 + vortex * 1.1;
+        ctx.beginPath();
+        ctx.arc(cx + Math.cos(theta) * pt.r, cy + Math.sin(theta) * pt.r, pt.sz * 0.5, 0, TAU);
+        ctx.fillStyle = ink(pt.opacity);
+        ctx.fill();
+      });
+
+      // Rune ticks
+      for (let i = 0; i < TICKS; i++) {
+        const major = i % MAJOR === 0;
+        const a = (i / TICKS) * TAU + vortex * 0.35;
+        const r1 = major ? 58 : 60, r2 = major ? 65 : 63;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+        ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+        ctx.strokeStyle = ink(major ? 0.40 : 0.18);
+        ctx.lineWidth = major ? 0.9 : 0.5;
+        ctx.stroke();
+      }
+
+      // Vortex sweeps (outer smoky arcs)
+      [
+        { r: 78,  n: 5,  span: 0.42, lw: 3.2, a: 0.055 },
+        { r: 92,  n: 7,  span: 0.34, lw: 2.2, a: 0.040 },
+        { r: 106, n: 9,  span: 0.26, lw: 1.6, a: 0.030 },
+        { r: 118, n: 11, span: 0.20, lw: 1.1, a: 0.022 },
+      ].forEach(({ r, n, span, lw, a: alpha }, li) => {
+        for (let i = 0; i < n; i++) {
+          const base = (i / n) * TAU + vortex * (1 + li * 0.18);
+          for (let f = 0; f < 3; f++) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, r + f * 1.2, base, base + span * (1 - f * 0.35));
+            ctx.strokeStyle = ink(alpha * (1 - f * 0.55));
+            ctx.lineWidth = lw * (1 - f * 0.45);
+            ctx.lineCap = 'round';
+            ctx.stroke();
+          }
+        }
+      });
+
+      // Orbital particles
+      FLECKS.forEach(p => {
+        p.angle += p.speed;
+        const x = cx + Math.cos(p.angle) * p.radius * p.tiltX;
+        const y = cy + Math.sin(p.angle) * p.radius;
+        const pulse = 0.7 + 0.3 * Math.sin(frame * 0.03 + p.phase);
+
+        if (p.type === 'wisp') {
+          const vx = -Math.sin(p.angle) * p.radius * p.tiltX * p.speed;
+          const vy =  Math.cos(p.angle) * p.radius * p.speed;
+          const len = p.wispLen, inv = 1 / (Math.hypot(vx, vy) || 1);
+          const tx = vx * inv * len, ty = vy * inv * len;
+          const grd = ctx.createLinearGradient(x, y, x - tx, y - ty);
+          grd.addColorStop(0, ink(p.alpha * pulse));
+          grd.addColorStop(1, ink(0));
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - tx, y - ty);
+          ctx.strokeStyle = grd; ctx.lineWidth = p.size * 0.6; ctx.lineCap = 'round'; ctx.stroke();
+          ctx.beginPath(); ctx.arc(x, y, p.size * 0.4, 0, TAU);
+          ctx.fillStyle = ink(p.alpha * pulse * 0.9); ctx.fill();
+        } else if (p.type === 'fleck') {
+          ctx.save(); ctx.translate(x, y); ctx.rotate(p.angle * 3);
+          ctx.beginPath();
+          for (let k = 0; k < 4; k++) {
+            const a = (k / 4) * TAU;
+            const rr = k % 2 === 0 ? p.size * 0.8 : p.size * 0.3;
+            k === 0 ? ctx.moveTo(Math.cos(a)*rr, Math.sin(a)*rr) : ctx.lineTo(Math.cos(a)*rr, Math.sin(a)*rr);
+          }
+          ctx.closePath(); ctx.fillStyle = ink(p.alpha * pulse * 0.7); ctx.fill(); ctx.restore();
+        } else {
+          ctx.beginPath(); ctx.arc(x, y, p.size * 0.45, 0, TAU);
+          ctx.fillStyle = ink(p.alpha * pulse * 0.8); ctx.fill();
+        }
+      });
+
+      raf = requestAnimationFrame(draw);
+    }
+    draw();
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
   }, []);
 
   const handlePointClick = useCallback((point) => {
@@ -364,14 +503,15 @@ const ResearchSynergyMap = ({ onClose, onNavigateToExperience }) => {
           </div>
           <div className="rsm-globe-layout">
             <div className="rsm-globe-wrap" ref={wrapRef}>
+              <canvas ref={orbitRef} className="rsm-orbit-canvas" />
               {globeWidth > 0 && (
                 <Globe
                   ref={globeRef}
-                  globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
-                  bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+                  globeImageUrl="//unpkg.com/three-globe/example/img/earth-day.jpg"
+                  bumpImageUrl={null}
                   backgroundColor="rgba(0,0,0,0)"
-                  atmosphereColor="#88bbff"
-                  atmosphereAltitude={0.18}
+                  atmosphereColor="#c8960c"
+                  atmosphereAltitude={0.14}
                   width={globeWidth}
                   height={globeH}
                   // Glowing dots

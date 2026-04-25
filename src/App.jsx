@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { getAvailableExperiences } from './data/experiences';
-import TryLatestExperience from './components/TryLatestExperience';
 import DiscoverTheVisionSlideshow from './components/DiscoverTheVisionSlideshow';
 import SpaceCafeObserver from './components/SpaceCafeObserver'
 import HampiBazaarObserver from './components/HampiBazaarObserver'
@@ -84,6 +83,8 @@ import SpaceCafe2 from './components/SpaceCafe2';
 import FantasyReality from './components/FantasyReality';
 import LivingSpaceOracle from './components/LivingSpaceOracle';
 import ResearchSynergyMap from './components/ResearchSynergyMap';
+import HeroSection from './components/HeroSection';
+import ExploreOverlay from './components/ExploreOverlay';
 import CreativityLearningPage from './components/CreativityLearningPage'
 import CreateExperiencePage from './components/CreateExperiencePage';
 import HydrokineticPart1Page from './components/HydrokineticPart1Page';
@@ -92,6 +93,8 @@ import HydrokineticPart2Page from './components/HydrokineticPart2Page';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
+import './styles/hub-redesign.css'
+
 
 function App() {
   const [currentExperience, setCurrentExperience] = useState(null);
@@ -105,7 +108,7 @@ function App() {
   const [showVideoGeneration, setShowVideoGeneration] = useState(false);
   const [showResearchSynergyMap, setShowResearchSynergyMap] = useState(false);
   const [clickCounts, setClickCounts] = useState({});
-  const [filterType, setFilterType] = useState('All');
+  const [showExploreOverlay, setShowExploreOverlay] = useState(false);
 
   // Load click counts from localStorage on mount
   useEffect(() => {
@@ -156,6 +159,9 @@ function App() {
     }
     if (creativityParam === 'true') {
       setShowCreativityPage(true);
+    }
+    if (createParam === 'true') {
+      setShowCreatePage(true);
     }
     const researchSynergyParam = urlParams.get('research-synergy');
     if (researchSynergyParam === 'true') {
@@ -631,151 +637,25 @@ function App() {
     return <AIRoastBattleExperience onStop={stopExperience} />;
   }
 
-  // Main Hub Landing Page
   return (
     <div className="hub-landing">
-      <div className="hub-content">
-        <h1 className="hub-title">FantasyWorld Hub</h1>
-        <p className="hub-subtitle">
-          Where daydreams become reality through immersive experiences
-        </p>
-        
-        {/* Discover the Vision Slideshow */}
-        <div className="slideshow-section">
-          <DiscoverTheVisionSlideshow 
-            isOpen={true} 
-            onClose={() => {}} 
-          />
-        </div>
-        
-        
-        {/* Try Latest Experience Section */}
-        <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
-          <TryLatestExperience 
-            onNavigateToHub={() => {
-              const hubSection = document.querySelector('.experience-hub-section');
-              if (hubSection) {
-                hubSection.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
-          />
-        </div>
-        
-        
-        <div className="experience-hub-section">
-          <h2 className="experience-hub-heading">Experience Hub</h2>
-          
-          {/* Quick Tutorial */}
-          <div className="quick-tutorial">
-            <h3>💫 How it works:</h3>
-            <div className="tutorial-steps">
-              <div className="tutorial-step">
-                <span className="step-number">1</span>
-                <span className="step-text">Pick an experience below</span>
-              </div>
-              <div className="tutorial-step">
-                <span className="step-number">2</span>
-                <span className="step-text">Click "Enter Experience"</span>
-              </div>
-              <div className="tutorial-step">
-                <span className="step-number">3</span>
-                <span className="step-text">Let your imagination soar!</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Filter Dropdown */}
-          <div className="filter-section" style={{
-            display: 'flex',
-            justifyContent: 'center',
-            margin: '30px 0',
-            gap: '15px',
-            alignItems: 'center'
-          }}>
-            <label style={{
-              color: '#e2e8f0',
-              fontSize: '16px',
-              fontWeight: '500'
-            }}>
-              Filter by type:
-            </label>
-            <select 
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              style={{
-                background: 'rgba(15, 23, 42, 0.9)',
-                border: '2px solid rgba(255, 204, 128, 0.3)',
-                borderRadius: '12px',
-                padding: '10px 15px',
-                color: '#e2e8f0',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                outline: 'none'
-              }}
-            >
-              <option value="All">All</option>
-              <option value="Image">Image</option>
-              <option value="Text">Text</option>
-              <option value="Text + Image">Image + Text</option>
-              <option value="Video">Video</option>
-              <option value="Interactive Simulation">Interactive</option>
-              <option value="Interactive Upload">Upload</option>
-            </select>
-          </div>
-          
-          <div className="experiences-grid">
-          {getAvailableExperiences().filter(experience => {
-            if (filterType === 'All') return true;
-            return experience.contentType === filterType;
-          }).map((experience) => (
-            <div key={experience.id} className={`experience-card available ${experience.contentType === 'Interactive Upload' ? 'upload-card' : ''} ${experience.contentType === 'Interactive Simulation' ? 'interactive-card' : ''} ${(experience.contentType === 'Text + Image' || experience.contentType === 'Text and Image') ? 'text-image-card' : ''} ${experience.contentType === 'Video' ? 'video-card' : ''} ${experience.contentType === 'Text' ? 'text-card' : ''}`}>
-              <div className="card-header">
-                <h3>{experience.icon} {experience.title}</h3>
-                <div className="card-header-right">
-                  <button className="info-button" onClick={() => window.open(`/references?experience=${experience.id}`, '_blank')}>
-                    ℹ️
-                  </button>
-                </div>
-              </div>
-              <p className="card-description">{experience.description}</p>
-              <div className="card-center-section">
-                <button 
-                  className="enter-btn"
-                  onClick={() => startExperience(experience.id)}
-                >
-                  Enter Experience
-                </button>
-              </div>
-              <div className="card-tags-horizontal">
-                <span className="experience-type">
-                  {experience.contentType === 'Image' ? '🖼️ Image' : 
-                   experience.contentType === 'Text' ? '📝 Text' : 
-                   experience.contentType === 'Video' ? '🎥 Video' :
-                   experience.contentType === 'Interactive Simulation' ? '🎮 Interactive' :
-                   experience.contentType === 'Interactive Upload' ? '📤 Upload' :
-                   '📝🖼️ Text + Image'}
-                </span>
-                <div className="creation-timestamp">
-                  {experience.createdDate || 'Feb 2026'}
-                </div>
-                <span className="click-counter">👆 {clickCounts[experience.id] || 0}</span>
-              </div>
-              {experience.inspiredBy && (
-                <div className="inspiration-top-left">
-                  <span className="inspiration-tag">Inspired by {experience.inspiredBy}</span>
-                </div>
-              )}
-            </div>
-          ))}
-          </div>
-          
-          <p className="hub-footer">
-            Choose your immersive escape and let your imagination wander...
-          </p>
-        </div>
-      </div>
       <div className="stars-background"></div>
+
+      {/* SECTION 1 — Hero */}
+      <HeroSection
+        onExplore={() => setShowExploreOverlay(true)}
+        onLearn={() => window.open(`${window.location.origin}${window.location.pathname}?creativity=true`, '_blank')}
+        onCreate={() => window.open(`${window.location.origin}${window.location.pathname}?create=true`, '_blank')}
+        onResearch={() => setShowResearchSynergyMap(true)}
+        onAbout={() => window.open(`${window.location.origin}${window.location.pathname}?experience=about`, '_blank')}
+      />
+      <ExploreOverlay
+        open={showExploreOverlay}
+        experiences={getAvailableExperiences()}
+        onSelect={(id) => { setShowExploreOverlay(false); startExperience(id); }}
+        onClose={() => setShowExploreOverlay(false)}
+      />
+
     </div>
   )
 }
