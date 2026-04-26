@@ -430,36 +430,240 @@ const PlasmaMuzzleFlash = () => (
   </svg>
 );
 
+// Bullet/gunpowder muzzle flash
+const BulletFlash = () => (
+  <svg width="110" height="110" viewBox="-55 -55 110 110">
+    <ellipse rx="10" ry="12" fill="rgba(255,240,180,0.98)"/>
+    <ellipse rx="22" ry="18" fill="rgba(255,200,60,0.65)"/>
+    <ellipse rx="38" ry="28" fill="rgba(255,140,20,0.30)"/>
+    <g stroke="rgba(255,200,60,0.90)" strokeWidth="2.5" strokeLinecap="round">
+      <line x1="0" y1="-10" x2="0" y2="-48"/>
+      <line x1="0"  y1="10" x2="0"  y2="48"/>
+      <line x1="12" y1="-8" x2="44" y2="-28"/>
+      <line x1="-12" y1="8" x2="-44" y2="28"/>
+      <line x1="12" y1="8" x2="44" y2="28"/>
+      <line x1="-12" y1="-8" x2="-44" y2="-28"/>
+    </g>
+    <ellipse rx="5" ry="6" fill="rgba(255,255,220,0.95)"/>
+  </svg>
+);
+
+// Explosive flash for RPG / shotgun
+const ExplosiveFlash = () => (
+  <svg width="140" height="140" viewBox="-70 -70 140 140">
+    <circle r="28" fill="rgba(255,120,10,0.90)"/>
+    <circle r="46" fill="rgba(255,80,5,0.55)"/>
+    <circle r="62" fill="rgba(255,50,0,0.22)"/>
+    <g stroke="rgba(255,200,40,0.88)" strokeWidth="3" strokeLinecap="round">
+      <line x1="0" y1="-22" x2="0" y2="-62"/>
+      <line x1="0"  y1="22" x2="0"  y2="62"/>
+      <line x1="22" y1="0"  x2="62" y2="0"/>
+      <line x1="-22" y1="0" x2="-62" y2="0"/>
+      <line x1="16"  y1="-16" x2="44" y2="-44"/>
+      <line x1="-16" y1="16"  x2="-44" y2="44"/>
+      <line x1="16"  y1="16"  x2="44" y2="44"/>
+      <line x1="-16" y1="-16" x2="-44" y2="-44"/>
+    </g>
+    <circle r="12" fill="rgba(255,255,200,0.96)"/>
+  </svg>
+);
+
+// Assault Rifle (M4-style)
+const AssaultRifle = ({ mirror }) => (
+  <svg width="380" height="110" viewBox="0 0 380 110" style={mirror ? { transform: 'scaleX(-1)' } : {}}>
+    <rect x="195" y="47" width="170" height="13" rx="3" fill="#1a1a1a"/>
+    <rect x="197" y="48" width="166" height="4"  rx="2" fill="#2a2a2a"/>
+    <rect x="355" y="43" width="22"  height="21" rx="3" fill="#111"/>
+    <rect x="357" y="46" width="9"   height="6"  rx="1" fill="#222"/>
+    <rect x="357" y="56" width="9"   height="6"  rx="1" fill="#222"/>
+    <rect x="357" y="53" width="18"  height="1"  rx="0.5" fill="#333"/>
+    <rect x="95"  y="40" width="170" height="28" rx="4" fill="#1c1c1c"/>
+    <rect x="97"  y="42" width="166" height="9"  rx="3" fill="#252525"/>
+    <rect x="110" y="28" width="130" height="14" rx="3" fill="#181818"/>
+    <rect x="148" y="19" width="60"  height="13" rx="5" fill="#0e1a0e"/>
+    <ellipse cx="164" cy="25.5" rx="7.5" ry="5" fill="rgba(0,60,15,0.5)"/>
+    <ellipse cx="164" cy="25.5" rx="3.5" ry="2.5" fill="rgba(0,180,60,0.6)"/>
+    <ellipse cx="192" cy="25.5" rx="7.5" ry="5" fill="rgba(0,60,15,0.5)"/>
+    <ellipse cx="192" cy="25.5" rx="3.5" ry="2.5" fill="rgba(0,180,60,0.6)"/>
+    <rect x="195" y="44" width="110" height="5" rx="2" fill="#282828"/>
+    <rect x="195" y="53" width="110" height="20" rx="4" fill="#1e1e1e"/>
+    {[205,225,245,265,285].map(x => <rect key={x} x={x} y="71" width="11" height="3" rx="1" fill="#2e2e2e"/>)}
+    <rect x="95" y="68" width="100" height="20" rx="4" fill="#1c1c1c"/>
+    <path d="M132 88 Q128 108 142 108 L162 108 Q170 106 168 88 Z" fill="#1a1a1a"/>
+    <rect x="132" y="83" width="36" height="8" rx="2" fill="#222"/>
+    <path d="M128 88 Q118 103 136 108 L142 108 Q126 103 143 88" fill="none" stroke="#333" strokeWidth="2"/>
+    <path d="M96 88 Q92 108 108 108 L118 108 Q124 103 122 88 Z" fill="#1c1c1c"/>
+    <rect x="5"  y="50" width="93" height="26" rx="5" fill="#181818"/>
+    <rect x="7"  y="52" width="89" height="10" rx="3" fill="#222"/>
+    <rect x="5"  y="62" width="28" height="14" rx="3" fill="#151515"/>
+    <rect x="0"  y="52" width="9"  height="12" rx="3" fill="#141414"/>
+    <rect x="103" y="44" width="18" height="3" rx="1" fill="rgba(255,140,0,0.32)"/>
+  </svg>
+);
+
+// RPG Launcher
+const RPGLauncher = ({ mirror }) => (
+  <svg width="380" height="110" viewBox="0 0 380 110" style={mirror ? { transform: 'scaleX(-1)' } : {}}>
+    <rect x="35" y="37" width="316" height="36" rx="18" fill="#2d3d1c"/>
+    <rect x="37" y="39" width="312" height="14" rx="8" fill="rgba(255,255,255,0.06)"/>
+    <ellipse cx="362" cy="55" rx="20" ry="23" fill="#243018"/>
+    <ellipse cx="362" cy="55" rx="12" ry="14" fill="#1a2410"/>
+    <ellipse cx="362" cy="55" rx="5"  ry="6"  fill="rgba(255,120,0,0.18)"/>
+    <ellipse cx="362" cy="55" rx="2.5" ry="3" fill="rgba(255,80,0,0.55)"/>
+    <path d="M33 37 L14 26 L10 84 L33 73 Z" fill="#1e2a10"/>
+    <rect x="140" y="73" width="58" height="22" rx="5" fill="#1a2410"/>
+    <rect x="143" y="76" width="52" height="11" rx="3" fill="#243018"/>
+    <path d="M160 95 Q156 108 168 108 L178 108 Q184 106 181 95" fill="none" stroke="#2d3d1c" strokeWidth="3"/>
+    <rect x="258" y="73" width="32" height="26" rx="5" fill="#1e2a10"/>
+    <rect x="95"  y="30" width="6"  height="13" rx="2" fill="#2d3d1c"/>
+    <rect x="285" y="28" width="6"  height="9"  rx="2" fill="#2d3d1c"/>
+    <rect x="0"   y="44" width="38" height="22" rx="4" fill="#1c2a0e"/>
+    <rect x="2"   y="47" width="34" height="5"  rx="2" fill="#243018"/>
+    {[88,138,188,238,288].map(x => <rect key={x} x={x} y="43" width="4" height="24" rx="2" fill="rgba(190,130,20,0.28)"/>)}
+    <rect x="18" y="44" width="16" height="4" rx="1" fill="rgba(255,180,0,0.38)"/>
+    <rect x="18" y="52" width="16" height="4" rx="1" fill="rgba(255,0,0,0.28)"/>
+  </svg>
+);
+
+// Pump Shotgun
+const Shotgun = ({ mirror }) => (
+  <svg width="380" height="110" viewBox="0 0 380 110" style={mirror ? { transform: 'scaleX(-1)' } : {}}>
+    <rect x="138" y="41" width="234" height="14" rx="4" fill="#111"/>
+    <rect x="140" y="43" width="230" height="5"  rx="3" fill="#1a1a1a"/>
+    <rect x="138" y="55" width="234" height="12" rx="4" fill="#0d0d0d"/>
+    <rect x="140" y="57" width="230" height="4"  rx="3" fill="#1a1a1a"/>
+    <rect x="358" y="37" width="20"  height="32" rx="5" fill="#0d0d0d"/>
+    <ellipse cx="368" cy="47" rx="5" ry="4" fill="rgba(0,0,0,0.9)"/>
+    <ellipse cx="368" cy="61" rx="5" ry="4" fill="rgba(0,0,0,0.9)"/>
+    <rect x="252" y="67" width="76"  height="22" rx="5" fill="#3d1e0a"/>
+    <rect x="255" y="70" width="70"  height="10" rx="3" fill="#4d2810"/>
+    <rect x="88"  y="38" width="115" height="38" rx="6" fill="#1a1a1a"/>
+    <rect x="90"  y="40" width="111" height="12" rx="4" fill="#222"/>
+    <rect x="112" y="43" width="44"  height="14" rx="3" fill="#111"/>
+    <path d="M88 52 Q55 50 28 54 L6 62 L6 72 L28 72 Q56 70 88 76 Z" fill="#4d2810"/>
+    <path d="M88 54 Q58 52 30 56 L10 63 L10 71 L30 70 Q58 68 88 74" fill="none" stroke="rgba(100,50,10,0.45)" strokeWidth="1"/>
+    <path d="M88 76 Q86 96 103 100 L118 100 Q126 96 124 76 Z" fill="#1a1a1a"/>
+    <path d="M108 76 Q104 90 113 95 L119 95 Q124 90 121 76" fill="none" stroke="#222" strokeWidth="2.5"/>
+    <rect x="138" y="67" width="98"  height="8"  rx="4" fill="#181818"/>
+    <rect x="138" y="39" width="232" height="3"  rx="1.5" fill="#252525"/>
+    <circle cx="365" cy="40" r="3" fill="#aaa"/>
+    <rect x="0"   y="49" width="9"  height="28" rx="4" fill="#3d1e0a"/>
+  </svg>
+);
+
+// Sniper Rifle
+const SniperRifle = ({ mirror }) => (
+  <svg width="380" height="110" viewBox="0 0 380 110" style={mirror ? { transform: 'scaleX(-1)' } : {}}>
+    <rect x="325" y="45" width="50" height="20" rx="4" fill="#1a1a1a"/>
+    <rect x="327" y="47" width="46" height="7"  rx="3" fill="#222"/>
+    <rect x="372" y="43" width="6"  height="24" rx="3" fill="#111"/>
+    <rect x="155" y="48" width="172" height="14" rx="3" fill="#181818"/>
+    <rect x="157" y="49" width="168" height="5"  rx="2" fill="#222"/>
+    <line x1="205" y1="62" x2="194" y2="88" stroke="#222" strokeWidth="3.5"/>
+    <line x1="228" y1="62" x2="239" y2="88" stroke="#222" strokeWidth="3.5"/>
+    <rect x="191" y="86" width="10" height="5" rx="2" fill="#1a1a1a"/>
+    <rect x="236" y="86" width="10" height="5" rx="2" fill="#1a1a1a"/>
+    <rect x="78"  y="41" width="125" height="30" rx="5" fill="#181818"/>
+    <rect x="80"  y="43" width="121" height="12" rx="4" fill="#1e1e1e"/>
+    <rect x="88"  y="24" width="115" height="20" rx="7" fill="#0a0a0a"/>
+    <rect x="90"  y="26" width="111" height="9"  rx="5" fill="#111"/>
+    <ellipse cx="106" cy="35" rx="9"  ry="7"   fill="rgba(8,22,40,0.95)"/>
+    <ellipse cx="106" cy="35" rx="4.5" ry="3.5" fill="rgba(0,90,200,0.42)"/>
+    <ellipse cx="180" cy="35" rx="9"  ry="7"   fill="rgba(8,22,40,0.95)"/>
+    <ellipse cx="180" cy="35" rx="4.5" ry="3.5" fill="rgba(0,90,200,0.42)"/>
+    <rect x="133" y="18" width="16" height="10" rx="3" fill="#181818"/>
+    <rect x="135" y="16" width="12" height="7"  rx="2" fill="#222"/>
+    <path d="M108 71 L106 92 Q106 102 118 102 L133 102 Q143 100 141 92 L138 71 Z" fill="#181818"/>
+    <rect x="108" y="66" width="30" height="8" rx="2" fill="#222"/>
+    <path d="M80 71 Q76 94 93 98 L103 98 Q110 94 108 71 Z" fill="#181818"/>
+    <path d="M94 71 Q90 86 98 92 L104 92 Q109 86 106 71" fill="none" stroke="#222" strokeWidth="2"/>
+    <rect x="4"  y="47" width="77" height="16" rx="3" fill="#141414"/>
+    <rect x="6"  y="49" width="73" height="6"  rx="2" fill="#1c1c1c"/>
+    <rect x="4"  y="63" width="28" height="10" rx="3" fill="#111"/>
+    <rect x="0"  y="45" width="7"  height="30" rx="3" fill="#0d0d0d"/>
+    <rect x="93" y="27" width="32" height="3" rx="1.5" fill="rgba(90,150,255,0.16)"/>
+  </svg>
+);
+
 // ─────────────────────────────────────────────────────────────
-//  Screen crack drawer (gun sequence)
+//  Accumulative crack impact — adds to existing canvas, never clears
 // ─────────────────────────────────────────────────────────────
-function drawScreenCracks(canvas) {
+function addCrackImpact(canvas, shot, totalShots) {
   const W = canvas.width, H = canvas.height;
   const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
-  const impacts = [{ x: W * 0.34, y: H * 0.48 }, { x: W * 0.66, y: H * 0.52 }];
-  impacts.forEach(ip => {
-    for (let i = 0; i < 22; i++) {
-      const ang = (i / 22) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
-      const len = 90 + Math.random() * 260;
-      ctx.save();
-      ctx.strokeStyle = `rgba(0,240,255,${0.30 + Math.random() * 0.45})`;
-      ctx.lineWidth = 0.8 + Math.random() * 1.5;
-      ctx.shadowColor = 'rgba(0,220,255,0.7)'; ctx.shadowBlur = 8;
-      ctx.beginPath(); ctx.moveTo(ip.x, ip.y);
-      let cx2 = ip.x, cy2 = ip.y;
-      const segs = 3 + Math.floor(Math.random() * 3);
-      for (let s = 0; s < segs; s++) {
-        const sL = len / segs, j = (Math.random() - 0.5) * 35;
-        cx2 += Math.cos(ang) * sL; cy2 += Math.sin(ang) * sL;
-        ctx.lineTo(cx2 + j, cy2 + j * 0.5);
-      }
-      ctx.stroke(); ctx.restore();
+  const progress = shot / totalShots;
+
+  // Impact position: starts left/right edges, spreads inward then everywhere
+  let ix, iy;
+  const side = shot % 2;
+  if (progress < 0.38) {
+    ix = side === 0
+      ? W * (0.12 + Math.random() * 0.22)
+      : W * (0.66 + Math.random() * 0.22);
+    iy = H * (0.18 + Math.random() * 0.64);
+  } else {
+    ix = W * (0.07 + Math.random() * 0.86);
+    iy = H * (0.07 + Math.random() * 0.86);
+  }
+
+  const crackCount = 13 + Math.floor(progress * 14);
+  const lenBase    = 70 + progress * 180;
+
+  for (let i = 0; i < crackCount; i++) {
+    const ang   = (i / crackCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.55;
+    const len   = lenBase * (0.45 + Math.random() * 0.85);
+    const alpha = 0.28 + Math.random() * 0.55;
+    ctx.save();
+    ctx.strokeStyle = `rgba(0,240,255,${alpha})`;
+    ctx.lineWidth   = 0.5 + Math.random() * 1.7;
+    ctx.shadowColor = 'rgba(0,220,255,0.65)'; ctx.shadowBlur = 7;
+    ctx.beginPath(); ctx.moveTo(ix, iy);
+    let cx2 = ix, cy2 = iy;
+    const segs = 2 + Math.floor(Math.random() * 4);
+    for (let s = 0; s < segs; s++) {
+      const sL = len / segs, j = (Math.random() - 0.5) * 30;
+      cx2 += Math.cos(ang) * sL; cy2 += Math.sin(ang) * sL;
+      ctx.lineTo(cx2 + j, cy2 + j * 0.5);
     }
-    const g = ctx.createRadialGradient(ip.x, ip.y, 0, ip.x, ip.y, 70);
-    g.addColorStop(0, 'rgba(0,240,255,0.50)'); g.addColorStop(0.4, 'rgba(0,200,255,0.16)'); g.addColorStop(1, 'transparent');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ip.x, ip.y, 70, 0, Math.PI * 2); ctx.fill();
-  });
+    ctx.stroke(); ctx.restore();
+  }
+
+  // Impact glow
+  const r   = 38 + progress * 32;
+  const impG = ctx.createRadialGradient(ix, iy, 0, ix, iy, r);
+  impG.addColorStop(0,   `rgba(0,255,255,${0.42 + progress * 0.28})`);
+  impG.addColorStop(0.5, 'rgba(0,200,255,0.10)');
+  impG.addColorStop(1,   'transparent');
+  ctx.beginPath(); ctx.arc(ix, iy, r, 0, Math.PI * 2);
+  ctx.fillStyle = impG; ctx.fill();
+
+  // White bleed grows as progress increases
+  if (progress > 0.55) {
+    const bleed = (progress - 0.55) / 0.45;
+    const wg = ctx.createRadialGradient(ix, iy, 0, ix, iy, r * 3);
+    wg.addColorStop(0, `rgba(255,255,255,${bleed * 0.45})`);
+    wg.addColorStop(1, 'transparent');
+    ctx.beginPath(); ctx.arc(ix, iy, r * 3, 0, Math.PI * 2);
+    ctx.fillStyle = wg; ctx.fill();
+    ctx.fillStyle = `rgba(255,255,255,${bleed * 0.07})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+
+function fadeToWhite(canvas, callback) {
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const DURATION = 340;
+  let start = null;
+  function frame(ts) {
+    if (!start) start = ts;
+    const p = Math.min((ts - start) / DURATION, 1);
+    ctx.fillStyle = `rgba(255,255,255,${p * 0.97})`;
+    ctx.fillRect(0, 0, W, H);
+    if (p < 1) requestAnimationFrame(frame);
+    else callback();
+  }
+  requestAnimationFrame(frame);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -476,7 +680,6 @@ const HeroSection = ({ onExplore, onCreate, onResearch, onLearn, onAbout }) => {
   const [gunsPos,     setGunsPos]     = useState('off'); // 'off'|'in'|'out'
   const [gunFlash,    setGunFlash]    = useState(false);
   const [cracksShow,  setCracksShow]  = useState(false);
-  const [veilShow,    setVeilShow]    = useState(false);
 
   const particleRef   = useRef(null);
   const slashRef      = useRef(null);
@@ -485,12 +688,13 @@ const HeroSection = ({ onExplore, onCreate, onResearch, onLearn, onAbout }) => {
   const cardRef       = useRef(null);
   const curRef        = useRef(null);
   const curRingRef    = useRef(null);
-  const gunLRef       = useRef(null);
-  const gunRRef       = useRef(null);
-  const mflRef        = useRef(null);
-  const mfrRef        = useRef(null);
-  const btlRef        = useRef(null);
-  const btrRef        = useRef(null);
+  // 3D arc gun refs — arrays of 7 (L0-L6 top-to-bottom / R0-R6)
+  const gunLRefs = useRef(Array(7).fill(null));
+  const gunRRefs = useRef(Array(7).fill(null));
+  const mfLRefs  = useRef(Array(7).fill(null));
+  const mfRRefs  = useRef(Array(7).fill(null));
+  const trLRefs  = useRef(Array(7).fill(null));
+  const trRRefs  = useRef(Array(7).fill(null));
   const mouseRef      = useRef({ mx: 0, my: 0, lx: 0, ly: 0 });
   const dustRef       = useRef([]);
   const rafRef        = useRef(null);
@@ -591,46 +795,90 @@ const HeroSection = ({ onExplore, onCreate, onResearch, onLearn, onAbout }) => {
     if (phase !== 'open') return;
     setPhase('gun-seq');
     setBarsIn(true);
-    setTimeout(() => setGunsPos('in'), 400);
+
+    // All 14 guns slide in — CSS transition-delay staggers by arc position
+    setTimeout(() => setGunsPos('in'), 250);
+
+    const GL = gunLRefs.current, GR = gunRRefs.current;
+    const MFL = mfLRefs.current, MFR = mfRRefs.current;
+    const TRL = trLRefs.current, TRR = trRRefs.current;
+
+    // Center-out firing order: L3,R3 → L2,R4 → L4,R2 → L1,R5 → L5,R1 → L0,R6 → L6,R0
+    const allGuns  = [GL[3],GR[3], GL[2],GR[4], GL[4],GR[2], GL[1],GR[5], GL[5],GR[1], GL[0],GR[6], GL[6],GR[0]];
+    const allFlash = [MFL[3],MFR[3], MFL[2],MFR[4], MFL[4],MFR[2], MFL[1],MFR[5], MFL[5],MFR[1], MFL[0],MFR[6], MFL[6],MFR[0]];
+    const allTrail = [TRL[3],TRR[3], TRL[2],TRR[4], TRL[4],TRR[2], TRL[1],TRR[5], TRL[5],TRR[1], TRL[0],TRR[6], TRL[6],TRR[0]];
+
+    // 3D-aware base and kick transforms for each arc slot
+    const LB = (z,r) => `translateY(-50%) translateZ(${z}px) rotateY(${r}deg)`;
+    const LK = (z,r) => `translateY(-50%) translateX(-22px) translateZ(${z}px) rotateY(${r}deg)`;
+    const RB = (z,r) => `translateY(-50%) translateZ(${z}px) rotateY(${-r}deg)`;
+    const RK = (z,r) => `translateY(-50%) translateX(22px) translateZ(${z}px) rotateY(${-r}deg)`;
+    const Lbase = [LB(-160,22),LB(-80,13),LB(-25,6),LB(0,0),LB(-25,6),LB(-80,13),LB(-160,22)];
+    const Lkick = [LK(-160,22),LK(-80,13),LK(-25,6),LK(0,0),LK(-25,6),LK(-80,13),LK(-160,22)];
+    const Rbase = [RB(-160,22),RB(-80,13),RB(-25,6),RB(0,0),RB(-25,6),RB(-80,13),RB(-160,22)];
+    const Rkick = [RK(-160,22),RK(-80,13),RK(-25,6),RK(0,0),RK(-25,6),RK(-80,13),RK(-160,22)];
+
+    // RECOILS in center-out order matching allGuns
+    const RECOILS = [
+      [Lbase[3],Lkick[3],Lbase[3]], [Rbase[3],Rkick[3],Rbase[3]],
+      [Lbase[2],Lkick[2],Lbase[2]], [Rbase[4],Rkick[4],Rbase[4]],
+      [Lbase[4],Lkick[4],Lbase[4]], [Rbase[2],Rkick[2],Rbase[2]],
+      [Lbase[1],Lkick[1],Lbase[1]], [Rbase[5],Rkick[5],Rbase[5]],
+      [Lbase[5],Lkick[5],Lbase[5]], [Rbase[1],Rkick[1],Rbase[1]],
+      [Lbase[0],Lkick[0],Lbase[0]], [Rbase[6],Rkick[6],Rbase[6]],
+      [Lbase[6],Lkick[6],Lbase[6]], [Rbase[0],Rkick[0],Rbase[0]],
+    ];
+
+    let shot = 0;
+    const SHOTS = 42;
+
+    const cc = crackCanvasRef.current;
+    if (cc) { cc.width = window.innerWidth; cc.height = window.innerHeight; }
+    setCracksShow(true);
+
     setTimeout(() => {
-      // Recoil (imperative - needs force reflow to retrigger animation)
-      [gunLRef, gunRRef].forEach(ref => {
-        if (!ref.current) return;
-        ref.current.classList.remove('fwh-gun-fire');
-        void ref.current.offsetWidth;
-        ref.current.classList.add('fwh-gun-fire');
-      });
-      // Muzzle flash
-      [mflRef, mfrRef].forEach(ref => {
-        if (!ref.current) return;
-        ref.current.classList.remove('pop');
-        void ref.current.offsetWidth;
-        ref.current.classList.add('pop');
-      });
-      // Plasma trails
-      [btlRef, btrRef].forEach(ref => {
-        if (!ref.current) return;
-        ref.current.classList.remove('fwh-trail-fire');
-        void ref.current.offsetWidth;
-        ref.current.classList.add('fwh-trail-fire');
-      });
-      setGunFlash(true);
-      document.body.classList.add('fwh-shake');
-      setTimeout(() => document.body.classList.remove('fwh-shake'), 400);
-    }, 1800);
-    setTimeout(() => setGunFlash(false), 1880);
-    setTimeout(() => {
-      const cc = crackCanvasRef.current;
-      if (cc) { cc.width = window.innerWidth; cc.height = window.innerHeight; drawScreenCracks(cc); }
-      setCracksShow(true);
-    }, 1920);
-    setTimeout(() => setGunsPos('out'), 2400);
-    setTimeout(() => setVeilShow(true), 2600);
-    setTimeout(() => {
-      setBarsIn(false); setGunsPos('off'); setCracksShow(false); setVeilShow(false);
-      setPhase('open');
-      onExplore();
-    }, 3200);
+      const interval = setInterval(() => {
+        const idx = shot % allGuns.length;
+        const g = allGuns[idx];
+        if (g) {
+          g.animate(
+            [{ transform: RECOILS[idx][0] }, { transform: RECOILS[idx][1] }, { transform: RECOILS[idx][2] }],
+            { duration: 180, easing: 'ease-out' }
+          );
+        }
+        const mf = allFlash[idx];
+        if (mf) { mf.classList.remove('pop'); void mf.offsetWidth; mf.classList.add('pop'); }
+        const tr = allTrail[idx];
+        if (tr) { tr.classList.remove('fwh-trail-fire'); void tr.offsetWidth; tr.classList.add('fwh-trail-fire'); }
+
+        if (cc) addCrackImpact(cc, shot, SHOTS);
+        setGunFlash(true);
+        setTimeout(() => setGunFlash(false), 45);
+        document.body.classList.add('fwh-shake');
+        setTimeout(() => document.body.classList.remove('fwh-shake'), 160);
+
+        shot++;
+        if (shot >= SHOTS) {
+          clearInterval(interval);
+          if (cc) {
+            fadeToWhite(cc, () => {
+              setGunsPos('out');
+              setTimeout(() => {
+                setBarsIn(false); setGunsPos('off'); setCracksShow(false);
+                setGunFlash(false); setPhase('open');
+                onExplore();
+              }, 380);
+            });
+          } else {
+            setGunsPos('out');
+            setTimeout(() => {
+              setBarsIn(false); setGunsPos('off'); setCracksShow(false);
+              setPhase('open'); onExplore();
+            }, 380);
+          }
+        }
+      }, 95);
+    }, 820);
   }, [phase, onExplore]);
 
   const isNavVisible = phase === 'open' || phase === 'gun-seq';
@@ -706,26 +954,54 @@ const HeroSection = ({ onExplore, onCreate, onResearch, onLearn, onAbout }) => {
       <div className={`fwh-cin-bar fwh-cin-top${barsIn ? ' in' : ''}`} />
       <div className={`fwh-cin-bar fwh-cin-bot${barsIn ? ' in' : ''}`} />
 
-      <div ref={gunLRef} className={`fwh-gun fwh-gun-l${gunsPos === 'in' ? ' in' : ''}${gunsPos === 'out' ? ' out' : ''}`}>
-        <PlasmaGun />
-      </div>
-      <div ref={gunRRef} className={`fwh-gun fwh-gun-r${gunsPos === 'in' ? ' in' : ''}${gunsPos === 'out' ? ' out' : ''}`}>
-        <PlasmaGun mirror />
-      </div>
+      {/* ── 3D arc gun arena ── */}
+      {(() => {
+        // L: Sniper RPG AR Plasma Shotgun Plasma Plasma  (top→bottom)
+        // R: Plasma AR Shotgun RPG Plasma Sniper Plasma
+        const LG = [SniperRifle, RPGLauncher, AssaultRifle, PlasmaGun, Shotgun, PlasmaGun, PlasmaGun];
+        const RG = [PlasmaGun, AssaultRifle, Shotgun, RPGLauncher, PlasmaGun, SniperRifle, PlasmaGun];
+        const cls = gunsPos === 'in' ? ' in' : gunsPos === 'out' ? ' out' : '';
+        return (
+          <div className="fwh-gun-arena">
+            {[0,1,2,3,4,5,6].map(i => {
+              const LGun = LG[i], RGun = RG[i];
+              return (
+                <React.Fragment key={i}>
+                  <div ref={el => { gunLRefs.current[i] = el; }} className={`fwh-gun fwh-gun-a-l${i}${cls}`}><LGun /></div>
+                  <div ref={el => { gunRRefs.current[i] = el; }} className={`fwh-gun fwh-gun-a-r${i}${cls}`}><RGun mirror /></div>
+                </React.Fragment>
+              );
+            })}
+          </div>
+        );
+      })()}
 
-      <div className="fwh-mflash fwh-mflash-l">
-        <div ref={mflRef} className="fwh-mflash-inner"><PlasmaMuzzleFlash /></div>
-      </div>
-      <div className="fwh-mflash fwh-mflash-r">
-        <div ref={mfrRef} className="fwh-mflash-inner"><PlasmaMuzzleFlash /></div>
-      </div>
+      {/* Muzzle flashes */}
+      {[0,1,2,3,4,5,6].map(i => {
+        const LFlash = [BulletFlash, ExplosiveFlash, BulletFlash, PlasmaMuzzleFlash, ExplosiveFlash, PlasmaMuzzleFlash, PlasmaMuzzleFlash][i];
+        const RFlash = [PlasmaMuzzleFlash, BulletFlash, ExplosiveFlash, ExplosiveFlash, PlasmaMuzzleFlash, BulletFlash, PlasmaMuzzleFlash][i];
+        return (
+          <React.Fragment key={i}>
+            <div className={`fwh-mflash fwh-mflash-a-l${i}`}>
+              <div ref={el => { mfLRefs.current[i] = el; }} className="fwh-mflash-inner"><LFlash /></div>
+            </div>
+            <div className={`fwh-mflash fwh-mflash-a-r${i}`}>
+              <div ref={el => { mfRRefs.current[i] = el; }} className="fwh-mflash-inner"><RFlash /></div>
+            </div>
+          </React.Fragment>
+        );
+      })}
 
-      <div ref={btlRef} className="fwh-trail fwh-trail-l" />
-      <div ref={btrRef} className="fwh-trail fwh-trail-r" />
+      {/* Bullet trails */}
+      {[0,1,2,3,4,5,6].map(i => (
+        <React.Fragment key={i}>
+          <div ref={el => { trLRefs.current[i] = el; }} className={`fwh-trail fwh-trail-a-l${i}`} />
+          <div ref={el => { trRRefs.current[i] = el; }} className={`fwh-trail fwh-trail-a-r${i}`} />
+        </React.Fragment>
+      ))}
 
       <div className={`fwh-gun-flash${gunFlash ? ' active' : ''}`} />
       <canvas ref={crackCanvasRef} className={`fwh-crack-canvas${cracksShow ? ' show' : ''}`} />
-      <div className={`fwh-veil${veilShow ? ' show' : ''}`} />
 
       {/* Custom cursor (portal phase only) */}
       {phase === 'portal' && (

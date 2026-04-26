@@ -104,7 +104,7 @@ const ExploreOverlay = ({ experiences = [], onSelect, onClose, open }) => {
     if (!open || N === 0) return;
     const sc = spiralRef.current;
     const ctx2d = sc ? sc.getContext('2d') : null;
-    const R = 220, aStep = 36 * Math.PI / 180, vStep = 110;
+    const R = 220, aStep = 36 * Math.PI / 180, vStep = 220;
     let t = 0, lastFocus = -1;
 
     const loop = () => {
@@ -229,13 +229,22 @@ const ExploreOverlay = ({ experiences = [], onSelect, onClose, open }) => {
                     <div className="ex-c-num">{String(i + 1).padStart(2, '0')}</div>
                     <div className="ex-c-tag">{exp.contentType}</div>
                     <div className="ex-c-title">{exp.title}</div>
-                    <div className="ex-c-desc">{exp.description?.slice(0, 120)}…</div>
-                    <button
-                      className="ex-enter-btn"
-                      onClick={(e) => { e.stopPropagation(); onSelect(exp.id); }}
-                    >
-                      Enter Experience
-                    </button>
+                    <div className="ex-c-desc">{exp.description?.slice(0, 200)}…</div>
+                    {exp.inspiredBy && <div className="ex-c-inspired">Inspired by {exp.inspiredBy}</div>}
+                    <div className="ex-c-btns">
+                      <button
+                        className="ex-enter-btn"
+                        onClick={(e) => { e.stopPropagation(); onSelect(exp.id); }}
+                      >
+                        Enter Experience
+                      </button>
+                      <button
+                        className="ex-ref-btn"
+                        onClick={(e) => { e.stopPropagation(); window.open(`/references?experience=${exp.id}`, '_blank'); }}
+                      >
+                        References
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

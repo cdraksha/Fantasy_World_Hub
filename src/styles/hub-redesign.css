@@ -820,38 +820,69 @@
 .fwh-cin-bot { bottom: 0; }
 .fwh-cin-bar.in { height: clamp(48px,7vh,88px); }
 
-/* Plasma guns */
-.fwh-gun {
-  position: fixed; top: 50%; z-index: 86;
-  transform: translateY(-50%); opacity: 0; pointer-events: none;
+/* Gun arena — full-viewport 3D perspective container */
+.fwh-gun-arena {
+  position: fixed; inset: 0; z-index: 86;
+  perspective: 1200px; perspective-origin: 50% 50%;
+  pointer-events: none;
 }
-.fwh-gun-l { left: -440px; transition: left 1.1s cubic-bezier(0.16,1,0.3,1), opacity 0.4s; }
-.fwh-gun-r { right: -440px; transition: right 1.1s cubic-bezier(0.16,1,0.3,1), opacity 0.4s; }
-.fwh-gun-l.in { left: clamp(10px,3vw,48px); opacity: 1; }
-.fwh-gun-r.in { right: clamp(10px,3vw,48px); opacity: 1; }
-.fwh-gun-l.out { left: -440px; opacity: 0; transition: left 0.55s cubic-bezier(0.6,0,1,0.4), opacity 0.4s; }
-.fwh-gun-r.out { right: -440px; opacity: 0; transition: right 0.55s cubic-bezier(0.6,0,1,0.4), opacity 0.4s; }
 
-@keyframes fwhGunFireL {
-  0%   { transform: translateY(-50%); }
-  30%  { transform: translateY(-50%) translateX(-18px) rotate(-3deg); }
-  100% { transform: translateY(-50%); }
+/* Gun base — absolute inside arena so perspective applies */
+.fwh-gun { position: absolute; opacity: 0; pointer-events: none; }
+
+/* Left arc — 7 positions top→bottom, center gun closest (Z=0) */
+.fwh-gun-a-l0 { top:14%; left:-480px; transform:translateY(-50%) translateZ(-160px) rotateY(22deg);  transition:left 1.0s cubic-bezier(0.16,1,0.3,1) 0.22s, opacity 0.4s 0.22s; }
+.fwh-gun-a-l1 { top:26%; left:-480px; transform:translateY(-50%) translateZ(-80px)  rotateY(13deg);  transition:left 1.0s cubic-bezier(0.16,1,0.3,1) 0.17s, opacity 0.4s 0.17s; }
+.fwh-gun-a-l2 { top:38%; left:-480px; transform:translateY(-50%) translateZ(-25px)  rotateY(6deg);   transition:left 1.0s cubic-bezier(0.16,1,0.3,1) 0.09s, opacity 0.4s 0.09s; }
+.fwh-gun-a-l3 { top:50%; left:-480px; transform:translateY(-50%) translateZ(0px)    rotateY(0deg);   transition:left 0.95s cubic-bezier(0.16,1,0.3,1),      opacity 0.4s; }
+.fwh-gun-a-l4 { top:62%; left:-480px; transform:translateY(-50%) translateZ(-25px)  rotateY(6deg);   transition:left 1.0s cubic-bezier(0.16,1,0.3,1) 0.09s, opacity 0.4s 0.09s; }
+.fwh-gun-a-l5 { top:74%; left:-480px; transform:translateY(-50%) translateZ(-80px)  rotateY(13deg);  transition:left 1.0s cubic-bezier(0.16,1,0.3,1) 0.17s, opacity 0.4s 0.17s; }
+.fwh-gun-a-l6 { top:84%; left:-480px; transform:translateY(-50%) translateZ(-160px) rotateY(22deg);  transition:left 1.0s cubic-bezier(0.16,1,0.3,1) 0.22s, opacity 0.4s 0.22s; }
+
+/* Right arc — mirror rotateY */
+.fwh-gun-a-r0 { top:14%; right:-480px; transform:translateY(-50%) translateZ(-160px) rotateY(-22deg); transition:right 1.0s cubic-bezier(0.16,1,0.3,1) 0.22s, opacity 0.4s 0.22s; }
+.fwh-gun-a-r1 { top:26%; right:-480px; transform:translateY(-50%) translateZ(-80px)  rotateY(-13deg); transition:right 1.0s cubic-bezier(0.16,1,0.3,1) 0.17s, opacity 0.4s 0.17s; }
+.fwh-gun-a-r2 { top:38%; right:-480px; transform:translateY(-50%) translateZ(-25px)  rotateY(-6deg);  transition:right 1.0s cubic-bezier(0.16,1,0.3,1) 0.09s, opacity 0.4s 0.09s; }
+.fwh-gun-a-r3 { top:50%; right:-480px; transform:translateY(-50%) translateZ(0px)    rotateY(0deg);   transition:right 0.95s cubic-bezier(0.16,1,0.3,1),      opacity 0.4s; }
+.fwh-gun-a-r4 { top:62%; right:-480px; transform:translateY(-50%) translateZ(-25px)  rotateY(-6deg);  transition:right 1.0s cubic-bezier(0.16,1,0.3,1) 0.09s, opacity 0.4s 0.09s; }
+.fwh-gun-a-r5 { top:74%; right:-480px; transform:translateY(-50%) translateZ(-80px)  rotateY(-13deg); transition:right 1.0s cubic-bezier(0.16,1,0.3,1) 0.17s, opacity 0.4s 0.17s; }
+.fwh-gun-a-r6 { top:84%; right:-480px; transform:translateY(-50%) translateZ(-160px) rotateY(-22deg); transition:right 1.0s cubic-bezier(0.16,1,0.3,1) 0.22s, opacity 0.4s 0.22s; }
+
+/* In state */
+[class*="fwh-gun-a-l"].in { left:  clamp(6px,2.5vw,40px); opacity: 1; }
+[class*="fwh-gun-a-r"].in { right: clamp(6px,2.5vw,40px); opacity: 1; }
+
+/* Out state */
+[class*="fwh-gun-a-l"].out { left:  -480px; opacity: 0; transition: left  0.4s ease-in, opacity 0.3s; }
+[class*="fwh-gun-a-r"].out { right: -480px; opacity: 0; transition: right 0.4s ease-in, opacity 0.3s; }
+
+/* Blast explosion canvas */
+.fwh-blast-canvas {
+  position: fixed; inset: 0; z-index: 92;
+  width: 100%; height: 100%; pointer-events: none; display: none;
 }
-@keyframes fwhGunFireR {
-  0%   { transform: translateY(-50%); }
-  30%  { transform: translateY(-50%) translateX(18px) rotate(3deg); }
-  100% { transform: translateY(-50%); }
-}
-.fwh-gun-l.fwh-gun-fire { animation: fwhGunFireL 0.22s ease-out forwards; }
-.fwh-gun-r.fwh-gun-fire { animation: fwhGunFireR 0.22s ease-out forwards; }
 
 /* Muzzle flash */
 .fwh-mflash {
-  position: fixed; top: 50%; z-index: 87;
+  position: fixed; z-index: 87;
   width: 0; height: 0; transform: translateY(-50%); pointer-events: none;
 }
-.fwh-mflash-l { left: clamp(310px,30vw,420px); }
-.fwh-mflash-r { right: clamp(310px,30vw,420px); }
+/* Left arc flash positions — top to bottom */
+.fwh-mflash-a-l0 { left: clamp(310px,30vw,420px); top: 14%; }
+.fwh-mflash-a-l1 { left: clamp(310px,30vw,420px); top: 26%; }
+.fwh-mflash-a-l2 { left: clamp(310px,30vw,420px); top: 38%; }
+.fwh-mflash-a-l3 { left: clamp(310px,30vw,420px); top: 50%; }
+.fwh-mflash-a-l4 { left: clamp(310px,30vw,420px); top: 62%; }
+.fwh-mflash-a-l5 { left: clamp(310px,30vw,420px); top: 74%; }
+.fwh-mflash-a-l6 { left: clamp(310px,30vw,420px); top: 84%; }
+/* Right arc flash positions */
+.fwh-mflash-a-r0 { right: clamp(310px,30vw,420px); top: 14%; }
+.fwh-mflash-a-r1 { right: clamp(310px,30vw,420px); top: 26%; }
+.fwh-mflash-a-r2 { right: clamp(310px,30vw,420px); top: 38%; }
+.fwh-mflash-a-r3 { right: clamp(310px,30vw,420px); top: 50%; }
+.fwh-mflash-a-r4 { right: clamp(310px,30vw,420px); top: 62%; }
+.fwh-mflash-a-r5 { right: clamp(310px,30vw,420px); top: 74%; }
+.fwh-mflash-a-r6 { right: clamp(310px,30vw,420px); top: 84%; }
 .fwh-mflash-inner {
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%,-50%); opacity: 0;
@@ -864,20 +895,28 @@
   100% { opacity: 0;   transform: translate(-50%,-50%) scale(0.6); }
 }
 
-/* Plasma bullet trails */
+/* Bullet trails — 14 arc positions, color-coded by gun type */
 .fwh-trail {
-  position: fixed; top: 50%; z-index: 87; height: 4px;
+  position: fixed; z-index: 87; height: 4px;
   transform: translateY(-50%); pointer-events: none;
   opacity: 0; border-radius: 2px;
 }
-.fwh-trail-l {
-  left: clamp(310px,30vw,420px); width: 0;
-  background: linear-gradient(90deg, rgba(0,240,255,0.9), rgba(200,255,255,0.95), transparent);
-}
-.fwh-trail-r {
-  right: clamp(310px,30vw,420px); width: 0;
-  background: linear-gradient(270deg, rgba(0,240,255,0.9), rgba(200,255,255,0.95), transparent);
-}
+/* Left trails — L0=Sniper L1=RPG L2=AR L3=Plasma L4=Shotgun L5=Plasma L6=Plasma */
+.fwh-trail-a-l0 { top:14%; left:clamp(310px,30vw,420px); width:0; background:linear-gradient(90deg, rgba(200,220,255,0.9), rgba(255,255,255,0.95), transparent); }
+.fwh-trail-a-l1 { top:26%; left:clamp(310px,30vw,420px); width:0; background:linear-gradient(90deg, rgba(255,90,10,0.9),  rgba(255,180,60,0.9),  transparent); }
+.fwh-trail-a-l2 { top:38%; left:clamp(310px,30vw,420px); width:0; background:linear-gradient(90deg, rgba(255,200,60,0.9), rgba(255,240,180,0.95), transparent); }
+.fwh-trail-a-l3 { top:50%; left:clamp(310px,30vw,420px); width:0; background:linear-gradient(90deg, rgba(0,240,255,0.9),  rgba(200,255,255,0.95), transparent); }
+.fwh-trail-a-l4 { top:62%; left:clamp(310px,30vw,420px); width:0; background:linear-gradient(90deg, rgba(255,150,20,0.9), rgba(255,220,100,0.9),  transparent); }
+.fwh-trail-a-l5 { top:74%; left:clamp(310px,30vw,420px); width:0; background:linear-gradient(90deg, rgba(0,240,255,0.9),  rgba(200,255,255,0.95), transparent); }
+.fwh-trail-a-l6 { top:84%; left:clamp(310px,30vw,420px); width:0; background:linear-gradient(90deg, rgba(0,240,255,0.9),  rgba(200,255,255,0.95), transparent); }
+/* Right trails — R0=Plasma R1=AR R2=Shotgun R3=RPG R4=Plasma R5=Sniper R6=Plasma */
+.fwh-trail-a-r0 { top:14%; right:clamp(310px,30vw,420px); width:0; background:linear-gradient(270deg, rgba(0,240,255,0.9),  rgba(200,255,255,0.95), transparent); }
+.fwh-trail-a-r1 { top:26%; right:clamp(310px,30vw,420px); width:0; background:linear-gradient(270deg, rgba(255,200,60,0.9), rgba(255,240,180,0.95), transparent); }
+.fwh-trail-a-r2 { top:38%; right:clamp(310px,30vw,420px); width:0; background:linear-gradient(270deg, rgba(255,150,20,0.9), rgba(255,220,100,0.9),  transparent); }
+.fwh-trail-a-r3 { top:50%; right:clamp(310px,30vw,420px); width:0; background:linear-gradient(270deg, rgba(255,90,10,0.9),  rgba(255,180,60,0.9),  transparent); }
+.fwh-trail-a-r4 { top:62%; right:clamp(310px,30vw,420px); width:0; background:linear-gradient(270deg, rgba(0,240,255,0.9),  rgba(200,255,255,0.95), transparent); }
+.fwh-trail-a-r5 { top:74%; right:clamp(310px,30vw,420px); width:0; background:linear-gradient(270deg, rgba(200,220,255,0.9), rgba(255,255,255,0.95), transparent); }
+.fwh-trail-a-r6 { top:84%; right:clamp(310px,30vw,420px); width:0; background:linear-gradient(270deg, rgba(0,240,255,0.9),  rgba(200,255,255,0.95), transparent); }
 .fwh-trail-fire { animation: fwhTrailFire 0.18s ease-out forwards; }
 @keyframes fwhTrailFire {
   0%   { opacity: 1; width: 0; }
@@ -1002,10 +1041,10 @@ body.fwh-shake { animation: fwhShake 0.35s ease-out; }
 .ex-card {
   position: absolute; left: 0; top: 0;
   transform-origin: center center; transform-style: preserve-3d;
-  cursor: pointer; width: 310px; will-change: transform;
+  cursor: pointer; width: 280px; will-change: transform;
 }
 .ex-card-body {
-  position: relative; border-radius: 14px; overflow: hidden; height: 185px;
+  position: relative; border-radius: 14px; overflow: hidden; height: 440px;
   backdrop-filter: blur(12px) brightness(0.6) saturate(1.4);
   border: 1px solid rgba(255,220,100,0.22);
   box-shadow: 0 8px 40px rgba(0,0,0,0.4); transition: box-shadow 0.4s;
@@ -1066,8 +1105,8 @@ body.fwh-shake { animation: fwhShake 0.35s ease-out; }
 .ex-c-content {
   position: relative; z-index: 3; height: 100%;
   padding: 1.3rem 1.4rem 1.2rem;
-  display: flex; flex-direction: column; justify-content: flex-end; gap: .3rem;
-  background: linear-gradient(to top, rgba(20,8,1,0.9) 0%, rgba(20,8,1,0.4) 40%, transparent 65%);
+  display: flex; flex-direction: column; justify-content: flex-start; gap: .3rem;
+  background: linear-gradient(to bottom, rgba(20,8,1,0.82) 0%, rgba(20,8,1,0.22) 40%, rgba(20,8,1,0.72) 100%);
 }
 .ex-c-num {
   position: absolute; top: 1rem; right: 1.2rem;
@@ -1093,7 +1132,7 @@ body.fwh-shake { animation: fwhShake 0.35s ease-out; }
   max-height: 0; overflow: hidden; opacity: 0;
   transition: max-height .5s, opacity .5s;
 }
-.ex-card.is-focus .ex-c-desc { max-height: 80px; opacity: 1; }
+.ex-card.is-focus .ex-c-desc { max-height: 140px; opacity: 1; }
 .ex-enter-btn {
   font-family: 'Cinzel', serif; font-size: 0.55rem; font-weight: 700;
   letter-spacing: 0.2em; text-transform: uppercase;
@@ -1101,12 +1140,29 @@ body.fwh-shake { animation: fwhShake 0.35s ease-out; }
   background: rgba(40,20,4,0.75);
   border: 1px solid rgba(255,200,60,0.4);
   border-radius: 6px; padding: .4rem .9rem;
-  cursor: pointer; transition: background .2s, border-color .2s;
-  opacity: 0; transition: opacity .4s;
-  align-self: flex-start; margin-top: .3rem;
+  cursor: pointer; opacity: 0; transition: opacity .4s;
 }
 .ex-enter-btn:hover { background: rgba(80,40,8,0.9); border-color: rgba(255,200,60,0.7); }
 .ex-card.is-focus .ex-enter-btn { opacity: 1; }
+.ex-c-inspired {
+  font-size: .62rem; letter-spacing: .08em; font-style: italic;
+  color: rgba(255,180,80,0.55); opacity: 0; transition: opacity .4s; margin-top: .15rem;
+}
+.ex-card.is-focus .ex-c-inspired { opacity: 1; }
+.ex-c-btns {
+  display: flex; gap: .5rem; flex-wrap: wrap;
+  margin-top: auto; padding-top: .8rem;
+}
+.ex-ref-btn {
+  font-family: 'Cinzel', serif; font-size: 0.55rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(200,160,60,0.85); background: rgba(20,10,2,0.6);
+  border: 1px solid rgba(200,150,40,0.35);
+  border-radius: 6px; padding: .4rem .9rem;
+  cursor: pointer; opacity: 0; transition: opacity .4s;
+}
+.ex-ref-btn:hover { background: rgba(60,30,5,0.85); border-color: rgba(200,160,60,0.65); }
+.ex-card.is-focus .ex-ref-btn { opacity: 1; }
 
 /* Chrome UI */
 .ex-header {
