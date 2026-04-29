@@ -42,16 +42,15 @@ Style: Realistic architectural visualization, near-future urban planning, photor
 
       console.log('🌆 Generating Futuristic Skyscraper with enhanced prompt...');
 
-      const response = await axios.post('https://api.segmind.com/v1/nano-banana', {
-        prompt: enhancedPrompt,
-        samples: 1,
-        scheduler: "DPM++ 2M",
-        num_inference_steps: 25,
-        guidance_scale: 7.5,
+      const response = await axios.post('https://api.segmind.com/v1/juggernaut-lightning-flux', {
+        positivePrompt: enhancedPrompt,
+        width: 1024,
+        height: 1024,
+        steps: 25,
         seed: Math.floor(Math.random() * 1000000),
-        img_width: 1024,
-        img_height: 1024,
-        base64: false
+        CFGScale: 7.5,
+        outputFormat: "JPG",
+        scheduler: "Euler"
       }, {
         headers: {
           'x-api-key': import.meta.env.VITE_SEGMIND_API_KEY,

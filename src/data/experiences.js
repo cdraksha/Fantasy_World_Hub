@@ -938,6 +938,17 @@ export const EXPERIENCES = {
     modelsUsed: 'Segmind GPT-4 for career concept generation, Segmind Nano Banana for 7 parallel image generation',
     status: 'available',
     createdDate: 'Apr 2026'
+  },
+
+  'hindu-mythology-anime': {
+    title: 'Hindu Mythology — Anime Edition',
+    icon: '⚡',
+    contentType: 'Image',
+    description: 'Epic scenes from Hindu mythology — Ramayana, Mahabharata, and the Puranas — reimagined as breathtaking Japanese anime artwork. GPT-4 picks the legendary moment, then AI renders it in the style of Demon Slayer, Attack on Titan, and Fate. Hanuman carrying mountains. Ram unleashing the Brahmastra. Arjuna vs Karna at Kurukshetra.',
+    example: 'Hanuman soars through a stormy sky carrying an entire mountain range, divine energy crackling around him at massive anime-epic scale.',
+    modelsUsed: 'Segmind GPT-4 for scene selection and prompt, Segmind GPT-Image-2 for anime image generation',
+    status: 'available',
+    createdDate: 'Apr 2026'
   }
 };
 
