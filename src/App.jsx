@@ -95,6 +95,7 @@ import IndianCitiesExperience from './components/IndianCitiesExperience';
 import MughalEraExperience from './components/MughalEraExperience';
 import VijayanagaraExperience from './components/VijayanagaraExperience';
 import Ecumenopolis2Experience from './components/Ecumenopolis2Experience';
+import ToyPlanetExperience from './components/ToyPlanetExperience';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -660,6 +661,10 @@ function App() {
 
   if (currentExperience === 'terran-ecumenopolis-2') {
     return <Ecumenopolis2Experience onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'toy-planet') {
+    return <ToyPlanetExperience onStop={stopExperience} />;
   }
 
   return (

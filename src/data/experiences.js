@@ -993,6 +993,18 @@ export const EXPERIENCES = {
     modelsUsed: 'Segmind GPT-4 for cultural combination and prompt generation, Segmind GPT-Image-2 for photorealistic image generation',
     status: 'available',
     createdDate: 'Apr 2026'
+  },
+
+  'toy-planet': {
+    title: 'Toy Planet',
+    icon: '🪐',
+    contentType: 'Image',
+    description: 'AI conjures a unique miniature world floating in deep space — inspired by Super Mario Galaxy. GPT-4 invents the planet name, theme, and surface features. gpt-image-2 renders it: a tiny perfect sphere with giant cartoonish trees, clockwork towers, lighthouses, crystal spires, or mushroom forests, floating alone in a black starfield with a single dramatic light source.',
+    example: 'Cogsworth — a steampunk sphere with a towering brass clock, spinning gears, belching chimneys, and a tiny airship docked at a mast, floating in pure black space.',
+    modelsUsed: 'Segmind GPT-4 for planet name and theme, Segmind GPT-Image-2 for image generation',
+    inspiredBy: 'Super Mario Galaxy (2007)',
+    status: 'available',
+    createdDate: 'Apr 2026'
   }
 };
 
