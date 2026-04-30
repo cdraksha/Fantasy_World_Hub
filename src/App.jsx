@@ -94,6 +94,7 @@ import HinduMythologyAnimeExperience from './components/HinduMythologyAnimeExper
 import IndianCitiesExperience from './components/IndianCitiesExperience';
 import MughalEraExperience from './components/MughalEraExperience';
 import VijayanagaraExperience from './components/VijayanagaraExperience';
+import Ecumenopolis2Experience from './components/Ecumenopolis2Experience';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -655,6 +656,10 @@ function App() {
 
   if (currentExperience === 'vijayanagara-paintings') {
     return <VijayanagaraExperience onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'terran-ecumenopolis-2') {
+    return <Ecumenopolis2Experience onStop={stopExperience} />;
   }
 
   return (

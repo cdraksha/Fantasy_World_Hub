@@ -982,6 +982,17 @@ export const EXPERIENCES = {
     modelsUsed: 'Segmind GPT-4 for scene selection and prompt, Segmind GPT-Image-2 for acrylic painting image generation',
     status: 'available',
     createdDate: 'Apr 2026'
+  },
+
+  'terran-ecumenopolis-2': {
+    title: 'Terran Ecumenopolis 2.0',
+    icon: '🌆',
+    contentType: 'Image',
+    description: 'A planet-wide city where every civilisation on Earth built together — Mughal minarets beside Norse stave towers, Aztec pyramids fused with Byzantine domes, Dravidian gopurams next to Polynesian spires. GPT-4 picks a fresh unexpected cultural combination every time and writes the cinematic prompt. gpt-image-2 renders it at 1536×1024 high quality. No preset images — every city is unique.',
+    example: 'Byzantine golden domes rise beside Aztec stepped pyramids while Japanese pagodas tower over African geometric mega-structures at sunset, flying vehicles threading the canyons below.',
+    modelsUsed: 'Segmind GPT-4 for cultural combination and prompt generation, Segmind GPT-Image-2 for photorealistic image generation',
+    status: 'available',
+    createdDate: 'Apr 2026'
   }
 };
 
