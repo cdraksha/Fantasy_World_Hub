@@ -960,6 +960,17 @@ export const EXPERIENCES = {
     modelsUsed: 'Segmind GPT-4 for scene and palette selection, Segmind GPT-Image-2 for watercolor image generation',
     status: 'available',
     createdDate: 'Apr 2026'
+  },
+
+  'mughal-era-paintings': {
+    title: 'Mughal Era — Oil Paintings',
+    icon: '🏛️',
+    contentType: 'Image',
+    description: 'Indian streets during the Mughal Empire (1526–1857) rendered as rich oil paintings — bazaars in Agra, the imperial court at Fatehpur Sikri, Chandni Chowk under Shah Jahan, caravanserais, Sufi dargahs, elephant processions by torchlight. GPT-4 picks the scene, gpt-image-2 paints it with Dutch Golden Age chiaroscuro fused with Mughal miniature richness.',
+    example: 'An oil painting of the Agra bazaar at dusk — turbaned merchants by lantern light, camel carts, sandstone archways, deep amber and crimson impasto, Rembrandt shadows.',
+    modelsUsed: 'Segmind GPT-4 for scene selection and prompt, Segmind GPT-Image-2 for oil painting image generation',
+    status: 'available',
+    createdDate: 'Apr 2026'
   }
 };
 

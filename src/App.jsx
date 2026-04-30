@@ -92,6 +92,7 @@ import OvertonWindowCareersPage from './components/OvertonWindowCareersPage';
 import HydrokineticPart2Page from './components/HydrokineticPart2Page';
 import HinduMythologyAnimeExperience from './components/HinduMythologyAnimeExperience';
 import IndianCitiesExperience from './components/IndianCitiesExperience';
+import MughalEraExperience from './components/MughalEraExperience';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -645,6 +646,10 @@ function App() {
 
   if (currentExperience === 'indian-cities') {
     return <IndianCitiesExperience onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'mughal-era-paintings') {
+    return <MughalEraExperience onStop={stopExperience} />;
   }
 
   return (
