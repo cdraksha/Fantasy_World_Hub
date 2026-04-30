@@ -971,6 +971,17 @@ export const EXPERIENCES = {
     modelsUsed: 'Segmind GPT-4 for scene selection and prompt, Segmind GPT-Image-2 for oil painting image generation',
     status: 'available',
     createdDate: 'Apr 2026'
+  },
+
+  'vijayanagara-paintings': {
+    title: 'Vijayanagara Empire — Acrylic Paintings',
+    icon: '🪨',
+    contentType: 'Image',
+    description: 'Streets and scenes from the Vijayanagara Empire (1336–1646 CE) rendered as vivid acrylic paintings. The grand Hampi Bazaar colonnade, Vittala Temple festivals, Tungabhadra river ghats, royal elephant processions, Persian and Portuguese merchants at market. GPT-4 picks the scene, gpt-image-2 paints it with bold saturated acrylics, graphic flat colour, and Deccan sunlight.',
+    example: 'An acrylic painting of the Hampi Bazaar at midday — colonnaded stone pillars, spice traders, caparisoned elephants, vivid saffron and cobalt against granite boulders.',
+    modelsUsed: 'Segmind GPT-4 for scene selection and prompt, Segmind GPT-Image-2 for acrylic painting image generation',
+    status: 'available',
+    createdDate: 'Apr 2026'
   }
 };
 

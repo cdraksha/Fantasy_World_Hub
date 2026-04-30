@@ -93,6 +93,7 @@ import HydrokineticPart2Page from './components/HydrokineticPart2Page';
 import HinduMythologyAnimeExperience from './components/HinduMythologyAnimeExperience';
 import IndianCitiesExperience from './components/IndianCitiesExperience';
 import MughalEraExperience from './components/MughalEraExperience';
+import VijayanagaraExperience from './components/VijayanagaraExperience';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -650,6 +651,10 @@ function App() {
 
   if (currentExperience === 'mughal-era-paintings') {
     return <MughalEraExperience onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'vijayanagara-paintings') {
+    return <VijayanagaraExperience onStop={stopExperience} />;
   }
 
   return (
