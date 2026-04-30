@@ -84,7 +84,7 @@ export default function IndianCitiesExperience({ onStop }) {
           }} />
 
           <div style={{ fontSize: 17, letterSpacing: 4, marginBottom: 36 }}>
-            CAPTURING THE CITY…
+            PAINTING THE CITY…
           </div>
 
           <div style={{ position: 'relative', width: 120, height: 120, margin: '0 auto 18px' }}>
@@ -208,7 +208,7 @@ export default function IndianCitiesExperience({ onStop }) {
           onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,180,80,1)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,140,0,0.15)'; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,180,80,0.5)'; e.currentTarget.style.color = 'rgba(255,180,80,0.9)'; e.currentTarget.style.background = 'none'; }}
         >
-          📷 New City
+          🎨 New Painting
         </button>
       </div>
     </Shell>

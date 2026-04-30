@@ -7,15 +7,15 @@ const API_KEY  = () => import.meta.env.VITE_SEGMIND_API_KEY;
 const FALLBACK_SCENES = [
   {
     title: 'Mumbai Rooftop at Golden Hour',
-    prompt: 'Photorealistic cinematic shot from a Mumbai rooftop at golden hour. Dozens of water tanks and satellite dishes silhouetted against a hazy orange sky. Laundry lines strung between buildings. Below, a dense maze of narrow lanes packed with shops, autos, and people. Warm dusty light. Shot on 35mm f/2.0, shallow depth of field, film grain, ultra-realistic.'
+    prompt: 'Traditional watercolor painting of a Mumbai rooftop at golden hour. Water tanks and satellite dishes silhouetted against a warm amber sky. Laundry lines strung between buildings. Loose wet-on-wet washes of ochre and burnt sienna. Visible brushstrokes, soft bleeding edges, paper texture showing through. Luminous atmospheric haze, impressionistic crowd below. Watercolor on cold-press paper, warm palette.'
   },
   {
     title: 'Varanasi Ghat at Dawn',
-    prompt: 'Photorealistic cinematic shot of Varanasi ghats at dawn. Soft pink-gold mist rising off the Ganges. Priests performing aarti with brass lamps. Pilgrims descending worn stone steps to bathe. Small wooden boats on still water reflecting the sky. Ancient temple spires behind. Shot on medium format camera, natural light only, ultra-detailed, film grain.'
+    prompt: 'Traditional watercolor painting of Varanasi ghats at dawn. Soft pink and lavender washes reflect in the still Ganges. Priests with brass lamps, pilgrims on worn stone steps, small wooden boats. Ancient temple spires dissolving into morning mist. Loose fluid brushwork, wet-on-wet blending, white paper left for highlights. Serene, atmospheric, luminous watercolor on textured paper.'
   },
   {
-    title: 'Old Delhi Street Market — Chandni Chowk',
-    prompt: 'Photorealistic cinematic street photograph in Chandni Chowk, Old Delhi. Narrow lane packed with cycle rickshaws, handcarts, and crowds. Colorful shop fronts with Hindi signage. Spice sellers, fabric bolls, silver jewellers. Tangle of electric wires overhead. Afternoon haze and dust. Shot on 28mm full-frame, f/4, street photography style, ultra-detailed, natural color grading.'
+    title: 'Old Delhi Lane — Chandni Chowk',
+    prompt: 'Traditional watercolor painting of a narrow Chandni Chowk lane in Old Delhi. Cycle rickshaws and handcarts in a crowded bazaar. Colorful shop fronts with Hindi signage, spice sellers, tangled electric wires overhead. Rich jewel tones — saffron, crimson, cobalt. Expressive loose brushwork, ink line details, wet washes bleeding into each other. Watercolor on textured paper.'
   }
 ];
 
@@ -42,11 +42,11 @@ const useIndianCitiesContent = () => {
             messages   : [
               {
                 role   : 'system',
-                content: 'You are a world-class travel photographer specialising in Indian cities. You compose stunning photorealistic scenes — rooftops, street markets, railway stations, chai stalls, ghats, old havelis, bazaars, temple lanes, auto-rickshaw junctions — from cities like Mumbai, Delhi, Varanasi, Kolkata, Jaipur, Chennai, Hyderabad, Amritsar, Bangalore, Cochin. No fantasy, no surrealism — purely real, gritty, beautiful India. Return ONLY valid compact JSON with no markdown.'
+                content: 'You are a master watercolor artist specialising in Indian cities. You paint evocative scenes — rooftops, street markets, railway stations, chai stalls, ghats, old havelis, bazaars, temple lanes, auto-rickshaw junctions — from cities like Mumbai, Delhi, Varanasi, Kolkata, Jaipur, Chennai, Hyderabad, Amritsar, Bangalore, Cochin. Your style is loose, luminous, wet-on-wet with bleeding color washes, visible brushstrokes, and paper texture. No surrealism, no fantasy — purely real, beautiful India rendered in watercolor. Return ONLY valid compact JSON with no markdown.'
               },
               {
                 role   : 'user',
-                content: 'Pick one specific Indian city scene and write a cinematic photorealistic image prompt for it. Return: {"title":"<5-8 word descriptive English title>","prompt":"<100-140 word ultra-detailed photorealistic image prompt, specify city, time of day, camera settings, lighting, mood>"}'
+                content: 'Pick one specific Indian city scene and write a detailed watercolor painting prompt for it. Return: {"title":"<5-8 word descriptive English title>","prompt":"<100-140 word watercolor painting prompt, specify city, time of day, color palette, brushwork style, mood, paper texture>"}'
               }
             ]
           })
@@ -71,7 +71,7 @@ const useIndianCitiesContent = () => {
       }
 
       // ── Step 2: generate the image with gpt-image-2 ──
-      const finalPrompt = `${imagePrompt}. Photorealistic, cinematic composition, natural lighting, ultra-detailed textures, professional photography, authentic India, no illustration, no painting, no fantasy elements.`;
+      const finalPrompt = `${imagePrompt}. Traditional watercolor painting, loose expressive brushwork, wet-on-wet color washes, soft bleeding edges, visible paper texture, luminous transparent pigments, no photography, no CGI, authentic India.`;
 
       const imgRes = await fetch(IMG_URL, {
         method : 'POST',
