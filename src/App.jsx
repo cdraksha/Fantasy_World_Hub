@@ -91,6 +91,7 @@ import HydrokineticPart1Page from './components/HydrokineticPart1Page';
 import OvertonWindowCareersPage from './components/OvertonWindowCareersPage';
 import HydrokineticPart2Page from './components/HydrokineticPart2Page';
 import HinduMythologyAnimeExperience from './components/HinduMythologyAnimeExperience';
+import IndianCitiesExperience from './components/IndianCitiesExperience';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -640,6 +641,10 @@ function App() {
 
   if (currentExperience === 'hindu-mythology-anime') {
     return <HinduMythologyAnimeExperience onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'indian-cities') {
+    return <IndianCitiesExperience onStop={stopExperience} />;
   }
 
   return (

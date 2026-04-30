@@ -949,6 +949,17 @@ export const EXPERIENCES = {
     modelsUsed: 'Segmind GPT-4 for scene selection and prompt, Segmind GPT-Image-2 for anime image generation',
     status: 'available',
     createdDate: 'Apr 2026'
+  },
+
+  'indian-cities': {
+    title: 'Indian Cities',
+    icon: '🏙️',
+    contentType: 'Image',
+    description: 'Photorealistic AI-generated scenes from Indian cities — rooftops packed with water tanks and laundry lines, chaotic street markets, chai stalls at dusk, Varanasi ghats at dawn, Old Delhi lanes, railway platforms, temple bazaars. GPT-4 picks the scene, gpt-image-2 renders it in cinematic high quality.',
+    example: 'A Mumbai rooftop at golden hour — water tanks silhouetted against a hazy orange sky, laundry lines everywhere, the city sprawling endlessly below.',
+    modelsUsed: 'Segmind GPT-4 for scene selection and prompt, Segmind GPT-Image-2 for photorealistic image generation',
+    status: 'available',
+    createdDate: 'Apr 2026'
   }
 };
 
