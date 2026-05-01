@@ -3,6 +3,29 @@ import { useState, useCallback } from 'react';
 const VISION_URL = 'https://api.segmind.com/v1/gpt-4o';
 const IMG_URL    = 'https://api.segmind.com/v1/gpt-image-2';
 const API_KEY    = () => import.meta.env.VITE_SEGMIND_API_KEY;
+const IMGBB_KEY  = () => import.meta.env.VITE_IMGBB_API_KEY;
+
+const uploadToImgbb = async (base64Data) => {
+  const base64 = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
+  const formData = new FormData();
+  formData.append('image', base64);
+  formData.append('key', IMGBB_KEY());
+  const res = await fetch('https://api.imgbb.com/1/upload', {
+    method: 'POST',
+    body: formData
+  });
+  if (!res.ok) throw new Error(`Image upload failed: ${res.status}`);
+  const json = await res.json();
+  return { url: json.data.url, deleteUrl: json.data.delete_url };
+};
+
+const deleteFromImgbb = async (deleteUrl) => {
+  try {
+    await fetch(deleteUrl, { method: 'GET' });
+  } catch {
+    // silently ignore — image will expire on its own
+  }
+};
 
 const useToyPlanet4Content = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -12,8 +35,14 @@ const useToyPlanet4Content = () => {
     setIsGenerating(true);
     setError(null);
 
+    let deleteUrl = null;
+
     try {
-      // Step 1 — vision model reads the photo and describes everything in detail
+      // Step 1 — upload to imgbb to get a hosted URL
+      const uploaded = await uploadToImgbb(imageBase64);
+      deleteUrl = uploaded.deleteUrl;
+
+      // Step 2 — vision model reads the hosted image and describes the scene
       const visionRes = await fetch(VISION_URL, {
         method : 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY() },
@@ -30,7 +59,7 @@ const useToyPlanet4Content = () => {
                 },
                 {
                   type     : 'image_url',
-                  image_url: { url: imageBase64 }
+                  image_url: { url: uploaded.url }
                 }
               ]
             }
@@ -44,12 +73,11 @@ const useToyPlanet4Content = () => {
         sceneDescription = visionJson.choices[0].message.content.trim();
       }
 
-      // Step 2 — build the planet prompt from the description
+      // Step 3 — generate the planet with the people recreated on its surface
       const planetPrompt = sceneDescription
         ? `A tiny perfect spherical toy planet floating alone in pure black space. On its surface, recreated as charming Nintendo-style cartoon characters: ${sceneDescription}. The landscape and people from the scene wrap all the way around the sphere. Single dramatic light source from above. Super Mario Galaxy Nintendo 3D art style, vivid, magical, dreamlike, ultra detailed, pure black void background, no stars.`
-        : 'A tiny perfect spherical toy planet floating alone in pure black space with people and landscape on its surface. Super Mario Galaxy Nintendo 3D art style, vivid, magical, dreamlike, ultra detailed.';
+        : 'A tiny perfect spherical toy planet floating alone in pure black space with people and landscape recreated as Nintendo characters on its surface. Super Mario Galaxy Nintendo 3D art style, vivid, magical, dreamlike, ultra detailed.';
 
-      // Step 3 — generate the planet
       const imgRes = await fetch(IMG_URL, {
         method : 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY() },
@@ -82,6 +110,8 @@ const useToyPlanet4Content = () => {
       setError(err.message || 'Generation failed');
       throw err;
     } finally {
+      // Step 4 — delete from imgbb regardless of success or failure
+      if (deleteUrl) await deleteFromImgbb(deleteUrl);
       setIsGenerating(false);
     }
   }, []);
