@@ -1005,6 +1005,17 @@ export const EXPERIENCES = {
     inspiredBy: 'Super Mario Galaxy (2007)',
     status: 'available',
     createdDate: 'Apr 2026'
+  },
+
+  'cherry-blossom-cities': {
+    title: 'Cherry Blossom Cities',
+    icon: '🌸',
+    contentType: 'Image',
+    description: 'Cities around the world at cherry blossom season, painted as vivid impressionist masterpieces. GPT-4 picks the city and scene — Tokyo\'s Shibuya crossing, Kyoto\'s Philosopher\'s Path, Paris boulevards, Washington DC\'s Tidal Basin, Seoul palaces, Amsterdam canals. gpt-image-2 paints it in bright Monet/Renoir style: thick expressive brushwork, saturated sakura pink, luminous light, maximum joy.',
+    example: 'Tokyo Shibuya at cherry blossom season — sakura arching over the famous scramble crossing, neon signs glowing pink behind a canopy of petals, bold impressionist brushwork and vibrant colour.',
+    modelsUsed: 'Segmind GPT-4 for city scene and painting prompt, Segmind GPT-Image-2 for impressionist image generation',
+    status: 'available',
+    createdDate: 'Apr 2026'
   }
 };
 

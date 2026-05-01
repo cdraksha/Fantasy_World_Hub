@@ -96,6 +96,7 @@ import MughalEraExperience from './components/MughalEraExperience';
 import VijayanagaraExperience from './components/VijayanagaraExperience';
 import Ecumenopolis2Experience from './components/Ecumenopolis2Experience';
 import ToyPlanetExperience from './components/ToyPlanetExperience';
+import CherryBlossomCitiesExperience from './components/CherryBlossomCitiesExperience';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -665,6 +666,10 @@ function App() {
 
   if (currentExperience === 'toy-planet') {
     return <ToyPlanetExperience onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'cherry-blossom-cities') {
+    return <CherryBlossomCitiesExperience onStop={stopExperience} />;
   }
 
   return (
