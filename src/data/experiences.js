@@ -1042,13 +1042,14 @@ export const EXPERIENCES = {
     createdDate: 'Apr 2026'
   },
 
-  'toy-planet-4': {
-    title: 'Toy Planet 4.0 — Your World',
-    icon: '🪐',
-    contentType: 'Interactive Upload',
-    description: 'Upload any photo and watch it transform into a tiny toy planet floating in pure black space. A mountain photo becomes a rocky planet. You and your family become a miniature world. A city street wraps into a sphere. Whatever is in your photo becomes the surface of a Super Mario Galaxy-style planet.',
-    example: 'Upload a photo of you and your wife on a mountain — gpt-image-2 transforms it into a tiny spherical planet with the mountain and both of you visible on its surface, floating in black space.',
-    modelsUsed: 'Segmind GPT-Image-2 for photo-to-planet transformation',
+  'hindu-temple-planet': {
+    title: 'Toy Planet 4.0 — Hindu Temples',
+    icon: '🛕',
+    contentType: 'Image',
+    description: 'Ancient Hindu temple worlds floating in deep black space — like Asgard but divine Indian. GPT-4 conjures a new sacred realm every time: colossal Kailasa-style temples carved from volcanic rock, thousand-spired golden gopurams piercing the void, submerged Dwarka cities rising from sacred oceans, Hampi boulder empires under eternal sunlight. gpt-image-2 renders each at 1024×1024 — epic, mythological, jaw-dropping.',
+    example: 'The Golden Gopuram World — thousands of soaring South Indian temple towers covered in gold wrap across the entire sphere, lush jungle between the spires, rivers of sacred water flowing around the equator.',
+    modelsUsed: 'Segmind GPT-4 for divine realm concept and prompt, Segmind GPT-Image-2 for image generation',
+    inspiredBy: 'Thor: Ragnarok (2017)',
     status: 'available',
     createdDate: 'Apr 2026'
   }
