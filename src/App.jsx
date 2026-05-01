@@ -97,6 +97,7 @@ import VijayanagaraExperience from './components/VijayanagaraExperience';
 import Ecumenopolis2Experience from './components/Ecumenopolis2Experience';
 import ToyPlanetExperience from './components/ToyPlanetExperience';
 import CherryBlossomCitiesExperience from './components/CherryBlossomCitiesExperience';
+import SakuraPlanetExperience from './components/SakuraPlanetExperience';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -670,6 +671,10 @@ function App() {
 
   if (currentExperience === 'cherry-blossom-cities') {
     return <CherryBlossomCitiesExperience onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'sakura-planet') {
+    return <SakuraPlanetExperience onStop={stopExperience} />;
   }
 
   return (

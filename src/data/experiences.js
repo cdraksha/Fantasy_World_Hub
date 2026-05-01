@@ -1007,6 +1007,18 @@ export const EXPERIENCES = {
     createdDate: 'Apr 2026'
   },
 
+  'sakura-planet': {
+    title: 'Toy Planet 2.0 — Sakura',
+    icon: '🌸',
+    contentType: 'Image',
+    description: 'Tiny cherry blossom worlds floating in deep black space — inspired by Super Mario Galaxy. GPT-4 invents a new intimate scene each time: a monk playing a bamboo flute under a sakura tree, a woman in a kimono beside a glowing koi pond, an old man on a tea house veranda watching petals drift into the void, children releasing paper lanterns into space. gpt-image-2 renders each planet at 1024×1024 — a perfect sphere of sakura magic.',
+    example: 'The Midnight Pond — a glassy koi pond covers half the planet, a stone lantern glows amber, a woman in white kimono kneels trailing her fingers in the water, cherry blossoms arching overhead.',
+    modelsUsed: 'Segmind GPT-4 for planet scene and prompt, Segmind GPT-Image-2 for image generation',
+    inspiredBy: 'Super Mario Galaxy (2007)',
+    status: 'available',
+    createdDate: 'Apr 2026'
+  },
+
   'cherry-blossom-cities': {
     title: 'Cherry Blossom Cities',
     icon: '🌸',
