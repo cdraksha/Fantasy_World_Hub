@@ -3,29 +3,6 @@ import { useState, useCallback } from 'react';
 const VISION_URL = 'https://api.segmind.com/v1/gpt-4o';
 const IMG_URL    = 'https://api.segmind.com/v1/gpt-image-2';
 const API_KEY    = () => import.meta.env.VITE_SEGMIND_API_KEY;
-const IMGBB_KEY  = () => import.meta.env.VITE_IMGBB_API_KEY;
-
-const uploadToImgbb = async (base64Data) => {
-  const base64 = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
-  const formData = new FormData();
-  formData.append('image', base64);
-  formData.append('key', IMGBB_KEY());
-  const res = await fetch('https://api.imgbb.com/1/upload', {
-    method: 'POST',
-    body: formData
-  });
-  if (!res.ok) throw new Error(`Image upload failed: ${res.status}`);
-  const json = await res.json();
-  return { url: json.data.url, deleteUrl: json.data.delete_url };
-};
-
-const deleteFromImgbb = async (deleteUrl) => {
-  try {
-    await fetch(deleteUrl, { method: 'GET' });
-  } catch {
-    // silently ignore — image will expire on its own
-  }
-};
 
 const useToyPlanet4Content = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -35,31 +12,25 @@ const useToyPlanet4Content = () => {
     setIsGenerating(true);
     setError(null);
 
-    let deleteUrl = null;
-
     try {
-      // Step 1 — upload to imgbb to get a hosted URL
-      const uploaded = await uploadToImgbb(imageBase64);
-      deleteUrl = uploaded.deleteUrl;
-
-      // Step 2 — vision model reads the hosted image and describes the scene
+      // Step 1 — vision model reads the photo and gives cartoon-friendly description
       const visionRes = await fetch(VISION_URL, {
         method : 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY() },
         body   : JSON.stringify({
           model      : 'gpt-4o',
-          max_tokens : 300,
+          max_tokens : 200,
           messages   : [
             {
               role   : 'user',
               content: [
                 {
                   type: 'text',
-                  text: 'Describe this photo in precise detail for an artist who will recreate everyone in it as cartoon characters on a toy planet. Include: how many people, each person\'s approximate hair color, skin tone, clothing colors and style, what they are doing, their expressions. Then describe the setting: location type, key landscape features, time of day, colors in the scene. Be specific and visual. Write 3-5 sentences only, no lists.'
+                  text: 'You are helping create a Nintendo cartoon illustration. Look at this photo and describe ONLY: how many people, each person\'s hair color, skin color, clothing color, and what they are wearing. Then in one sentence describe the setting (mountain, beach, city etc) and its main colors. Use simple cartoon-friendly language. No photographic detail. 2-3 sentences max.'
                 },
                 {
                   type     : 'image_url',
-                  image_url: { url: uploaded.url }
+                  image_url: { url: imageBase64 }
                 }
               ]
             }
@@ -73,10 +44,10 @@ const useToyPlanet4Content = () => {
         sceneDescription = visionJson.choices[0].message.content.trim();
       }
 
-      // Step 3 — generate the planet with the people recreated on its surface
+      // Step 2 — generate a brand new cartoon toy planet
       const planetPrompt = sceneDescription
-        ? `A tiny perfect spherical toy planet floating alone in pure black space. On its surface, recreated as charming Nintendo-style cartoon characters: ${sceneDescription}. The landscape and people from the scene wrap all the way around the sphere. Single dramatic light source from above. Super Mario Galaxy Nintendo 3D art style, vivid, magical, dreamlike, ultra detailed, pure black void background, no stars.`
-        : 'A tiny perfect spherical toy planet floating alone in pure black space with people and landscape recreated as Nintendo characters on its surface. Super Mario Galaxy Nintendo 3D art style, vivid, magical, dreamlike, ultra detailed.';
+        ? `Brand new digital cartoon illustration — NOT a photograph, NOT realistic, NOT a transformed image. A tiny perfect spherical toy planet floating alone in pure black space. On its surface as cute Nintendo 3D cartoon characters: ${sceneDescription}. The characters and landscape are fully illustrated in bright bold colours, cel-shaded, cartoon style. The planet is a complete sphere floating in pure black void with no stars. Single dramatic light from above. Super Mario Galaxy Nintendo art style. Vivid, joyful, magical. No photorealism whatsoever.`
+        : 'Brand new digital cartoon illustration of a tiny perfect spherical toy planet floating in pure black space. Cute Nintendo 3D cartoon characters on the surface. Super Mario Galaxy art style, vivid, bright, magical. No photorealism.';
 
       const imgRes = await fetch(IMG_URL, {
         method : 'POST',
@@ -110,8 +81,6 @@ const useToyPlanet4Content = () => {
       setError(err.message || 'Generation failed');
       throw err;
     } finally {
-      // Step 4 — delete from imgbb regardless of success or failure
-      if (deleteUrl) await deleteFromImgbb(deleteUrl);
       setIsGenerating(false);
     }
   }, []);
