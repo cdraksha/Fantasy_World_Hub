@@ -1163,6 +1163,12 @@ body.fwh-shake { animation: fwhShake 0.35s ease-out; }
 }
 .ex-ref-btn:hover { background: rgba(60,30,5,0.85); border-color: rgba(200,160,60,0.65); }
 .ex-card.is-focus .ex-ref-btn { opacity: 1; }
+.ex-c-date {
+  text-align: right; font-size: .58rem; letter-spacing: .12em;
+  color: rgba(255,255,255,0.2); margin-top: .5rem;
+  opacity: 0; transition: opacity .4s;
+}
+.ex-card.is-focus .ex-c-date { opacity: 1; }
 
 /* Chrome UI */
 .ex-header {

@@ -245,6 +245,7 @@ const ExploreOverlay = ({ experiences = [], onSelect, onClose, open }) => {
                         References
                       </button>
                     </div>
+                    {exp.createdDate && <div className="ex-c-date">{exp.createdDate}</div>}
                   </div>
                 </div>
               </div>
