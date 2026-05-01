@@ -1028,6 +1028,18 @@ export const EXPERIENCES = {
     inspiredBy: 'Super Mario Galaxy (2007)',
     status: 'available',
     createdDate: 'Apr 2026'
+  },
+
+  'skyscraper-planet': {
+    title: 'Toy Planet 3.0 — Skyscrapers',
+    icon: '🏙️',
+    contentType: 'Image',
+    description: 'Tiny city worlds floating in deep black space — inspired by Super Mario Galaxy. Each planet is a real-world city miniaturized onto a sphere: Manhattan with Art Deco towers and yellow cabs, Dubai with twisting gold supertalls, Tokyo with neon signs and bullet trains circling the equator, Hong Kong with harbour-lit density, Singapore with sky-bridge towers. GPT-4 picks the city and mood, gpt-image-2 renders it at 1024×1024.',
+    example: 'The Tokyo Neon Planet — dense Japanese skyscrapers with LED billboards curving around a tiny sphere, a bullet train elevated track wrapping the equator, blue hour glow.',
+    modelsUsed: 'Segmind GPT-4 for city concept and prompt, Segmind GPT-Image-2 for image generation',
+    inspiredBy: 'Super Mario Galaxy (2007)',
+    status: 'available',
+    createdDate: 'Apr 2026'
   }
 };
 

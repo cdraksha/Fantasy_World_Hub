@@ -98,6 +98,7 @@ import Ecumenopolis2Experience from './components/Ecumenopolis2Experience';
 import ToyPlanetExperience from './components/ToyPlanetExperience';
 import CherryBlossomCitiesExperience from './components/CherryBlossomCitiesExperience';
 import SakuraPlanetExperience from './components/SakuraPlanetExperience';
+import SkyscraperPlanetExperience from './components/SkyscraperPlanetExperience';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -675,6 +676,10 @@ function App() {
 
   if (currentExperience === 'sakura-planet') {
     return <SakuraPlanetExperience onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'skyscraper-planet') {
+    return <SkyscraperPlanetExperience onStop={stopExperience} />;
   }
 
   return (
