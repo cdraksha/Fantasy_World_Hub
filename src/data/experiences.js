@@ -1011,9 +1011,9 @@ export const EXPERIENCES = {
     title: 'Cherry Blossom Cities',
     icon: '🌸',
     contentType: 'Image',
-    description: 'Cities around the world at cherry blossom season, painted as vivid impressionist masterpieces. GPT-4 picks the city and scene — Tokyo\'s Shibuya crossing, Kyoto\'s Philosopher\'s Path, Paris boulevards, Washington DC\'s Tidal Basin, Seoul palaces, Amsterdam canals. gpt-image-2 paints it in bright Monet/Renoir style: thick expressive brushwork, saturated sakura pink, luminous light, maximum joy.',
-    example: 'Tokyo Shibuya at cherry blossom season — sakura arching over the famous scramble crossing, neon signs glowing pink behind a canopy of petals, bold impressionist brushwork and vibrant colour.',
-    modelsUsed: 'Segmind GPT-4 for city scene and painting prompt, Segmind GPT-Image-2 for impressionist image generation',
+    description: 'Cities around the world at peak cherry blossom season, captured as stunning photorealistic travel photography. GPT-4 picks the city and landmark — Tokyo\'s Shibuya crossing, Amsterdam canals, Seoul\'s Gyeongbokgung Palace, Washington DC\'s Tidal Basin, Paris boulevards, Prague bridges, Vancouver harbour. gpt-image-2 renders a cinematic, magazine-quality photograph: sharp sakura in bloom, beautiful natural light, breathtaking scenery.',
+    example: 'Amsterdam canals at cherry blossom season — pink sakura reflecting in the water alongside traditional Dutch townhouses, soft morning light, petals floating on the surface.',
+    modelsUsed: 'Segmind GPT-4 for city and scene selection, Segmind GPT-Image-2 for photorealistic image generation',
     status: 'available',
     createdDate: 'Apr 2026'
   }

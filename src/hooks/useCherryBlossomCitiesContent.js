@@ -7,19 +7,19 @@ const API_KEY  = () => import.meta.env.VITE_SEGMIND_API_KEY;
 const FALLBACK_SCENES = [
   {
     title: 'Tokyo Shibuya — Cherry Blossom Rush Hour',
-    prompt: 'Bright impressionist painting of Tokyo\'s Shibuya crossing at cherry blossom season. Massive sakura trees in full bloom arch over the famous scramble crossing, petals drifting onto the crowd below. Neon signs glow pink and white behind a canopy of blossoms. Figures with umbrellas and city bustle. Vivid luminous palette — hot pink, coral, cream white, electric blue neon. Loose confident brushwork, thick impasto on flower clusters, Monet meets modern Tokyo. Ultra-bright, joyful, painterly.'
+    prompt: 'Professional travel photograph of Tokyo\'s Shibuya crossing at peak cherry blossom season. Massive sakura trees in full bloom arch over the famous scramble crossing, pink petals drifting onto the crowd below. Neon signs glowing behind a canopy of soft blossoms. Hundreds of people crossing. Shot with 35mm lens, f/2.8, golden hour light, petals sharp in foreground. Ultra sharp, cinematic, photorealistic.'
   },
   {
-    title: 'Kyoto Philosopher\'s Path at Full Bloom',
-    prompt: 'Bright impressionist painting of the Philosopher\'s Path in Kyoto at peak cherry blossom season. A narrow canal lined with ancient stone, hundreds of sakura trees forming a tunnel of pink and white. Soft afternoon light filtering through petals. Traditional wooden machiya townhouses behind. Vivid luminous palette — intense blossom pink, jade green, cream, warm amber sunlight. Thick expressive oil brushwork, dabs of pure white and hot pink for flowers, gloriously bright and alive.'
-  },
-  {
-    title: 'Paris Boulevard Under Cherry Blossoms',
-    prompt: 'Bright impressionist painting of a grand Parisian boulevard lined with cherry blossom trees in full bloom. Haussmann buildings in cream and sand behind a canopy of intense pink sakura. Parisians at café tables under drifting petals, bicycles, a green lamp post. Golden afternoon light. Vivid palette — saturated blossom pink, warm ochre stone, cobalt sky, green café awnings. Thick Monet-style brushwork, pure colour, maximum brightness, painterly and joyful.'
+    title: 'Amsterdam Canals — Cherry Blossom Spring',
+    prompt: 'Professional travel photograph of Amsterdam\'s canal district at cherry blossom season. Sakura trees in full bloom line the historic canal, their pink blossoms reflecting perfectly in the water. Traditional Dutch narrow townhouses in the background, bicycles parked along the canal edge. Soft morning light, petals floating on the canal surface. Shot at f/2.8, wide angle, cinematic colour grading. Ultra sharp, photorealistic, stunning travel photography.'
   },
   {
     title: 'Washington DC Tidal Basin at Dawn',
-    prompt: 'Bright impressionist painting of Washington DC\'s Tidal Basin at sunrise during cherry blossom festival. The Jefferson Memorial reflected in still water, surrounded by hundreds of sakura trees in peak bloom. Dawn light painting everything in gold and pink. Petals floating on the water. Vivid luminous palette — hot pink, pale gold, lavender sky, cream marble. Thick expressive brushwork, pure colour dabs, radiant and gloriously bright. Monet-style impressionism at its most vivid.'
+    prompt: 'Professional travel photograph of Washington DC\'s Tidal Basin at sunrise during the cherry blossom festival. The Jefferson Memorial perfectly reflected in still water, surrounded by hundreds of sakura trees at peak bloom. Pink and gold dawn light, petals floating on the water. Shot at f/2.8, wide angle, long exposure for glassy reflections. Ultra sharp, cinematic, photorealistic.'
+  },
+  {
+    title: 'Seoul Gyeongbokgung Palace — Cherry Blossoms',
+    prompt: 'Professional travel photograph of Seoul\'s Gyeongbokgung Palace at cherry blossom season. Ancient Korean royal palace buildings with traditional curved tile roofs framed by hundreds of sakura trees in full bloom. Pink petals drifting across the grand stone courtyard. People in hanbok robes walking through the blossoms. Warm afternoon light. Shot at f/2.8, 35mm, cinematic. Ultra sharp, photorealistic, breathtaking travel photography.'
   }
 ];
 
@@ -45,11 +45,11 @@ const useCherryBlossomCitiesContent = () => {
             messages   : [
               {
                 role   : 'system',
-                content: 'You are a master impressionist painter specialising in cherry blossom scenes in cities around the world. You paint vivid, gloriously bright scenes — Tokyo crossings, Kyoto canal paths, Paris boulevards, Washington DC monuments, Seoul palaces, Amsterdam canals, Prague bridges, Vancouver harbours, all under full sakura bloom. Your style is bold impressionism: thick expressive brushwork, pure saturated colour, luminous light, maximum brightness and joy. Think Monet, Renoir, Pissarro — but turned up to full saturation. No dark, moody, or muted tones. Always bright, always alive. Return ONLY valid compact JSON with no markdown.'
+                content: 'You are a world-class travel photographer specialising in cherry blossom season photography across cities worldwide. You capture stunning, photorealistic images of cherry blossoms in famous city locations — Tokyo Shibuya crossing, Kyoto Philosopher\'s Path, Amsterdam canals, Washington DC Tidal Basin, Seoul Gyeongbokgung Palace, Paris boulevards, Prague bridges, Vancouver harbour, Berlin Unter den Linden, London Hyde Park, New York Central Park, Sydney harbour, Istanbul Bosphorus. Your shots are cinematic and magazine-quality: sharp foreground blossoms, beautiful bokeh, perfect natural light. Vary the cities, landmarks, times of day (dawn, golden hour, blue hour, midday), and composition. Return ONLY valid compact JSON with no markdown.'
               },
               {
                 role   : 'user',
-                content: 'Pick one specific city scene during cherry blossom season and write a bright impressionist painting prompt. Return: {"title":"<city location> — <4-6 word subtitle>","prompt":"<110-140 word impressionist painting prompt, specify city, exact location, time of day, colour palette (vivid and bright), brushwork style, light quality, mood — always joyful and luminous>"}'
+                content: 'Pick one specific city and exact landmark at cherry blossom season. Return: {"title":"<City Name> — <landmark or location, 3-5 words>","prompt":"<100-130 word photorealistic travel photography prompt: specify exact city, landmark, cherry blossom details, light conditions, camera settings (lens, aperture, time of day), composition, mood — always stunning, sharp, cinematic and photorealistic>"}'
               }
             ]
           })
@@ -73,7 +73,7 @@ const useCherryBlossomCitiesContent = () => {
         imagePrompt = fb.prompt;
       }
 
-      const finalPrompt = `${imagePrompt}. Impressionist oil painting, vivid saturated colours, thick expressive brushwork, luminous bright light, full cherry blossom bloom, joyful and radiant, museum-quality fine art, no photography, no dark tones, maximum colour vibrancy.`;
+      const finalPrompt = `${imagePrompt}. Photorealistic travel photography, ultra sharp, cinematic colour grading, full cherry blossom bloom at peak season, natural light, magazine quality, shot on Sony A7R V, no painting, no illustration, no sketch, no watercolor.`;
 
       const imgRes = await fetch(IMG_URL, {
         method : 'POST',
