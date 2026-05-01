@@ -99,6 +99,7 @@ import ToyPlanetExperience from './components/ToyPlanetExperience';
 import CherryBlossomCitiesExperience from './components/CherryBlossomCitiesExperience';
 import SakuraPlanetExperience from './components/SakuraPlanetExperience';
 import SkyscraperPlanetExperience from './components/SkyscraperPlanetExperience';
+import ToyPlanet4Experience from './components/ToyPlanet4Experience';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -680,6 +681,10 @@ function App() {
 
   if (currentExperience === 'skyscraper-planet') {
     return <SkyscraperPlanetExperience onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'toy-planet-4') {
+    return <ToyPlanet4Experience onStop={stopExperience} />;
   }
 
   return (

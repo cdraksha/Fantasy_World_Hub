@@ -1040,6 +1040,17 @@ export const EXPERIENCES = {
     inspiredBy: 'Super Mario Galaxy (2007)',
     status: 'available',
     createdDate: 'Apr 2026'
+  },
+
+  'toy-planet-4': {
+    title: 'Toy Planet 4.0 — Your World',
+    icon: '🪐',
+    contentType: 'Interactive Upload',
+    description: 'Upload any photo and watch it transform into a tiny toy planet floating in pure black space. A mountain photo becomes a rocky planet. You and your family become a miniature world. A city street wraps into a sphere. Whatever is in your photo becomes the surface of a Super Mario Galaxy-style planet.',
+    example: 'Upload a photo of you and your wife on a mountain — gpt-image-2 transforms it into a tiny spherical planet with the mountain and both of you visible on its surface, floating in black space.',
+    modelsUsed: 'Segmind GPT-Image-2 for photo-to-planet transformation',
+    status: 'available',
+    createdDate: 'Apr 2026'
   }
 };
 
