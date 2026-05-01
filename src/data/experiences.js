@@ -1007,6 +1007,17 @@ export const EXPERIENCES = {
     createdDate: 'Apr 2026'
   },
 
+  'cherry-blossom-cities': {
+    title: 'Cherry Blossom Cities',
+    icon: '🌸',
+    contentType: 'Image',
+    description: 'Cities around the world at peak cherry blossom season, captured as stunning photorealistic travel photography. GPT-4 picks the city and landmark — Tokyo\'s Shibuya crossing, Amsterdam canals, Seoul\'s Gyeongbokgung Palace, Washington DC\'s Tidal Basin, Paris boulevards, Prague bridges, Vancouver harbour. gpt-image-2 renders a cinematic, magazine-quality photograph: sharp sakura in bloom, beautiful natural light, breathtaking scenery.',
+    example: 'Amsterdam canals at cherry blossom season — pink sakura reflecting in the water alongside traditional Dutch townhouses, soft morning light, petals floating on the surface.',
+    modelsUsed: 'Segmind GPT-4 for city and scene selection, Segmind GPT-Image-2 for photorealistic image generation',
+    status: 'available',
+    createdDate: 'Apr 2026'
+  },
+
   'sakura-planet': {
     title: 'Toy Planet 2.0 — Sakura',
     icon: '🌸',
@@ -1015,17 +1026,6 @@ export const EXPERIENCES = {
     example: 'The Midnight Pond — a glassy koi pond covers half the planet, a stone lantern glows amber, a woman in white kimono kneels trailing her fingers in the water, cherry blossoms arching overhead.',
     modelsUsed: 'Segmind GPT-4 for planet scene and prompt, Segmind GPT-Image-2 for image generation',
     inspiredBy: 'Super Mario Galaxy (2007)',
-    status: 'available',
-    createdDate: 'Apr 2026'
-  },
-
-  'cherry-blossom-cities': {
-    title: 'Cherry Blossom Cities',
-    icon: '🌸',
-    contentType: 'Image',
-    description: 'Cities around the world at peak cherry blossom season, captured as stunning photorealistic travel photography. GPT-4 picks the city and landmark — Tokyo\'s Shibuya crossing, Amsterdam canals, Seoul\'s Gyeongbokgung Palace, Washington DC\'s Tidal Basin, Paris boulevards, Prague bridges, Vancouver harbour. gpt-image-2 renders a cinematic, magazine-quality photograph: sharp sakura in bloom, beautiful natural light, breathtaking scenery.',
-    example: 'Amsterdam canals at cherry blossom season — pink sakura reflecting in the water alongside traditional Dutch townhouses, soft morning light, petals floating on the surface.',
-    modelsUsed: 'Segmind GPT-4 for city and scene selection, Segmind GPT-Image-2 for photorealistic image generation',
     status: 'available',
     createdDate: 'Apr 2026'
   }
