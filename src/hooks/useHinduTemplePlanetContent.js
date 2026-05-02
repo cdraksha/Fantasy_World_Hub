@@ -7,19 +7,19 @@ const API_KEY  = () => import.meta.env.VITE_SEGMIND_API_KEY;
 const FALLBACK_SCENES = [
   {
     title: 'Kailash — The Mountain of Gods',
-    prompt: 'A tiny perfect spherical toy planet floating in pure black space. The entire surface is dominated by a colossal Kailasa-style temple carved directly from black volcanic rock — massive, impossibly detailed, towering over the curved horizon. Dozens of smaller shrines spiral down the surface. Lava rivers glow orange between carved stone paths. A stormy purple sky with lightning crackling around the temple spires. Super Mario Galaxy Nintendo 3D art style, vivid, epic, magical.'
+    prompt: 'A tiny perfect spherical toy planet with clearly visible curved sides floating in pure black space. Disney Pixar 3D render quality. On the surface: a colossal Kailasa-style temple carved from black volcanic rock dominates the background. In the foreground two cute chibi cartoon Hindu priests in white dhotis stand before the temple entrance. Lava rivers glow orange between carved stone paths. Gold diyas flicker along the steps. Palm trees frame the scene. Warm dramatic light from below. Pure black void background.'
   },
   {
     title: 'The Golden Gopuram World',
-    prompt: 'A tiny perfect spherical toy planet floating in pure black space. Thousands of soaring South Indian gopuram towers covered in gold and vivid painted sculptures wrap across the entire sphere — every inch is temple. The towers pierce up into black space, their tops glowing like torches. Lush jungle visible between the towers, rivers of sacred water flowing around the planet equator. Sunset light in deep orange and saffron. Super Mario Galaxy Nintendo 3D art style, vivid, epic, magical.'
-  },
-  {
-    title: 'Dwarka — The Sunken Divine City',
-    prompt: 'A tiny perfect spherical toy planet floating in pure black space. A legendary ocean-covered world where colossal ancient Hindu temple spires rise from deep blue water, mostly submerged, their golden tops glowing above the waves. Bioluminescent coral glows around the submerged columns. The sky is deep indigo with a massive moon. One great central temple rises fully above the waterline, glowing with divine light. Super Mario Galaxy Nintendo 3D art style, vivid, epic, magical.'
+    prompt: 'A tiny perfect spherical toy planet with clearly visible curved sides floating in pure black space. Disney Pixar 3D render quality. On the surface: a soaring South Indian gopuram covered in gold and vivid painted sculptures rises behind two cute chibi cartoon devotees in traditional silk attire. Marigold garlands drape the entrance. Brass diyas and oil lamps line the stone courtyard. Banana trees and lotus flowers around the base. Warm golden temple light. Pure black void background.'
   },
   {
     title: 'Hampi — The Empire of Boulders',
-    prompt: 'A tiny perfect spherical toy planet floating in pure black space. A world of enormous orange granite boulders with Vijayanagara-style temple complexes built between and on top of them. Massive carved stone chariots and elephant statues ring the planet surface. The Vittala temple complex sits at the top of the sphere, lit by golden afternoon sun. Banana trees and sacred rivers visible between the ruins. Super Mario Galaxy Nintendo 3D art style, vivid, epic, magical.'
+    prompt: 'A tiny perfect spherical toy planet with clearly visible curved sides floating in pure black space. Disney Pixar 3D render quality. On the surface: enormous orange granite boulders with a Vijayanagara stone chariot and temple complex behind. Two cute chibi cartoon figures in traditional Deccan attire stand beside the stone chariot. Carved elephant statues line the path. Golden afternoon sun casting long shadows. Coconut palms and sacred river visible. Pure black void background.'
+  },
+  {
+    title: 'The Bridal Temple Planet',
+    prompt: 'A tiny perfect spherical toy planet with clearly visible curved sides floating in pure black space. Disney Pixar 3D render quality. On the surface: an ancient Dravidian temple with intricate carved gopuram glows with warm light in the background. A cute chibi South Indian bride in purple silk saree and gold jewellery and a groom in white dhoti with flower garlands stand in the centre. Rangoli on the stone floor, diyas everywhere, marigold garlands draped on pillars, banana trees on either side. Pure black void background.'
   }
 ];
 
@@ -45,11 +45,11 @@ const useHinduTemplePlanetContent = () => {
             messages   : [
               {
                 role   : 'system',
-                content: 'You design ancient Hindu temple toy planets — tiny perfect spheres floating in pure black space in the style of Super Mario Galaxy, but the entire surface is a fantastical ancient Indian divine realm. Think Asgard but Hindu — impossibly grand, sacred, mythological. Draw from real temple traditions but amplify to fantasy scale: Dravidian gopurams a thousand metres tall, Nagara shikhara spires piercing the void, cave temples carved into the entire planet like Ellora and Ajanta, submerged Dwarka rising from sacred oceans, Vijayanagara empire stone cities overrun with jungle and boulders, the cosmic Mount Meru as a planet itself, Angkor Wat-scale temple cities, floating temple islands, lava-filled Shiva realms, underwater Vishnu cities, celestial Indra palaces. Vary the mood: stormy and epic, golden and glorious, moonlit and mysterious, volcanic and powerful, underwater and bioluminescent. Always ancient, always Hindu, always jaw-dropping in scale. Return ONLY valid compact JSON with no markdown.'
+                content: 'You design ancient Hindu temple toy planets — tiny perfect spheres with clearly visible curved sides, floating in pure black space, rendered in Disney Pixar 3D animation quality. Each planet has: one ancient Indian temple (Dravidian gopuram, Nagara shikhara, Ellora cave temple, Vijayanagara stone complex, Hampi chariot, etc.) as the centrepiece, 1-2 cute chibi cartoon human characters in traditional Indian attire as the focus in the foreground, and rich decorative details (gold diyas, marigold garlands, rangoli, brass lamps, sacred rivers, palm trees, banana trees, lotus flowers, carved elephants). Vary the characters: bride and groom, priest and devotee, warrior and sage, dancer, pilgrim. Vary the temples: South Indian gopuram, North Indian shikhara, cave temple, stone chariot, riverside ghat temple, jungle temple. Vary the lighting: warm golden diya light, sunrise saffron, moonlit silver, festival lamp glow. Always floating in pure black void. Always Disney Pixar quality — not Nintendo, not photorealistic. Return ONLY valid compact JSON with no markdown.'
               },
               {
                 role   : 'user',
-                content: 'Invent a unique Hindu temple toy planet. Return: {"title":"<3-5 word mythological title>","prompt":"<130-160 word image prompt: describe the tiny spherical planet floating in pure black space, the specific temple style and architecture covering the surface, the scale, the lighting and mood, dramatic details — then end with: Super Mario Galaxy Nintendo 3D art style, vivid, epic, magical>"}'
+                content: 'Invent a unique Hindu temple toy planet scene. Return: {"title":"<3-5 word evocative title>","prompt":"<140-170 word image prompt: describe the tiny spherical planet with clearly visible curved sides floating in pure black space, the specific temple in the background, the 1-2 chibi cartoon characters in the foreground with their attire and expression, the decorative details (diyas, garlands, rangoli, trees), the lighting and mood — then end with: Disney Pixar 3D render quality, vivid, warm, magical, pure black void background>"}'
               }
             ]
           })
@@ -73,7 +73,7 @@ const useHinduTemplePlanetContent = () => {
         imagePrompt = fb.prompt;
       }
 
-      const finalPrompt = `${imagePrompt}. Tiny perfect sphere floating in pure black void, ancient Hindu temple architecture covering every surface, single dramatic divine light source, Super Mario Galaxy Nintendo render quality, pure black space background, no stars, epic mythological scale, ultra detailed stone carvings.`;
+      const finalPrompt = `${imagePrompt}. Tiny perfect sphere with clearly visible curved sides floating in pure black void, no stars, no background, pure black space. Disney Pixar 3D render quality, ultra detailed stone carvings, warm golden light from diyas, vivid colours, magical and sacred atmosphere.`;
 
       const imgRes = await fetch(IMG_URL, {
         method : 'POST',
