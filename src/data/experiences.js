@@ -1052,6 +1052,17 @@ export const EXPERIENCES = {
     inspiredBy: 'Thor: Ragnarok (2017)',
     status: 'available',
     createdDate: 'Apr 2026'
+  },
+
+  'blackhole-cities': {
+    title: 'Cities & Black Holes',
+    icon: '🌑',
+    contentType: 'Image',
+    description: 'Iconic world cities being consumed by colossal black holes — rendered in dramatic Japanese anime style. GPT-4 picks the city and the moment: Paris with the Eiffel Tower tilting toward the event horizon, Tokyo neon signs spiralling into the void, New York skyscrapers cracking apart, Mumbai\'s sea pulled upward in a column. Inspired by Attack on Titan, Akira, and Neon Genesis Evangelion.',
+    example: 'Dystopian Tokyo at night — a massive black hole hovers over Shinjuku, bending skyscrapers and neon signs in spiralling arcs toward the event horizon, the Tokyo Tower tilting at a violent angle.',
+    modelsUsed: 'Segmind GPT-4 for city and destruction scene, Segmind GPT-Image-2 for anime image generation',
+    status: 'available',
+    createdDate: 'May 2026'
   }
 };
 

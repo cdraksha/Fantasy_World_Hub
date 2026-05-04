@@ -100,6 +100,7 @@ import CherryBlossomCitiesExperience from './components/CherryBlossomCitiesExper
 import SakuraPlanetExperience from './components/SakuraPlanetExperience';
 import SkyscraperPlanetExperience from './components/SkyscraperPlanetExperience';
 import HinduTemplePlanetExperience from './components/HinduTemplePlanetExperience';
+import BlackholeCitiesExperience from './components/BlackholeCitiesExperience';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -685,6 +686,10 @@ function App() {
 
   if (currentExperience === 'hindu-temple-planet') {
     return <HinduTemplePlanetExperience onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'blackhole-cities') {
+    return <BlackholeCitiesExperience onStop={stopExperience} />;
   }
 
   return (
