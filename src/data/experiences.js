@@ -1063,6 +1063,17 @@ export const EXPERIENCES = {
     modelsUsed: 'Segmind GPT-4 for city and destruction scene, Segmind GPT-Image-2 for anime image generation',
     status: 'available',
     createdDate: 'May 2026'
+  },
+
+  'dream-comic': {
+    title      : 'Dream Comics',
+    icon       : '💤',
+    contentType: 'Image',
+    description: 'Fall asleep and dream the most bizarre comic strip imaginable. GPT-4 conjures a random absurd story set in ancient civilisations or far futures — then Nano Banana draws every panel in Japanese anime or Amar Chitra Katha style. Each dream escalates from odd to completely unhinged, ending with a final panel so weird it jolts you awake.',
+    example    : 'You dream of a Rajput warrior whose horse reveals it was a rocket. They land on the moon. There is a chai dhaba. A space dragon arrives late for its Sanskrit exam.',
+    modelsUsed : 'Segmind GPT-4 for dream story, Segmind Nano Banana for comic panel images',
+    status     : 'available',
+    createdDate: 'May 2026'
   }
 };
 
