@@ -102,6 +102,7 @@ import SkyscraperPlanetExperience from './components/SkyscraperPlanetExperience'
 import HinduTemplePlanetExperience from './components/HinduTemplePlanetExperience';
 import BlackholeCitiesExperience from './components/BlackholeCitiesExperience';
 import DreamComicExperience from './components/DreamComicExperience';
+import NavagrahaExperience from './components/NavagrahaExperience';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -695,6 +696,10 @@ function App() {
 
   if (currentExperience === 'dream-comic') {
     return <DreamComicExperience onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'navagraha') {
+    return <NavagrahaExperience onStop={stopExperience} />;
   }
 
   return (

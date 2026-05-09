@@ -1074,6 +1074,17 @@ export const EXPERIENCES = {
     modelsUsed : 'Segmind GPT-4 for dream story, Segmind Nano Banana for comic panel images',
     status     : 'available',
     createdDate: 'May 2026'
+  },
+
+  'navagraha': {
+    title: 'Navagraha — The Cosmic Sandbox',
+    icon: '🪐',
+    contentType: 'Interactive Simulation',
+    description: 'Place the nine Vedic planets across a South Indian birth chart and watch the oracle speak. Drag Rahu into the 8th house. Drop Saturn into Career. Each placement unlocks a poetic reading. When the chart is ready, reveal your destiny — GPT-4 reads the full sky and Nano Banana paints your fate in Tanjore gold.',
+    example: 'Place Jupiter in House 9 and Saturn in House 10 — the oracle whispers of a life of slow climb, late blossom, and a name that outlasts its owner.',
+    modelsUsed: 'Segmind GPT-4 for Vedic reading and destiny verdict, Segmind Nano Banana for Tanjore-style destiny image',
+    status: 'available',
+    createdDate: 'May 2026'
   }
 };
 
@@ -1084,6 +1095,10 @@ export const getAvailableExperiences = () => getAllExperiences().filter(exp => e
 export const getComingSoonExperiences = () => getAllExperiences().filter(exp => exp.status === 'coming-soon');
 export const getLatestExperience = () => {
   const available = getAvailableExperiences();
+  const may2026 = available.filter(exp => exp.createdDate === 'May 2026');
+  if (may2026.length > 0) {
+    return may2026[may2026.length - 1];
+  }
   const apr2026 = available.filter(exp => exp.createdDate === 'Apr 2026');
   if (apr2026.length > 0) {
     return apr2026[apr2026.length - 1];
