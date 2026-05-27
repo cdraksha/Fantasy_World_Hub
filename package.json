@@ -20,6 +20,7 @@
     "node-fetch": "^2.6.7",
     "nodemon": "^3.1.11",
     "openai": "^4.20.1",
+    "pdfjs-dist": "^5.7.284",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-globe.gl": "^2.37.1",

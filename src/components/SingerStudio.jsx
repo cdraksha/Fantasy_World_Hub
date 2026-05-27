@@ -126,13 +126,32 @@ function useGuitar() {
   return { init, strum, dispose };
 }
 
+/* ── PDF → images ── */
+async function pdfToImages(file, maxPages = 4) {
+  const { getDocument, GlobalWorkerOptions, version } = await import('pdfjs-dist');
+  GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await getDocument({ data: arrayBuffer }).promise;
+  const images = [];
+  for (let n = 1; n <= Math.min(pdf.numPages, maxPages); n++) {
+    const page = await pdf.getPage(n);
+    const viewport = page.getViewport({ scale: 2 });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    images.push(canvas.toDataURL('image/jpeg', 0.88));
+  }
+  return images;
+}
+
 /* ── GPT Vision parse ── */
-async function parseSongSheet(imageBase64) {
-  const prompt = `You are a music sheet parser. The image shows song lyrics with guitar chord notation above the words.
+async function parseSongSheet(images) {
+  const prompt = `You are a music sheet parser. The image(s) show song lyrics with guitar chord notation above the words. There may be multiple pages.
 
 Extract:
 1. The song title (or "Unknown Song" if not visible)
-2. All sections (Verse 1, Chorus, Bridge, Outro, etc.)
+2. All sections (Verse 1, Chorus, Bridge, Outro, etc.) across all pages
 3. For each section, every line of lyrics with the chord changes
 
 Return ONLY valid JSON in exactly this format — no markdown, no explanation:
@@ -164,12 +183,12 @@ Rules:
     headers: { 'x-api-key': API_KEY(), 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o',
-      max_tokens: 3000,
+      max_tokens: 4000,
       messages: [{
         role: 'user',
         content: [
           { type: 'text', text: prompt },
-          { type: 'image_url', image_url: { url: imageBase64 } }
+          ...images.map(url => ({ type: 'image_url', image_url: { url } })),
         ]
       }]
     })
@@ -420,18 +439,28 @@ function UploadScreen({ onParsed, onBack }) {
 
   const handleFile = async (file) => {
     if (!file) return;
-    if (!file.type.startsWith('image/')) { setError('Please upload an image file — JPG, PNG, or WEBP.'); return; }
+    const isImage = file.type.startsWith('image/');
+    const isPDF   = file.type === 'application/pdf';
+    if (!isImage && !isPDF) { setError('Please upload an image (JPG, PNG) or a PDF file.'); return; }
     setError(null);
     setParsing(true);
     try {
-      const raw     = await fileToBase64(file);
-      const resized = await resizeImage(raw);
-      setPreviewUrl(resized);
-      const songData = await parseSongSheet(resized);
+      let images;
+      if (isPDF) {
+        images = await pdfToImages(file);
+        if (images.length === 0) throw new Error('empty pdf');
+        setPreviewUrl(images[0]);
+      } else {
+        const raw     = await fileToBase64(file);
+        const resized = await resizeImage(raw);
+        images = [resized];
+        setPreviewUrl(resized);
+      }
+      const songData = await parseSongSheet(images);
       if (!songData?.sections?.length) throw new Error('empty');
       onParsed(songData);
     } catch {
-      setError('Could not read the song sheet. Make sure the image clearly shows lyrics and chord symbols (like Am, G, C) above the words.');
+      setError('Could not read the song sheet. Make sure lyrics and chord symbols (like Am, G, C) are clearly visible.');
       setParsing(false);
       setPreviewUrl(null);
     }
@@ -484,13 +513,13 @@ function UploadScreen({ onParsed, onBack }) {
         <input
           id="ss-file-input"
           type="file"
-          accept="image/*"
+          accept="image/*,application/pdf"
           style={{ display: 'none' }}
           onChange={(e) => handleFile(e.target.files[0])}
         />
         <div className="ss-upload-icon">🎼</div>
         <div className="ss-upload-cta">Drop your song sheet here</div>
-        <div className="ss-upload-hint">or click to browse · JPG · PNG · WEBP</div>
+        <div className="ss-upload-hint">or click to browse · JPG · PNG · PDF</div>
       </div>
 
       {error && (
@@ -503,7 +532,7 @@ function UploadScreen({ onParsed, onBack }) {
       )}
 
       <div className="ss-upload-hint" style={{ marginTop: 20 }}>
-        ♪ Guitar plays the chords &nbsp;·&nbsp; Lyrics shown karaoke-style &nbsp;·&nbsp; Tap to advance
+        ♪ Guitar plays the chords &nbsp;·&nbsp; Lyrics shown karaoke-style &nbsp;·&nbsp; Tap to advance &nbsp;·&nbsp; PDF supported
       </div>
     </div>
   );
