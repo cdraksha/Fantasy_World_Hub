@@ -1085,6 +1085,17 @@ export const EXPERIENCES = {
     modelsUsed: 'Segmind GPT-4 for Vedic reading and destiny verdict, Segmind Nano Banana for Tanjore-style destiny image',
     status: 'available',
     createdDate: 'May 2026'
+  },
+
+  'song-sheet': {
+    title: 'Song Sheet',
+    icon: '🎼',
+    contentType: 'Interactive Experience',
+    description: 'Upload a photo of any song sheet with lyrics and guitar chords. The AI reads the notation, the guitar plays the chords in real time, and the lyrics scroll karaoke-style so your singer can follow along. Tap to advance at your own pace or set a BPM for auto-play.',
+    example: 'Photograph a Kishore Kumar or Beatles chord sheet, upload it — the guitar strums Am → F → C → G as the lyrics scroll line by line.',
+    modelsUsed: 'Segmind GPT-4o Vision for chord and lyric extraction, Tone.js PluckSynth for guitar audio',
+    status: 'available',
+    createdDate: 'May 2026'
   }
 };
 
