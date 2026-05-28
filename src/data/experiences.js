@@ -1087,6 +1087,17 @@ export const EXPERIENCES = {
     createdDate: 'May 2026'
   },
 
+  'anime-mythology-battles': {
+    title: 'Anime Mythology Wars',
+    icon: '⚔️',
+    contentType: 'Video',
+    description: 'Hindu mythology battles rendered as Japanese anime — Demon Slayer intensity, Attack on Titan scale. GPT-4 picks the fight at random (Arjuna vs Karna, Kali vs Raktabija, Shiva vs Tripurasura...), writes a brutal multi-shot script, and Seedance 2.0 generates three 10-second video reels in parallel with epic AI music. 30 seconds of pure mythological violence.',
+    example: 'Bhima vs Duryodhana — the final mace duel at midnight Kurukshetra. Close-up of shattering earth. Wide shot: two giants circling. Crash zoom to eyes. Impact frame. The ground splits.',
+    modelsUsed: 'Segmind GPT-4 for battle script, Segmind Nano Banana for battle poster, Segmind Seedance 2.0 for 3×10s video generation with AI audio',
+    status: 'available',
+    createdDate: 'May 2026'
+  },
+
   'song-sheet': {
     title: 'Song Sheet',
     icon: '🎼',

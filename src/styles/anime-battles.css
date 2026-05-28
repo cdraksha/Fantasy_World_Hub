@@ -1,0 +1,336 @@
+/* ── Anime Mythology Battles ── */
+.amb-root {
+  position: fixed; inset: 0;
+  background: #060308;
+  color: #f0ece4;
+  font-family: 'Manrope', sans-serif;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.amb-bg {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 15% 30%, rgba(180,20,30,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 70%, rgba(200,120,10,0.07) 0%, transparent 50%);
+}
+
+.amb-noise {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/* ── Landing ── */
+.amb-landing {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; gap: 0; padding: 40px;
+}
+
+.amb-back-btn {
+  position: absolute; top: 22px; left: 28px;
+  background: none; border: none; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.3em;
+  text-transform: uppercase; color: rgba(240,236,228,0.35);
+  transition: color 0.2s; padding: 0;
+}
+.amb-back-btn:hover { color: rgba(240,236,228,0.7); }
+
+.amb-landing-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: rgba(196,30,50,0.8);
+  margin-bottom: 20px;
+}
+
+.amb-landing-title {
+  font-family: 'Cormorant SC', serif;
+  font-size: clamp(42px, 6vw, 80px);
+  font-weight: 600; letter-spacing: 0.06em;
+  color: #f0ece4; text-align: center;
+  line-height: 1.05; margin: 0 0 8px;
+}
+
+.amb-landing-deva {
+  font-family: 'Noto Serif Devanagari', serif;
+  font-size: 22px; color: rgba(245,166,35,0.65);
+  letter-spacing: 0.12em; margin-bottom: 36px;
+}
+
+.amb-landing-desc {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic; font-size: 18px;
+  color: rgba(240,236,228,0.45); text-align: center;
+  max-width: 520px; line-height: 1.75; margin-bottom: 52px;
+}
+
+.amb-generate-btn {
+  position: relative; overflow: hidden;
+  background: transparent;
+  border: 1px solid rgba(196,30,50,0.6);
+  color: #c41e32;
+  font-family: 'Cormorant SC', serif;
+  font-size: 20px; letter-spacing: 0.3em;
+  text-transform: uppercase;
+  padding: 18px 56px; cursor: pointer;
+  transition: all 0.35s ease;
+}
+.amb-generate-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(196,30,50,0.08);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.35s ease;
+}
+.amb-generate-btn:hover { color: #f0ece4; border-color: rgba(196,30,50,0.9); }
+.amb-generate-btn:hover::before { transform: scaleX(1); }
+
+.amb-generate-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: rgba(240,236,228,0.25);
+  margin-top: 20px; text-align: center;
+}
+
+/* ── Generating screen ── */
+.amb-generating {
+  position: relative; z-index: 1;
+  display: flex; height: 100%;
+  overflow: hidden;
+}
+
+.amb-gen-left {
+  width: 380px; flex-shrink: 0;
+  border-right: 1px solid rgba(196,30,50,0.15);
+  display: flex; flex-direction: column;
+  padding: 28px 24px; gap: 0; overflow-y: auto;
+}
+
+.amb-gen-right {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 28px 32px; overflow-y: auto; gap: 24px;
+}
+
+/* Left panel — status */
+.amb-gen-battle-name {
+  font-family: 'Cormorant SC', serif;
+  font-size: 24px; font-weight: 500;
+  color: #f0ece4; letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.amb-gen-tagline {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic; font-size: 15px;
+  color: rgba(240,236,228,0.5); line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.amb-progress-list { display: flex; flex-direction: column; gap: 14px; }
+
+.amb-progress-item {
+  display: flex; flex-direction: column; gap: 5px;
+}
+
+.amb-progress-label {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+.amb-progress-label-text { color: rgba(240,236,228,0.5); }
+.amb-progress-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(240,236,228,0.2); flex-shrink: 0;
+  transition: background 0.4s;
+}
+.amb-progress-dot.amb-done { background: #4caf50; }
+.amb-progress-dot.amb-running { background: #c41e32; animation: amb-pulse 1s ease-in-out infinite; }
+
+@keyframes amb-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+.amb-progress-bar-wrap {
+  height: 2px; background: rgba(240,236,228,0.07);
+}
+.amb-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #c41e32, #f5a623);
+  transition: width 1s linear;
+}
+
+/* Poster preview */
+.amb-poster-preview {
+  margin-top: 28px; border-top: 1px solid rgba(196,30,50,0.12);
+  padding-top: 20px;
+}
+.amb-poster-preview img {
+  width: 100%; display: block;
+  border: 1px solid rgba(196,30,50,0.2);
+}
+
+/* Right panel — shot script */
+.amb-script-head {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.38em;
+  text-transform: uppercase; color: rgba(196,30,50,0.7);
+  margin-bottom: 2px;
+}
+
+.amb-script-block {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 16px 18px;
+}
+
+.amb-script-seg-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.36em;
+  text-transform: uppercase; color: rgba(245,166,35,0.6);
+  margin-bottom: 10px;
+}
+
+.amb-script-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; line-height: 1.9;
+  color: rgba(240,236,228,0.55); white-space: pre-wrap;
+}
+
+/* ── Result screen ── */
+.amb-result {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  height: 100%; overflow-y: auto;
+}
+
+.amb-result-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 54px; flex-shrink: 0;
+  border-bottom: 1px solid rgba(196,30,50,0.12);
+}
+
+.amb-result-title {
+  font-family: 'Cormorant SC', serif;
+  font-size: 18px; letter-spacing: 0.08em; color: #f0ece4;
+}
+
+.amb-result-body {
+  flex: 1; display: flex; padding: 28px 32px; gap: 28px;
+  overflow: hidden;
+}
+
+/* Poster side */
+.amb-poster-side {
+  width: 280px; flex-shrink: 0;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+.amb-poster-side img {
+  width: 100%; display: block;
+  border: 1px solid rgba(196,30,50,0.25);
+}
+
+.amb-battle-info { display: flex; flex-direction: column; gap: 6px; }
+.amb-battle-name-big {
+  font-family: 'Cormorant SC', serif;
+  font-size: 20px; color: #f0ece4; letter-spacing: 0.06em;
+}
+.amb-battle-tag {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic; font-size: 14px;
+  color: rgba(240,236,228,0.45); line-height: 1.6;
+}
+
+.amb-again-btn {
+  background: transparent;
+  border: 1px solid rgba(196,30,50,0.4);
+  color: rgba(196,30,50,0.8);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.28em;
+  text-transform: uppercase; padding: 10px 0;
+  cursor: pointer; transition: all 0.22s; width: 100%;
+}
+.amb-again-btn:hover { border-color: rgba(196,30,50,0.8); color: #c41e32; }
+
+/* Video side */
+.amb-video-side {
+  flex: 1; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
+}
+
+.amb-video-item {
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.amb-video-seg-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px; letter-spacing: 0.36em;
+  text-transform: uppercase; color: rgba(245,166,35,0.55);
+}
+
+.amb-video-item video {
+  width: 100%; display: block;
+  border: 1px solid rgba(196,30,50,0.18);
+  background: #000;
+}
+
+.amb-video-pending {
+  width: 100%; aspect-ratio: 16/9;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 10px;
+  color: rgba(240,236,228,0.3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.26em; text-transform: uppercase;
+}
+
+.amb-video-spinner {
+  width: 24px; height: 24px;
+  border: 2px solid rgba(196,30,50,0.2);
+  border-top-color: #c41e32;
+  border-radius: 50%;
+  animation: amb-spin 0.9s linear infinite;
+}
+
+@keyframes amb-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Waiting state (GPT still generating) */
+.amb-waiting {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; gap: 20px;
+}
+
+.amb-waiting-icon {
+  font-size: 64px; animation: amb-float 1.4s ease-in-out infinite;
+}
+@keyframes amb-float {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-14px); }
+}
+
+.amb-waiting-label {
+  font-family: 'Cormorant SC', serif;
+  font-size: 26px; color: rgba(240,236,228,0.7); letter-spacing: 0.1em;
+}
+.amb-waiting-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.34em;
+  text-transform: uppercase; color: rgba(240,236,228,0.3);
+}
+
+.amb-timer {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px; color: rgba(196,30,50,0.7);
+  letter-spacing: 0.12em; font-weight: 500;
+  margin-top: 8px;
+}

@@ -104,6 +104,7 @@ import BlackholeCitiesExperience from './components/BlackholeCitiesExperience';
 import DreamComicExperience from './components/DreamComicExperience';
 import NavagrahaExperience from './components/NavagrahaExperience';
 import SingerStudio from './components/SingerStudio';
+import AnimeMythologyBattles from './components/AnimeMythologyBattles';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -705,6 +706,10 @@ function App() {
 
   if (currentExperience === 'song-sheet') {
     return <SingerStudio onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'anime-mythology-battles') {
+    return <AnimeMythologyBattles onStop={stopExperience} />;
   }
 
   return (
