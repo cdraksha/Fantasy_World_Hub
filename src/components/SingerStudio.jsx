@@ -91,39 +91,63 @@ async function resizeImage(dataUrl, maxDim = 1500) {
   });
 }
 
-/* ── Guitar hook ── */
+/* ── Guitar hook (continuous strumming loop) ── */
 function useGuitar() {
-  const ref = useRef(null);
+  const audioRef = useRef(null); // { synths, reverb, loop }
+  const notesRef = useRef([]);   // current chord — read inside the audio loop
 
-  const init = useCallback(async () => {
-    if (ref.current) return;
+  const init = useCallback(async (bpm) => {
+    if (audioRef.current) return;
     await Tone.start();
-    const reverb = new Tone.Reverb({ decay: 2.4, wet: 0.3 }).toDestination();
+    Tone.Transport.bpm.value = bpm;
+
+    const reverb = new Tone.Reverb({ decay: 1.8, wet: 0.28 }).toDestination();
     await reverb.ready;
+
     const synths = Array.from({ length: 6 }, () =>
-      new Tone.PluckSynth({ attackNoise: 0.9, dampening: 3600, resonance: 0.97 }).connect(reverb)
+      new Tone.PluckSynth({ attackNoise: 0.85, dampening: 3500, resonance: 0.97 }).connect(reverb)
     );
-    ref.current = { synths, reverb };
+
+    // Strum on every quarter note (one downstroke per beat)
+    const loop = new Tone.Loop((time) => {
+      const notes = notesRef.current;
+      if (!notes.length) return;
+      notes.forEach((note, i) => {
+        if (synths[i]) synths[i].triggerAttack(note, time + i * 0.024);
+      });
+    }, '4n');
+
+    loop.start(0);
+    Tone.Transport.start();
+    audioRef.current = { synths, reverb, loop };
   }, []);
 
-  const strum = useCallback((chordName) => {
+  // Switch which chord is being strummed — takes effect on the next beat
+  const setChord = useCallback((chordName) => {
     const key = normalizeChord(chordName);
-    const notes = key ? CHORD_NOTES[key] : null;
-    if (!notes || !ref.current) return;
-    const now = Tone.now();
-    notes.forEach((note, i) => {
-      if (ref.current.synths[i]) ref.current.synths[i].triggerAttack(note, now + i * 0.028);
-    });
+    notesRef.current = key ? CHORD_NOTES[key] : [];
+  }, []);
+
+  const updateBpm = useCallback((bpm) => {
+    Tone.Transport.bpm.value = bpm;
+  }, []);
+
+  // Silence the guitar without stopping the transport
+  const silence = useCallback(() => {
+    notesRef.current = [];
   }, []);
 
   const dispose = useCallback(() => {
-    if (!ref.current) return;
-    ref.current.synths.forEach(s => s.dispose());
-    ref.current.reverb.dispose();
-    ref.current = null;
+    notesRef.current = [];
+    if (!audioRef.current) return;
+    audioRef.current.loop.dispose();
+    Tone.Transport.stop();
+    audioRef.current.synths.forEach(s => s.dispose());
+    audioRef.current.reverb.dispose();
+    audioRef.current = null;
   }, []);
 
-  return { init, strum, dispose };
+  return { init, setChord, updateBpm, silence, dispose };
 }
 
 /* ── PDF → images ── */
@@ -248,25 +272,32 @@ function StudioScreen({ songData, onBack }) {
   const [beatsPerChord, setBeatsPerChord] = useState(4);
   const [mode, setMode]     = useState('tap');
 
-  const posRef      = useRef(0);
-  const advanceRef  = useRef(null);
-  const { init, strum, dispose } = useGuitar();
+  const posRef     = useRef(0);
+  const bpmRef     = useRef(bpm);
+  const advanceRef = useRef(null);
+  const guitar     = useGuitar();
+
+  // Keep bpmRef in sync so advance can read the latest bpm without deps
+  useEffect(() => { bpmRef.current = bpm; }, [bpm]);
+
+  // Live BPM updates while strumming
+  useEffect(() => { guitar.updateBpm(bpm); }, [bpm, guitar]);
 
   const advance = useCallback(async () => {
-    await init();
     const idx = posRef.current;
-    if (idx >= chordQueue.length) { setDone(true); setPlaying(false); return; }
+    if (idx >= chordQueue.length) { setDone(true); setPlaying(false); guitar.silence(); return; }
     const entry = chordQueue[idx];
-    strum(entry.chord);
+    // First chord: start the transport and strumming loop
+    await guitar.init(bpmRef.current);
+    guitar.setChord(entry.chord);
     setCurrentChord(entry.chord);
     setCurrentLineIdx(entry.lineIdx);
     setPlayingWordIdx(entry.wordIdx);
     setTimeout(() => setPlayingWordIdx(null), 680);
     posRef.current = idx + 1;
     setPos(idx + 1);
-  }, [chordQueue, init, strum]);
+  }, [chordQueue, guitar]);
 
-  // keep advanceRef current so auto interval always calls latest version
   advanceRef.current = advance;
 
   // Spacebar tap
@@ -277,7 +308,7 @@ function StudioScreen({ songData, onBack }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [mode]);
 
-  // Auto playback
+  // Auto playback — chord advances every N beats; strumming is handled by the loop
   useEffect(() => {
     if (!playing || mode !== 'auto') return;
     const ms = (60 / bpm) * beatsPerChord * 1000;
@@ -285,12 +316,13 @@ function StudioScreen({ songData, onBack }) {
     return () => clearInterval(id);
   }, [playing, mode, bpm, beatsPerChord]);
 
-  useEffect(() => () => dispose(), [dispose]);
+  useEffect(() => () => guitar.dispose(), [guitar]);
 
   const reset = () => {
     posRef.current = 0;
     setPos(0); setCurrentChord(null);
     setCurrentLineIdx(0); setDone(false); setPlaying(false);
+    guitar.silence(); // stop strumming — transport keeps running silently
   };
 
   const nextChord = chordQueue[pos]?.chord ?? null;
