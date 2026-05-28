@@ -206,45 +206,33 @@
 .amb-result {
   position: relative; z-index: 1;
   display: flex; flex-direction: column;
-  height: 100%; overflow-y: auto;
+  height: 100%; overflow: hidden;
 }
 
 .amb-result-topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 28px; height: 54px; flex-shrink: 0;
+  padding: 0 28px; height: 64px; flex-shrink: 0;
   border-bottom: 1px solid rgba(196,30,50,0.12);
+  gap: 20px;
 }
 
-.amb-result-title {
-  font-family: 'Cormorant SC', serif;
-  font-size: 18px; letter-spacing: 0.08em; color: #f0ece4;
+.amb-result-title-block {
+  flex: 1; display: flex; flex-direction: column; gap: 2px;
 }
 
-.amb-result-body {
-  flex: 1; display: flex; padding: 28px 32px; gap: 28px;
-  overflow: hidden;
-}
-
-/* Poster side */
-.amb-poster-side {
-  width: 280px; flex-shrink: 0;
-  display: flex; flex-direction: column; gap: 16px;
-}
-
-.amb-poster-side img {
-  width: 100%; display: block;
-  border: 1px solid rgba(196,30,50,0.25);
-}
-
-.amb-battle-info { display: flex; flex-direction: column; gap: 6px; }
 .amb-battle-name-big {
   font-family: 'Cormorant SC', serif;
   font-size: 20px; color: #f0ece4; letter-spacing: 0.06em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .amb-battle-tag {
   font-family: 'Cormorant Garamond', serif;
-  font-style: italic; font-size: 14px;
-  color: rgba(240,236,228,0.45); line-height: 1.6;
+  font-style: italic; font-size: 13px;
+  color: rgba(240,236,228,0.4); line-height: 1.4;
+}
+
+.amb-result-actions {
+  display: flex; gap: 10px; flex-shrink: 0;
 }
 
 .amb-again-btn {
@@ -252,30 +240,51 @@
   border: 1px solid rgba(196,30,50,0.4);
   color: rgba(196,30,50,0.8);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px; letter-spacing: 0.28em;
-  text-transform: uppercase; padding: 10px 0;
-  cursor: pointer; transition: all 0.22s; width: 100%;
+  font-size: 9px; letter-spacing: 0.24em;
+  text-transform: uppercase; padding: 9px 20px;
+  cursor: pointer; transition: all 0.22s; white-space: nowrap;
 }
 .amb-again-btn:hover { border-color: rgba(196,30,50,0.8); color: #c41e32; }
 
-/* Video side */
-.amb-video-side {
-  flex: 1; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
-}
-
-.amb-video-item {
-  display: flex; flex-direction: column; gap: 8px;
-}
-
-.amb-video-seg-label {
+.amb-download-btn {
+  position: relative; overflow: hidden;
+  background: transparent;
+  border: 1px solid rgba(245,166,35,0.35);
+  color: rgba(245,166,35,0.75);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 8px; letter-spacing: 0.36em;
-  text-transform: uppercase; color: rgba(245,166,35,0.55);
+  font-size: 9px; letter-spacing: 0.24em;
+  text-transform: uppercase; padding: 9px 20px;
+  cursor: pointer; transition: border-color 0.22s, color 0.22s;
+  display: flex; align-items: center; justify-content: center;
+  white-space: nowrap; min-width: 180px;
+}
+.amb-download-btn:hover:not(:disabled) {
+  border-color: rgba(245,166,35,0.7);
+  color: #f5a623;
+}
+.amb-download-btn:disabled { cursor: default; }
+.amb-download-btn.amb-dl-active {
+  border-color: rgba(245,166,35,0.5);
+  color: rgba(245,166,35,0.9);
+}
+.amb-dl-bar {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: rgba(245,166,35,0.12);
+  transition: width 0.4s linear;
+  pointer-events: none;
+}
+.amb-dl-label { position: relative; z-index: 1; }
+
+/* Result video — full width */
+.amb-result-video-wrap {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 20px 28px; overflow: hidden;
 }
 
-.amb-video-item video {
+.amb-result-video {
+  max-width: 100%; max-height: 100%;
   width: 100%; display: block;
-  border: 1px solid rgba(196,30,50,0.18);
+  border: 1px solid rgba(196,30,50,0.2);
   background: #000;
 }
 
@@ -288,6 +297,23 @@
   color: rgba(240,236,228,0.3);
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px; letter-spacing: 0.26em; text-transform: uppercase;
+}
+
+/* Warriors block in generating screen */
+.amb-gen-warriors {
+  margin-top: 28px; padding-top: 20px;
+  border-top: 1px solid rgba(196,30,50,0.1);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.amb-gen-warriors-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.36em;
+  text-transform: uppercase; color: rgba(245,166,35,0.5);
+}
+.amb-gen-warriors-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic; font-size: 14px;
+  color: rgba(240,236,228,0.45); line-height: 1.7;
 }
 
 .amb-video-spinner {

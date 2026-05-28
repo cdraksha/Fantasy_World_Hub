@@ -1087,17 +1087,6 @@ export const EXPERIENCES = {
     createdDate: 'May 2026'
   },
 
-  'anime-mythology-battles': {
-    title: 'Anime Mythology Wars',
-    icon: '⚔️',
-    contentType: 'Video',
-    description: 'Hindu mythology battles rendered as Japanese anime — Demon Slayer intensity, Attack on Titan scale. GPT-4 picks the fight at random (Arjuna vs Karna, Kali vs Raktabija, Shiva vs Tripurasura...), writes a brutal multi-shot script, and Seedance 2.0 generates three 10-second video reels in parallel with epic AI music. 30 seconds of pure mythological violence.',
-    example: 'Bhima vs Duryodhana — the final mace duel at midnight Kurukshetra. Close-up of shattering earth. Wide shot: two giants circling. Crash zoom to eyes. Impact frame. The ground splits.',
-    modelsUsed: 'Segmind GPT-4 for battle script, Segmind Nano Banana for battle poster, Segmind Seedance 2.0 for 3×10s video generation with AI audio',
-    status: 'available',
-    createdDate: 'May 2026'
-  },
-
   'song-sheet': {
     title: 'Song Sheet',
     icon: '🎼',
@@ -1105,6 +1094,17 @@ export const EXPERIENCES = {
     description: 'Upload a photo of any song sheet with lyrics and guitar chords. The AI reads the notation, the guitar plays the chords in real time, and the lyrics scroll karaoke-style so your singer can follow along. Tap to advance at your own pace or set a BPM for auto-play.',
     example: 'Photograph a Kishore Kumar or Beatles chord sheet, upload it — the guitar strums Am → F → C → G as the lyrics scroll line by line.',
     modelsUsed: 'Segmind GPT-4o Vision for chord and lyric extraction, Tone.js PluckSynth for guitar audio',
+    status: 'available',
+    createdDate: 'May 2026'
+  },
+
+  'anime-mythology-battles': {
+    title: 'Anime Mythology Wars',
+    icon: '⚔️',
+    contentType: 'Video',
+    description: 'Hindu mythology battles rendered as Japanese anime — Demon Slayer intensity, Attack on Titan scale. GPT-4 picks the fight at random (Arjuna vs Karna, Kali vs Raktabija, Shiva vs Tripurasura...), writes a brutal multi-shot script, and Seedance 2.0 generates three 10-second video reels in parallel with epic AI music. 30 seconds of pure mythological violence.',
+    example: 'Bhima vs Duryodhana — the final mace duel at midnight Kurukshetra. Close-up of shattering earth. Wide shot: two giants circling. Crash zoom to eyes. Impact frame. The ground splits.',
+    modelsUsed: 'Segmind GPT-4 for battle script, Segmind Nano Banana for battle poster, Segmind Seedance 2.0 for 3×10s video generation with AI audio',
     status: 'available',
     createdDate: 'May 2026'
   }
