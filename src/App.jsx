@@ -107,6 +107,7 @@ import SingerStudio from './components/SingerStudio';
 import AnimeMythologyBattles from './components/AnimeMythologyBattles';
 import FantasyWalk from './components/FantasyWalk';
 import IndianCityRun from './components/IndianCityRun';
+import TheConvergence from './components/TheConvergence';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -726,6 +727,10 @@ function App() {
 
   if (currentExperience === 'indian-city-run') {
     return <IndianCityRun onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'the-convergence') {
+    return <TheConvergence onStop={stopExperience} />;
   }
 
   return (

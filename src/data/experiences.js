@@ -1129,6 +1129,17 @@ export const EXPERIENCES = {
     modelsUsed: 'Segmind Seedance 2.0 for cinematic anime video with AI audio',
     status: 'available',
     createdDate: 'May 2026'
+  },
+
+  'the-convergence': {
+    title: 'The Convergence',
+    icon: '🌆',
+    contentType: 'Image',
+    description: 'Every city contains every version of itself. Type a city and watch AI collapse four historical eras — Ancient, Medieval, Colonial, Modern — into a single impossible quadruple-exposure photograph. GPT-4 writes the era-specific image prompt rooted in that city\'s real history. gpt-image-2 renders the haunting overlap. Makoto Shinkai meets a ghost photograph.',
+    example: 'Mumbai: the fishermen\'s quarter of 1620 bleeding through the Art Deco facade of 1935, the ancient fort walls dissolving beneath the highway overpass. Four cities. One frame. One impossible moment of visibility.',
+    modelsUsed: 'Segmind GPT-4 for convergence prompt and caption, Segmind gpt-image-2 for quadruple-exposure image generation',
+    status: 'available',
+    createdDate: 'May 2026'
   }
 };
 
