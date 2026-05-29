@@ -105,6 +105,8 @@ import DreamComicExperience from './components/DreamComicExperience';
 import NavagrahaExperience from './components/NavagrahaExperience';
 import SingerStudio from './components/SingerStudio';
 import AnimeMythologyBattles from './components/AnimeMythologyBattles';
+import FantasyWalk from './components/FantasyWalk';
+import IndianCityRun from './components/IndianCityRun';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -171,6 +173,9 @@ function App() {
     
     if (experienceParam) {
       setCurrentExperience(experienceParam);
+      const cleanUrl = new URL(window.location);
+      cleanUrl.searchParams.delete('experience');
+      window.history.replaceState({}, '', cleanUrl.toString());
     }
     if (creativityParam === 'true') {
       setShowCreativityPage(true);
@@ -218,7 +223,10 @@ function App() {
   }
 
   const stopExperience = () => {
-    setCurrentExperience(null)
+    setCurrentExperience(null);
+    const url = new URL(window.location);
+    url.searchParams.delete('experience');
+    window.history.replaceState({}, '', url.toString());
   }
 
   const handleInterviewGeneration = () => {
@@ -710,6 +718,14 @@ function App() {
 
   if (currentExperience === 'anime-mythology-battles') {
     return <AnimeMythologyBattles onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'fantasy-walk') {
+    return <FantasyWalk onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'indian-city-run') {
+    return <IndianCityRun onStop={stopExperience} />;
   }
 
   return (

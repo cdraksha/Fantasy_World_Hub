@@ -1107,6 +1107,28 @@ export const EXPERIENCES = {
     modelsUsed: 'Segmind GPT-4 for battle script, Segmind Nano Banana for battle poster, Segmind Seedance 2.0 for 3×10s video generation with AI audio',
     status: 'available',
     createdDate: 'May 2026'
+  },
+
+  'fantasy-walk': {
+    title: 'Fantasy Walk',
+    icon: '🌄',
+    contentType: 'Video',
+    description: 'Step through the portal. A lone traveler walks toward a breathtaking fantasy world — floating islands, aurora forests, crystal waterfalls — rendered as a 10-second cinematic video by Seedance 2.0. Orchestral fantasy music included. Every generation opens a different world.',
+    example: 'A cloaked figure walks a winding stone path. Ahead: luminous floating islands, golden sky, waterfalls cascading into mist. Low camera follows from behind. Epic orchestral score.',
+    modelsUsed: 'Segmind Seedance 2.0 for cinematic video with AI audio',
+    status: 'available',
+    createdDate: 'May 2026'
+  },
+
+  'indian-city-run': {
+    title: 'Indian City Run',
+    icon: '🏃',
+    contentType: 'Video',
+    description: 'Temple Run meets Studio Ghibli. A low chase-cam locks tight behind a sprinting runner as they tear through 5 iconic Indian worlds — Varanasi Ghats at dawn, Old Delhi Chandni Chowk, Hampi stone corridors, Jodhpur blue city lanes, Mumbai monsoon streets. Each run is a random world, rendered as a 10-second cinematic anime video by Seedance 2.0. Hyper-detailed. NOT cartoon.',
+    example: 'Low chase-cam behind a runner sprinting along the Varanasi ghats at dawn — marigold petals tearing across the frame, incense smoke, the Ganges glinting gold, temple silhouettes blurring overhead.',
+    modelsUsed: 'Segmind Seedance 2.0 for cinematic anime video with AI audio',
+    status: 'available',
+    createdDate: 'May 2026'
   }
 };
 

@@ -281,7 +281,7 @@ function Result({ battleData, videos, onAgain, onBack }) {
 
 /* ── Root ── */
 export default function AnimeMythologyBattles({ onStop }) {
-  const [screen, setScreen]         = useState('generating');
+  const [screen, setScreen]         = useState('idle');
   const [battleData, setBattleData] = useState(null);
   const [videos, setVideos]         = useState([null, null, null]);
   const [error, setError]           = useState(null);
@@ -295,8 +295,6 @@ export default function AnimeMythologyBattles({ onStop }) {
     document.head.appendChild(link);
     return () => { const el = document.getElementById('amb-fonts'); if (el) el.remove(); };
   }, []);
-
-  useEffect(() => { startGeneration(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startGeneration = async () => {
     setError(null);
@@ -331,6 +329,17 @@ export default function AnimeMythologyBattles({ onStop }) {
     <div className="amb-root">
       <div className="amb-bg" />
       <div className="amb-noise" />
+
+      {screen === 'idle' && (
+        <div className="amb-waiting">
+          <button className="amb-back-btn" onClick={onStop}>◂ Exit</button>
+          <div className="amb-waiting-icon">⚔️</div>
+          <div className="amb-waiting-label">Anime Mythology Wars</div>
+          <button className="amb-generate-btn" style={{ marginTop: 32 }} onClick={startGeneration}>
+            Summon the Battle
+          </button>
+        </div>
+      )}
 
       {screen === 'generating' && battleData && (
         <Generating

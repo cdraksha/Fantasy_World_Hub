@@ -1,0 +1,139 @@
+/* ── Fantasy Walk ── */
+.fw-root {
+  position: fixed; inset: 0;
+  background: #07050f;
+  color: #f0ece4;
+  font-family: 'Cormorant Garamond', serif;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.fw-bg {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 80%, rgba(120,70,200,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse at 20% 20%, rgba(60,40,140,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 10%, rgba(200,140,30,0.08) 0%, transparent 45%);
+}
+
+.fw-noise {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  opacity: 0.02;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/* ── Loading ── */
+.fw-loading {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; gap: 18px;
+}
+
+.fw-back-btn {
+  position: absolute; top: 22px; left: 28px;
+  background: none; border: none; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.3em;
+  text-transform: uppercase; color: rgba(240,236,228,0.3);
+  transition: color 0.2s; padding: 0;
+}
+.fw-back-btn:hover { color: rgba(240,236,228,0.65); }
+
+/* Orb animation */
+.fw-orb-wrap {
+  position: relative;
+  width: 100px; height: 100px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 8px;
+}
+
+.fw-orb {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(200,160,255,0.9), rgba(100,60,200,0.6));
+  box-shadow: 0 0 32px rgba(140,80,255,0.5), 0 0 64px rgba(140,80,255,0.2);
+  animation: fw-pulse 2.4s ease-in-out infinite;
+}
+
+.fw-orb-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 1px solid rgba(160,100,255,0.25);
+  animation: fw-expand 2.4s ease-out infinite;
+}
+.fw-orb-ring--2 {
+  animation-delay: 1.2s;
+}
+
+@keyframes fw-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50%       { transform: scale(1.08); opacity: 1; }
+}
+@keyframes fw-expand {
+  0%   { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+.fw-loading-label {
+  font-family: 'Cormorant SC', serif;
+  font-size: 26px; color: rgba(220,200,255,0.8);
+  letter-spacing: 0.1em;
+}
+.fw-loading-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.34em;
+  text-transform: uppercase; color: rgba(240,236,228,0.28);
+}
+
+.fw-timer {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px; color: rgba(160,100,255,0.6);
+  letter-spacing: 0.12em; margin-top: 6px;
+}
+
+/* ── Result ── */
+.fw-result {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  height: 100%;
+}
+
+.fw-result-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 54px; flex-shrink: 0;
+  border-bottom: 1px solid rgba(140,80,255,0.12);
+}
+
+.fw-result-title {
+  font-family: 'Cormorant SC', serif;
+  font-size: 18px; letter-spacing: 0.08em;
+  color: rgba(220,200,255,0.7);
+}
+
+.fw-again-btn {
+  background: transparent;
+  border: 1px solid rgba(140,80,255,0.35);
+  color: rgba(180,140,255,0.75);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.26em;
+  text-transform: uppercase; padding: 9px 20px;
+  cursor: pointer; transition: all 0.22s; white-space: nowrap;
+}
+.fw-again-btn:hover {
+  border-color: rgba(140,80,255,0.7);
+  color: rgba(200,160,255,0.95);
+}
+
+.fw-video-wrap {
+  flex: 1; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px 32px;
+}
+
+.fw-video {
+  max-width: 100%; max-height: 100%;
+  width: 100%;
+  display: block;
+  border: 1px solid rgba(140,80,255,0.2);
+  background: #000;
+}

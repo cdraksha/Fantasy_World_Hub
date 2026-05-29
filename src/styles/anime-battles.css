@@ -275,15 +275,33 @@
 }
 .amb-dl-label { position: relative; z-index: 1; }
 
-/* Result video — full width */
-.amb-result-video-wrap {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  padding: 20px 28px; overflow: hidden;
+/* Videos grid — 3 columns, all visible in one viewport */
+.amb-videos-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 1fr;
+  gap: 14px;
+  padding: 16px 24px;
+  align-items: start;
 }
 
-.amb-result-video {
-  max-width: 100%; max-height: 100%;
+.amb-video-item {
+  display: flex; flex-direction: column; gap: 7px;
+  min-width: 0;
+}
+
+.amb-video-seg-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px; letter-spacing: 0.36em;
+  text-transform: uppercase; color: rgba(245,166,35,0.55);
+  flex-shrink: 0;
+}
+
+.amb-video-item video {
   width: 100%; display: block;
+  aspect-ratio: 16/9;
   border: 1px solid rgba(196,30,50,0.2);
   background: #000;
 }
