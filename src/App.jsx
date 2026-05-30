@@ -108,6 +108,7 @@ import AnimeMythologyBattles from './components/AnimeMythologyBattles';
 import FantasyWalk from './components/FantasyWalk';
 import IndianCityRun from './components/IndianCityRun';
 import TheConvergence from './components/TheConvergence';
+import RoadsideReverie from './components/RoadsideReverie';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -731,6 +732,10 @@ function App() {
 
   if (currentExperience === 'the-convergence') {
     return <TheConvergence onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'roadside-reverie') {
+    return <RoadsideReverie onStop={stopExperience} />;
   }
 
   return (

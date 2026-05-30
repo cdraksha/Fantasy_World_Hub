@@ -1140,6 +1140,17 @@ export const EXPERIENCES = {
     modelsUsed: 'Segmind GPT-4 for convergence prompt and caption, Segmind gpt-image-2 for quadruple-exposure image generation',
     status: 'available',
     createdDate: 'May 2026'
+  },
+
+  'roadside-reverie': {
+    title: 'Roadside Reverie',
+    icon: '🪔',
+    contentType: 'Video',
+    description: 'No destination. No chase. Just sit beside a wall and watch the world breathe. Five iconic Indian worlds — Varanasi ghats at dusk, Old Delhi chai lanes at night, Mumbai monsoon in a doorway, Hampi ruins at golden hour, Jodhpur rooftops at twilight — rendered as 5-second Ghibli anime vignettes. Kling O3 Pro. A character at rest. The world in motion.',
+    example: 'A figure sits on the ancient Varanasi ghat steps, knees drawn to chest, watching hundreds of oil lamps drift downstream on the dark Ganges as temple bells echo across the water.',
+    modelsUsed: 'Segmind Kling O3 Pro for Ghibli-style anime video generation',
+    status: 'available',
+    createdDate: 'May 2026'
   }
 };
 
