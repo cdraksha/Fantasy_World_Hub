@@ -1146,11 +1146,22 @@ export const EXPERIENCES = {
     title: 'Roadside Reverie',
     icon: '🪔',
     contentType: 'Video',
-    description: 'No destination. No chase. Just sit beside a wall and watch the world breathe. Five iconic Indian worlds — Varanasi ghats at dusk, Old Delhi chai lanes at night, Mumbai monsoon in a doorway, Hampi ruins at golden hour, Jodhpur rooftops at twilight — rendered as 5-second Ghibli anime vignettes. Kling O3 Pro. A character at rest. The world in motion.',
+    description: 'No destination. No chase. Just sit beside a wall and watch the world breathe. Type any city and GPT-4 finds the perfect spot — a specific lane, a ghat, a rooftop — and Kling O3 Pro renders a 5-second Ghibli anime vignette. A character at rest. The world in motion.',
     example: 'A figure sits on the ancient Varanasi ghat steps, knees drawn to chest, watching hundreds of oil lamps drift downstream on the dark Ganges as temple bells echo across the water.',
-    modelsUsed: 'Segmind Kling O3 Pro for Ghibli-style anime video generation',
+    modelsUsed: 'Segmind GPT-4 for scene writing, Segmind Kling O3 Pro for anime video generation',
     status: 'available',
     createdDate: 'May 2026'
+  },
+
+  'darshan': {
+    title: 'Darshan',
+    icon: '🔱',
+    contentType: 'Image',
+    description: 'Every generation is a different divine vision from Hindu mythology. GPT-4 selects the moment — Hanuman, Vishwaroop, Narasimha, the Vishwaroopa — and renders it as a cinematic photorealistic still: foreground figure in near-complete silhouette, deity towering above radiating blinding god-rays through dark storm clouds. gpt-image-2 at full resolution. Baahubali meets Marvel VFX.',
+    example: 'Krishna reveals his cosmic Vishwaroop to Arjuna: Arjuna\'s chariot silhouetted at the bottom, the multi-armed divine form blazing above, golden light shafts tearing through storm clouds, rain streaking the frame.',
+    modelsUsed: 'Segmind GPT-4 for scene selection and cinematic prompt, Segmind gpt-image-2 for photorealistic image',
+    status: 'available',
+    createdDate: 'June 2026'
   }
 };
 
@@ -1161,6 +1172,10 @@ export const getAvailableExperiences = () => getAllExperiences().filter(exp => e
 export const getComingSoonExperiences = () => getAllExperiences().filter(exp => exp.status === 'coming-soon');
 export const getLatestExperience = () => {
   const available = getAvailableExperiences();
+  const jun2026 = available.filter(exp => exp.createdDate === 'June 2026');
+  if (jun2026.length > 0) {
+    return jun2026[jun2026.length - 1];
+  }
   const may2026 = available.filter(exp => exp.createdDate === 'May 2026');
   if (may2026.length > 0) {
     return may2026[may2026.length - 1];

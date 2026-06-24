@@ -109,6 +109,7 @@ import FantasyWalk from './components/FantasyWalk';
 import IndianCityRun from './components/IndianCityRun';
 import TheConvergence from './components/TheConvergence';
 import RoadsideReverie from './components/RoadsideReverie';
+import Darshan from './components/Darshan';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -736,6 +737,10 @@ function App() {
 
   if (currentExperience === 'roadside-reverie') {
     return <RoadsideReverie onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'darshan') {
+    return <Darshan onStop={stopExperience} />;
   }
 
   return (
