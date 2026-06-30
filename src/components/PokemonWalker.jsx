@@ -33,7 +33,6 @@ const ACHIEVEMENTS_META = [
   { key: 'steps1m',         label: '1 Million Steps',     desc: 'Walk 1,000,000 lifetime steps',    icon: '🚀' },
 ];
 
-const TRAIN_COSTS = [500, 1000, 2000, 4000, 8000, 15000, 25000, 40000, 60000, 100000];
 
 // ─── Pokémon Pools ─────────────────────────────────────────────────────────
 
@@ -243,12 +242,9 @@ function TypeBadge({ type }) {
 
 // ─── Pokémon Detail Popup ─────────────────────────────────────────────────
 
-function PokemonDetailPopup({ pokemon, allPokemon, team, vault, onClose, onAddTeam, onRemoveTeam, onTrain, onEvolve, evolving }) {
+function PokemonDetailPopup({ pokemon, allPokemon, team, vault, onClose, onAddTeam, onRemoveTeam, onEvolve, evolving }) {
   const isTeamMember = team.includes(pokemon.uid);
   const ownedCount = allPokemon.filter(p => p.dexId === pokemon.dexId).length;
-  const trainLevel = pokemon.level || 1;
-  const trainCost = TRAIN_COSTS[Math.min(trainLevel - 1, TRAIN_COSTS.length - 1)];
-  const canTrain = vault >= trainCost;
   const timesEvolved = pokemon.timesEvolved || 0;
   const evolveCost = timesEvolved === 0 ? 50000 : 100000;
   const canEvolveMore = timesEvolved < 2;
@@ -265,7 +261,7 @@ function PokemonDetailPopup({ pokemon, allPokemon, team, vault, onClose, onAddTe
           {pokemon.types.map(t => <TypeBadge key={t} type={t} />)}
         </div>
         <div className="pw-popup-meta">
-          Lv {trainLevel} · Owned ×{ownedCount} · #{pokemon.dexId}
+          Owned ×{ownedCount} · #{pokemon.dexId}
         </div>
         <div className="pw-popup-meta">
           Pack: {pokemon.packTier} · {pokemon.caughtDate}
@@ -290,21 +286,6 @@ function PokemonDetailPopup({ pokemon, allPokemon, team, vault, onClose, onAddTe
             <div className="pw-evolve-max">Max Evolution</div>
           )}
         </div>
-
-        {isTeamMember && (
-          <div className="pw-popup-train">
-            <div className="pw-popup-train-label">
-              Train to Lv {trainLevel + 1}: {fmtFull(trainCost)} vault steps
-            </div>
-            <button
-              className="pw-train-btn"
-              onClick={() => onTrain(pokemon.uid)}
-              disabled={!canTrain}
-            >
-              ⬆ Train
-            </button>
-          </div>
-        )}
 
         <div className="pw-popup-action-row">
           {isTeamMember ? (
@@ -649,7 +630,6 @@ export default function PokemonWalker({ onStop }) {
         name: fetched.name,
         sprite: fetched.sprite,
         types: fetched.types,
-        level: 1,
         timesEvolved: 0,
         location: 'Unknown',
         packTier: packOpening || 'common',
@@ -680,23 +660,6 @@ export default function PokemonWalker({ onStop }) {
       ...prev,
       pokemon: prev.pokemon.map(p => p.uid === uid ? { ...p, onTeam: false } : p),
     }));
-  };
-
-  // ─── Train Pokémon ───────────────────────────────────────────────────
-  const handleTrain = (uid) => {
-    setAppState(prev => {
-      const poke = prev.pokemon.find(p => p.uid === uid);
-      if (!poke) return prev;
-      const trainCost = TRAIN_COSTS[Math.min((poke.level || 1) - 1, TRAIN_COSTS.length - 1)];
-      if (prev.stepVault < trainCost) return prev;
-      return {
-        ...prev,
-        stepVault: prev.stepVault - trainCost,
-        pokemon: prev.pokemon.map(p =>
-          p.uid === uid ? { ...p, level: (p.level || 1) + 1 } : p
-        ),
-      };
-    });
   };
 
   // ─── Evolve Pokémon ──────────────────────────────────────────────────
@@ -826,13 +789,6 @@ export default function PokemonWalker({ onStop }) {
           onClose={() => setDetailPokemon(null)}
           onAddTeam={handleAddTeam}
           onRemoveTeam={handleRemoveTeam}
-          onTrain={(uid) => {
-            handleTrain(uid);
-            setDetailPokemon(prev => {
-              const updated = appState.pokemon.find(p => p.uid === prev.uid);
-              return updated ? { ...updated, level: (updated.level || 1) + 1 } : prev;
-            });
-          }}
           onEvolve={handleEvolve}
           evolving={evolving}
         />
@@ -1036,7 +992,6 @@ export default function PokemonWalker({ onStop }) {
                         <div style={{ width: 56, height: 56, margin: '0 auto', fontSize: 36, lineHeight: '56px' }}>❓</div>
                       )}
                       <div className="pw-team-name">{p.name}</div>
-                      <div className="pw-team-lvl">Lv {p.level || 1}</div>
                     </div>
                   ))}
                 </div>
@@ -1058,7 +1013,6 @@ export default function PokemonWalker({ onStop }) {
                         <div style={{ fontSize: 32, lineHeight: '60px', textAlign: 'center' }}>❓</div>
                       )}
                       <div className="pw-storage-name">{p.name}</div>
-                      <div className="pw-storage-lv">Lv {p.level || 1}</div>
                       <div className="pw-storage-types">
                         {p.types.map(t => <TypeBadge key={t} type={t} />)}
                       </div>
