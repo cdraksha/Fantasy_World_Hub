@@ -1162,6 +1162,17 @@ export const EXPERIENCES = {
     modelsUsed: 'Segmind GPT-4 for scene selection and cinematic prompt, Segmind gpt-image-2 for photorealistic image',
     status: 'available',
     createdDate: 'June 2026'
+  },
+
+  'pokemon-walker': {
+    title: 'Pokémon Walker',
+    icon: '👟',
+    contentType: 'Game',
+    description: 'Walk more. Catch more. Enter your daily step count and spend steps on Pokémon packs — Common (5k), Rare (10k), Epic (20k), Legendary (40k). Deposit to your Step Vault for long-term milestone packs. Train your team, build your collection across all 1,025 Pokémon. Powered by PokeAPI. No AI. Just walking.',
+    example: 'You walk 10,500 steps. You skip the Common pack, wait for the Rare at 10k, spend it — Dragonite appears. 500 steps go to your vault.',
+    modelsUsed: 'PokeAPI for Pokémon data',
+    status: 'available',
+    createdDate: 'June 2026'
   }
 };
 

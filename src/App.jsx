@@ -110,6 +110,7 @@ import IndianCityRun from './components/IndianCityRun';
 import TheConvergence from './components/TheConvergence';
 import RoadsideReverie from './components/RoadsideReverie';
 import Darshan from './components/Darshan';
+import PokemonWalker from './components/PokemonWalker';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -741,6 +742,10 @@ function App() {
 
   if (currentExperience === 'darshan') {
     return <Darshan onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'pokemon-walker') {
+    return <PokemonWalker onStop={stopExperience} />;
   }
 
   return (
