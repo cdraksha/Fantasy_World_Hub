@@ -5,11 +5,6 @@ import '../styles/pokemon-walker.css';
 
 const LS_KEY = 'fw_pokemon_walker';
 
-const LEVEL_THRESHOLDS = [
-  0, 50000, 100000, 175000, 275000, 400000, 575000, 800000,
-  1100000, 1500000, 2000000, 2600000, 3300000, 4100000, 5000000,
-  6000000, 7200000, 8600000, 10200000, 12000000,
-];
 
 const PACK_COSTS = { common: 5000, rare: 10000, epic: 20000, legendary: 40000 };
 
@@ -125,6 +120,32 @@ async function fetchPokemonById(id) {
   };
 }
 
+// ─── PokeAPI — evolution chain ────────────────────────────────────────────
+
+async function fetchEvolution(dexId) {
+  const specRes = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${dexId}`);
+  if (!specRes.ok) return null;
+  const spec = await specRes.json();
+  const chainRes = await fetch(spec.evolution_chain.url);
+  if (!chainRes.ok) return null;
+  const { chain } = await chainRes.json();
+
+  function findNext(node, targetId) {
+    const nodeId = parseInt(node.species.url.split('/').filter(Boolean).pop());
+    if (nodeId === targetId) {
+      if (node.evolves_to.length === 0) return null;
+      return parseInt(node.evolves_to[0].species.url.split('/').filter(Boolean).pop());
+    }
+    for (const child of node.evolves_to) {
+      const r = findNext(child, targetId);
+      if (r !== undefined) return r;
+    }
+    return undefined;
+  }
+
+  return findNext(chain, dexId) ?? null;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
 function todayString() {
@@ -132,14 +153,7 @@ function todayString() {
 }
 
 function getCollectorLevel(totalSteps) {
-  let level = 1;
-  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-    if (totalSteps >= LEVEL_THRESHOLDS[i]) {
-      level = i + 1;
-      break;
-    }
-  }
-  return Math.min(level, LEVEL_THRESHOLDS.length);
+  return Math.floor(totalSteps / 50000) + 1;
 }
 
 function fmtNum(n) {
@@ -229,12 +243,16 @@ function TypeBadge({ type }) {
 
 // ─── Pokémon Detail Popup ─────────────────────────────────────────────────
 
-function PokemonDetailPopup({ pokemon, allPokemon, team, vault, onClose, onAddTeam, onRemoveTeam, onTrain }) {
+function PokemonDetailPopup({ pokemon, allPokemon, team, vault, onClose, onAddTeam, onRemoveTeam, onTrain, onEvolve, evolving }) {
   const isTeamMember = team.includes(pokemon.uid);
   const ownedCount = allPokemon.filter(p => p.dexId === pokemon.dexId).length;
   const trainLevel = pokemon.level || 1;
   const trainCost = TRAIN_COSTS[Math.min(trainLevel - 1, TRAIN_COSTS.length - 1)];
   const canTrain = vault >= trainCost;
+  const timesEvolved = pokemon.timesEvolved || 0;
+  const evolveCost = timesEvolved === 0 ? 50000 : 100000;
+  const canEvolveMore = timesEvolved < 2;
+  const isEvolving = evolving === pokemon.uid;
 
   return (
     <div className="pw-popup-overlay" onClick={onClose}>
@@ -251,6 +269,26 @@ function PokemonDetailPopup({ pokemon, allPokemon, team, vault, onClose, onAddTe
         </div>
         <div className="pw-popup-meta">
           Pack: {pokemon.packTier} · {pokemon.caughtDate}
+        </div>
+
+        {/* Evolution */}
+        <div className="pw-popup-evolve">
+          {canEvolveMore ? (
+            <>
+              <div className="pw-popup-evolve-label">
+                Evolve · {fmtFull(evolveCost)} vault steps
+              </div>
+              <button
+                className="pw-evolve-btn"
+                onClick={() => onEvolve(pokemon.uid)}
+                disabled={vault < evolveCost || isEvolving}
+              >
+                {isEvolving ? 'Evolving…' : '✨ Evolve'}
+              </button>
+            </>
+          ) : (
+            <div className="pw-evolve-max">Max Evolution</div>
+          )}
         </div>
 
         {isTeamMember && (
@@ -418,6 +456,7 @@ export default function PokemonWalker({ onStop }) {
   const [packOpening, setPackOpening] = useState(null); // tier string or null
   const [detailPokemon, setDetailPokemon] = useState(null);
   const [showMidnight, setShowMidnight] = useState(false);
+  const [evolving, setEvolving] = useState(null); // uid of Pokémon being evolved
   const [launchInput, setLaunchInput] = useState('');
   const [clockTime, setClockTime] = useState('');
   const midnightChecked = useRef(false);
@@ -611,6 +650,7 @@ export default function PokemonWalker({ onStop }) {
         sprite: fetched.sprite,
         types: fetched.types,
         level: 1,
+        timesEvolved: 0,
         location: 'Unknown',
         packTier: packOpening || 'common',
         caughtDate: todayString(),
@@ -657,6 +697,41 @@ export default function PokemonWalker({ onStop }) {
         ),
       };
     });
+  };
+
+  // ─── Evolve Pokémon ──────────────────────────────────────────────────
+  const handleEvolve = async (uid) => {
+    if (evolving) return;
+    const poke = appState.pokemon.find(p => p.uid === uid);
+    if (!poke) return;
+    const timesEvolved = poke.timesEvolved || 0;
+    if (timesEvolved >= 2) return;
+    const cost = timesEvolved === 0 ? 50000 : 100000;
+    if (appState.stepVault < cost) return;
+
+    setEvolving(uid);
+    try {
+      const nextId = await fetchEvolution(poke.dexId);
+      if (!nextId) { setEvolving(null); return; }
+      const evolved = await fetchPokemonById(nextId);
+      setAppState(prev => {
+        if (prev.stepVault < cost) return prev;
+        return {
+          ...prev,
+          stepVault: prev.stepVault - cost,
+          pokemon: prev.pokemon.map(p =>
+            p.uid === uid
+              ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: timesEvolved + 1 }
+              : p
+          ),
+        };
+      });
+      setDetailPokemon(prev => prev?.uid === uid
+        ? { ...prev, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: timesEvolved + 1 }
+        : prev
+      );
+    } catch { /* silently fail */ }
+    setEvolving(null);
   };
 
   // ─── Midnight handlers ────────────────────────────────────────────────
@@ -753,12 +828,13 @@ export default function PokemonWalker({ onStop }) {
           onRemoveTeam={handleRemoveTeam}
           onTrain={(uid) => {
             handleTrain(uid);
-            // Update the detail popup pokemon level
             setDetailPokemon(prev => {
               const updated = appState.pokemon.find(p => p.uid === prev.uid);
               return updated ? { ...updated, level: (updated.level || 1) + 1 } : prev;
             });
           }}
+          onEvolve={handleEvolve}
+          evolving={evolving}
         />
       )}
 

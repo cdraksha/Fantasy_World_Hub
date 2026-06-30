@@ -903,6 +903,44 @@
   margin-bottom: 8px;
 }
 
+.pw-popup-evolve {
+  margin: 10px 0;
+  padding: 12px;
+  background: #fffbeb;
+  border: 2px solid #fcd34d;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.pw-popup-evolve-label {
+  font-size: 11px;
+  color: #92400e;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.pw-evolve-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: none;
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 800;
+  cursor: pointer;
+  font-size: 13px;
+  transition: opacity 0.2s;
+  letter-spacing: 0.03em;
+}
+
+.pw-evolve-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pw-evolve-btn:not(:disabled):hover { opacity: 0.85; }
+
+.pw-evolve-max {
+  font-size: 11px;
+  color: #6b7280;
+  font-style: italic;
+}
+
 .pw-popup-train {
   margin: 10px 0;
   padding: 12px;
