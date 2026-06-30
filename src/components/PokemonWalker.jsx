@@ -14,14 +14,8 @@ const LEVEL_THRESHOLDS = [
 const PACK_COSTS = { common: 5000, rare: 10000, epic: 20000, legendary: 40000 };
 
 const VAULT_MILESTONES = [
-  { threshold: 50000,   reward: 'rare' },
-  { threshold: 100000,  reward: 'rare' },
-  { threshold: 250000,  reward: 'epic' },
-  { threshold: 500000,  reward: 'epic' },
-  { threshold: 750000,  reward: 'epic' },
-  { threshold: 1000000, reward: 'legendary' },
-  { threshold: 2000000, reward: 'legendary' },
-  { threshold: 5000000, reward: 'legendary' },
+  { threshold: 200000, reward: 'epic' },
+  { threshold: 500000, reward: 'legendary' },
 ];
 
 const TYPE_COLORS = {
@@ -476,17 +470,20 @@ export default function PokemonWalker({ onStop }) {
   // ─── Level helpers ──────────────────────────────────────────────────
   const collectorLevel = appState ? getCollectorLevel(appState.totalStepsWalked) : 1;
 
-  // ─── Check vault milestones ─────────────────────────────────────────
-  const checkVaultMilestones = useCallback((newLifetime, unlockedArr, packInventory) => {
+  // ─── Check vault milestones (repeating — resets vault to 0 on unlock) ──
+  const checkVaultMilestones = useCallback((vaultBalance, packInventory) => {
     let newPacks = { ...packInventory };
-    let newUnlocked = [...unlockedArr];
-    for (const ms of VAULT_MILESTONES) {
-      if (newLifetime >= ms.threshold && !newUnlocked.includes(ms.threshold)) {
-        newUnlocked.push(ms.threshold);
+    let resetVault = vaultBalance;
+    // Check highest threshold first so legendary takes priority over epic
+    const sorted = [...VAULT_MILESTONES].sort((a, b) => b.threshold - a.threshold);
+    for (const ms of sorted) {
+      if (vaultBalance >= ms.threshold) {
         newPacks = { ...newPacks, [ms.reward]: (newPacks[ms.reward] || 0) + 1 };
+        resetVault = 0;
+        break;
       }
     }
-    return { newPacks, newUnlocked };
+    return { newPacks, resetVault };
   }, []);
 
   // ─── Check achievements ─────────────────────────────────────────────
@@ -562,17 +559,14 @@ export default function PokemonWalker({ onStop }) {
     setAppState(prev => {
       if (prev.spendableSteps <= 0) return prev;
       const deposit = prev.spendableSteps;
-      const newLifetime = prev.lifetimeVaultDeposits + deposit;
       const newVault = prev.stepVault + deposit;
-      const { newPacks, newUnlocked } = checkVaultMilestones(
-        newLifetime, prev.vaultMilestonesUnlocked, prev.packInventory
-      );
+      const newLifetime = prev.lifetimeVaultDeposits + deposit;
+      const { newPacks, resetVault } = checkVaultMilestones(newVault, prev.packInventory);
       return {
         ...prev,
         spendableSteps: 0,
-        stepVault: newVault,
+        stepVault: resetVault,
         lifetimeVaultDeposits: newLifetime,
-        vaultMilestonesUnlocked: newUnlocked,
         packInventory: newPacks,
       };
     });
@@ -714,9 +708,7 @@ export default function PokemonWalker({ onStop }) {
   }
 
   // ─── Helpers for vault milestone bars ────────────────────────────────
-  const upcomingMilestones = VAULT_MILESTONES.filter(
-    ms => !appState.vaultMilestonesUnlocked.includes(ms.threshold)
-  ).slice(0, 2);
+  const upcomingMilestones = VAULT_MILESTONES;
 
   // ─── Total pack count for sticky bar ────────────────────────────────
   const totalPacks = Object.values(appState.packInventory).reduce((a, b) => a + b, 0);
@@ -890,22 +882,19 @@ export default function PokemonWalker({ onStop }) {
                   🏦 Deposit All ({fmtFull(appState.spendableSteps)})
                 </button>
               )}
-              {upcomingMilestones.length === 0 && (
-                <div className="pw-empty">All vault milestones unlocked!</div>
-              )}
               {upcomingMilestones.map(ms => {
-                const pct = Math.min(100, (appState.lifetimeVaultDeposits / ms.threshold) * 100);
+                const pct = Math.min(100, (appState.stepVault / ms.threshold) * 100);
                 return (
                   <div className="pw-milestone-row" key={ms.threshold}>
                     <div className="pw-milestone-label">
-                      <span>{fmtFull(appState.lifetimeVaultDeposits)} / {fmtFull(ms.threshold)}</span>
+                      <span>{fmtFull(appState.stepVault)} / {fmtFull(ms.threshold)}</span>
                       <span>{Math.round(pct)}%</span>
                     </div>
                     <div className="pw-milestone-bar-bg">
                       <div className="pw-milestone-bar-fill" style={{ width: `${pct}%` }} />
                     </div>
                     <div className={`pw-milestone-reward ${ms.reward}`}>
-                      Reward: {ms.reward} pack
+                      Reward: {ms.reward} pack · resets to 0
                     </div>
                   </div>
                 );
