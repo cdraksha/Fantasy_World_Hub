@@ -177,9 +177,13 @@ function App() {
     
     if (experienceParam) {
       setCurrentExperience(experienceParam);
+      sessionStorage.setItem('fw_active_experience', experienceParam);
       const cleanUrl = new URL(window.location);
       cleanUrl.searchParams.delete('experience');
       window.history.replaceState({}, '', cleanUrl.toString());
+    } else {
+      const preserved = sessionStorage.getItem('fw_active_experience');
+      if (preserved) setCurrentExperience(preserved);
     }
     if (creativityParam === 'true') {
       setShowCreativityPage(true);
@@ -228,6 +232,7 @@ function App() {
 
   const stopExperience = () => {
     setCurrentExperience(null);
+    sessionStorage.removeItem('fw_active_experience');
     const url = new URL(window.location);
     url.searchParams.delete('experience');
     window.history.replaceState({}, '', url.toString());

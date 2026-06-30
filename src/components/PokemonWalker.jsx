@@ -846,28 +846,28 @@ export default function PokemonWalker({ onStop }) {
                   spendable steps
                 </span>
               </div>
-              {(['common', 'rare', 'epic', 'legendary']).map(tier => {
-                const cost = PACK_COSTS[tier];
-                const canAfford = appState.spendableSteps >= cost;
-                return (
-                  <div className="pw-pack-row" key={tier}>
-                    <span className={`pw-pack-tier-badge ${tier}`}>{tier}</span>
-                    <span className="pw-pack-cost">{fmtFull(cost)} steps</span>
-                    {canAfford ? (
-                      <button
-                        className={`pw-unlock-btn ${tier}`}
-                        onClick={() => handleUnlockPack(tier)}
-                      >
-                        Unlock
-                      </button>
-                    ) : (
-                      <span className="pw-need-more">
-                        Need {fmtFull(cost - appState.spendableSteps)} more
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
+              <div className="pw-pack-grid">
+                {(['common', 'rare', 'epic', 'legendary']).map(tier => {
+                  const cost = PACK_COSTS[tier];
+                  const canAfford = appState.spendableSteps >= cost;
+                  return (
+                    <div className={`pw-pack-store-card ${tier}${canAfford ? ' can-afford' : ''}`} key={tier}>
+                      <div className="pw-psc-tier">{tier}</div>
+                      <div className="pw-psc-cost">{fmtFull(cost)}</div>
+                      <div className="pw-psc-unit">steps</div>
+                      {canAfford ? (
+                        <button className="pw-psc-btn" onClick={() => handleUnlockPack(tier)}>
+                          Unlock
+                        </button>
+                      ) : (
+                        <div className="pw-psc-need">
+                          Need {fmtNum(cost - appState.spendableSteps)} more
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* 4. Step Vault */}
@@ -907,20 +907,22 @@ export default function PokemonWalker({ onStop }) {
             {/* 5. Pack Inventory */}
             <div className="pw-section">
               <div className="pw-section-title">Pack Inventory</div>
-              {(['common', 'rare', 'epic', 'legendary']).map(tier => (
-                <div className="pw-inv-row" key={tier}>
-                  <span className={`pw-inv-tier ${tier}`}>{tier}</span>
-                  <span className="pw-inv-count">×{appState.packInventory[tier]}</span>
-                  {appState.packInventory[tier] > 0 && (
-                    <button
-                      className={`pw-open-btn ${tier}`}
-                      onClick={() => handleOpenPack(tier)}
-                    >
-                      Open
-                    </button>
-                  )}
-                </div>
-              ))}
+              <div className="pw-pack-grid">
+                {(['common', 'rare', 'epic', 'legendary']).map(tier => (
+                  <div className={`pw-pack-store-card ${tier}${appState.packInventory[tier] > 0 ? ' has-pack' : ''}`} key={tier}>
+                    <div className="pw-psc-tier">{tier}</div>
+                    <div className="pw-psc-count">×{appState.packInventory[tier]}</div>
+                    <div className="pw-psc-unit">packs</div>
+                    {appState.packInventory[tier] > 0 ? (
+                      <button className="pw-psc-btn" onClick={() => handleOpenPack(tier)}>
+                        Open
+                      </button>
+                    ) : (
+                      <div className="pw-psc-need">Empty</div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* 6. Active Team */}
@@ -955,34 +957,29 @@ export default function PokemonWalker({ onStop }) {
               {storagePokemon.length === 0 ? (
                 <div className="pw-empty">Storage is empty.</div>
               ) : (
-                storagePokemon.map(p => (
-                  <div
-                    key={p.uid}
-                    className="pw-storage-item"
-                    onClick={() => setDetailPokemon(p)}
-                  >
-                    {p.sprite ? (
-                      <img src={p.sprite} alt={p.name} className="pw-storage-sprite" />
-                    ) : (
-                      <div style={{ width: 44, height: 44, fontSize: 28, lineHeight: '44px', textAlign: 'center' }}>❓</div>
-                    )}
-                    <div className="pw-storage-info">
+                <div className="pw-storage-grid">
+                  {storagePokemon.map(p => (
+                    <div key={p.uid} className="pw-storage-card" onClick={() => setDetailPokemon(p)}>
+                      {p.sprite ? (
+                        <img src={p.sprite} alt={p.name} className="pw-storage-sprite" />
+                      ) : (
+                        <div style={{ fontSize: 32, lineHeight: '60px', textAlign: 'center' }}>❓</div>
+                      )}
                       <div className="pw-storage-name">{p.name}</div>
-                      <div className="pw-storage-meta">
+                      <div className="pw-storage-lv">Lv {p.level || 1}</div>
+                      <div className="pw-storage-types">
                         {p.types.map(t => <TypeBadge key={t} type={t} />)}
-                        <span>Lv {p.level || 1}</span>
                       </div>
+                      <button
+                        className="pw-storage-team-btn"
+                        onClick={e => { e.stopPropagation(); handleAddTeam(p.uid); }}
+                        disabled={team.length >= 6}
+                      >
+                        → Team
+                      </button>
                     </div>
-                    <button
-                      className="pw-add-team-btn"
-                      onClick={e => { e.stopPropagation(); handleAddTeam(p.uid); }}
-                      disabled={team.length >= 6}
-                      style={team.length >= 6 ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
-                    >
-                      → Team
-                    </button>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </div>
           </>
