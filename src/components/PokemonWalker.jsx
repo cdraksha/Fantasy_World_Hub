@@ -419,7 +419,23 @@ export default function PokemonWalker({ onStop }) {
   const [detailPokemon, setDetailPokemon] = useState(null);
   const [showMidnight, setShowMidnight] = useState(false);
   const [launchInput, setLaunchInput] = useState('');
+  const [clockTime, setClockTime] = useState('');
   const midnightChecked = useRef(false);
+
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      let h = now.getHours();
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      setClockTime(`${h}:${m}:${s} ${ampm}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   // ─── Keep window refs for PackOpeningScreen ───────────────────────────
   useEffect(() => {
@@ -789,7 +805,10 @@ export default function PokemonWalker({ onStop }) {
           <>
             {/* 1. Header card */}
             <div className="pw-section">
-              <div className="pw-header-date">{appState.todayDate}</div>
+              <div className="pw-header-date">
+                {appState.todayDate}
+                <span className="pw-header-clock">{clockTime}</span>
+              </div>
               <div className="pw-stats-grid">
                 <div className="pw-stat-box level">
                   <div className="pw-stat-label">Collector Level</div>

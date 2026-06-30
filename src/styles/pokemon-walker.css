@@ -149,6 +149,17 @@
   color: var(--pw-muted);
   margin-bottom: 12px;
   font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pw-header-clock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pw-text);
+  letter-spacing: 0.04em;
 }
 
 .pw-stats-grid {
