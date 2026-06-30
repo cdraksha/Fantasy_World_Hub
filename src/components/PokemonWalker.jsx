@@ -1041,26 +1041,39 @@ export default function PokemonWalker({ onStop }) {
             {appState.pokemon.length === 0 ? (
               <div className="pw-empty">No Pokémon yet. Open some packs!</div>
             ) : (
-              <div className="pw-collection-grid">
-                {uniqueByDex.map(p => (
-                  <div
-                    key={p.dexId}
-                    className="pw-coll-card"
-                    onClick={() => {
-                      const actual = appState.pokemon.find(pk => pk.dexId === p.dexId);
-                      setDetailPokemon(actual || p);
-                    }}
-                  >
-                    {p.count > 1 && <span className="pw-dup-badge">×{p.count}</span>}
-                    {p.sprite ? (
-                      <img src={p.sprite} alt={p.name} className="pw-coll-sprite" />
-                    ) : (
-                      <div style={{ width: 56, height: 56, fontSize: 32, lineHeight: '56px', textAlign: 'center' }}>❓</div>
-                    )}
-                    <div className="pw-coll-name">{p.name}</div>
-                  </div>
-                ))}
-              </div>
+              <>
+                {(['legendary', 'epic', 'rare', 'common']).map(tier => {
+                  const group = uniqueByDex.filter(p => p.packTier === tier);
+                  if (group.length === 0) return null;
+                  return (
+                    <div key={tier} className="pw-coll-section">
+                      <div className={`pw-coll-section-title ${tier}`}>
+                        {tier} <span>{group.length}</span>
+                      </div>
+                      <div className="pw-collection-grid">
+                        {group.map(p => (
+                          <div
+                            key={p.dexId}
+                            className={`pw-coll-card ${tier}`}
+                            onClick={() => {
+                              const actual = appState.pokemon.find(pk => pk.dexId === p.dexId);
+                              setDetailPokemon(actual || p);
+                            }}
+                          >
+                            {p.count > 1 && <span className="pw-dup-badge">×{p.count}</span>}
+                            {p.sprite ? (
+                              <img src={p.sprite} alt={p.name} className="pw-coll-sprite" />
+                            ) : (
+                              <div style={{ width: 56, height: 56, fontSize: 32, lineHeight: '56px', textAlign: 'center' }}>❓</div>
+                            )}
+                            <div className="pw-coll-name">{p.name}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
             )}
           </>
         )}

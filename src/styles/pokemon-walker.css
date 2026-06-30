@@ -1189,3 +1189,55 @@
   font-size: 13px;
   padding: 24px 0;
 }
+
+/* ─── Collection tier sections ─── */
+.pw-coll-section {
+  margin-bottom: 24px;
+}
+
+.pw-coll-section-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pw-coll-section-title span {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.7;
+  background: rgba(0,0,0,0.08);
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+
+.pw-coll-section-title.legendary {
+  color: var(--pw-legendary);
+  background: rgba(217,119,6,0.10);
+  border-left: 3px solid var(--pw-legendary);
+}
+
+.pw-coll-section-title.epic {
+  color: var(--pw-epic);
+  background: rgba(124,58,237,0.10);
+  border-left: 3px solid var(--pw-epic);
+}
+
+.pw-coll-section-title.rare {
+  color: var(--pw-rare);
+  background: rgba(43,80,161,0.10);
+  border-left: 3px solid var(--pw-rare);
+}
+
+.pw-coll-section-title.common {
+  color: var(--pw-common);
+  background: rgba(61,158,66,0.10);
+  border-left: 3px solid var(--pw-common);
+}
