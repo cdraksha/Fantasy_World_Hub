@@ -778,13 +778,13 @@ export default function PokemonWalker({ onStop }) {
 
       {/* Tab bar */}
       <div className="pw-tabs">
-        {['dashboard', 'collection', 'achievements'].map(t => (
+        {['dashboard', 'collection'].map(t => (
           <button
             key={t}
             className={`pw-tab-btn ${tab === t ? 'active' : ''}`}
             onClick={() => setTab(t)}
           >
-            {t === 'dashboard' ? 'Dashboard' : t === 'collection' ? 'Collection' : 'Achievements'}
+            {t === 'dashboard' ? 'Dashboard' : 'Collection'}
           </button>
         ))}
       </div>
@@ -814,6 +814,14 @@ export default function PokemonWalker({ onStop }) {
                 <div className="pw-stat-box total">
                   <div className="pw-stat-label">Total Walked</div>
                   <div className="pw-stat-number">{fmtNum(appState.totalStepsWalked)}</div>
+                </div>
+                <div className="pw-stat-box streak">
+                  <div className="pw-stat-label">Daily Streak</div>
+                  <div className="pw-stat-number">{appState.streakDays || 0}d</div>
+                </div>
+                <div className="pw-stat-box best-streak">
+                  <div className="pw-stat-label">Best Streak</div>
+                  <div className="pw-stat-number">{appState.bestStreak || 0}d</div>
                 </div>
               </div>
             </div>
@@ -1019,45 +1027,6 @@ export default function PokemonWalker({ onStop }) {
           </>
         )}
 
-        {/* ─── ACHIEVEMENTS TAB ─── */}
-        {tab === 'achievements' && (
-          <>
-            <div className="pw-ach-stats-grid">
-              <div className="pw-ach-stat">
-                <div className="pw-ach-stat-val">{fmtFull(appState.bestDay || 0)}</div>
-                <div className="pw-ach-stat-label">Best Day</div>
-              </div>
-              <div className="pw-ach-stat">
-                <div className="pw-ach-stat-val">{appState.streakDays || 0}</div>
-                <div className="pw-ach-stat-label">Current Streak</div>
-              </div>
-              <div className="pw-ach-stat">
-                <div className="pw-ach-stat-val">{appState.bestStreak || 0}</div>
-                <div className="pw-ach-stat-label">Best Streak</div>
-              </div>
-              <div className="pw-ach-stat">
-                <div className="pw-ach-stat-val">{collectorLevel}</div>
-                <div className="pw-ach-stat-label">Collector Lv</div>
-              </div>
-            </div>
-
-            <div className="pw-ach-list">
-              {ACHIEVEMENTS_META.map(({ key, label, desc, icon }) => {
-                const unlocked = appState.achievements[key];
-                return (
-                  <div key={key} className="pw-ach-item" style={{ opacity: unlocked ? 1 : 0.5 }}>
-                    <div className="pw-ach-icon">{icon}</div>
-                    <div>
-                      <div className="pw-ach-label">{label}</div>
-                      <div className="pw-ach-desc">{desc}</div>
-                    </div>
-                    <div className="pw-ach-check">{unlocked ? '✅' : '⬜'}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
       </div>
     </div>
   );

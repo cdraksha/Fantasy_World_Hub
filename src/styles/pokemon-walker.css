@@ -180,10 +180,12 @@
   margin-top: 2px;
 }
 
-.pw-stat-box.level .pw-stat-number { color: var(--pw-legendary); }
-.pw-stat-box.steps .pw-stat-number { color: #16a34a; }
-.pw-stat-box.vault .pw-stat-number { color: var(--pw-blue); }
-.pw-stat-box.total .pw-stat-number { color: var(--pw-epic); }
+.pw-stat-box.level       .pw-stat-number { color: var(--pw-legendary); }
+.pw-stat-box.steps       .pw-stat-number { color: #16a34a; }
+.pw-stat-box.vault       .pw-stat-number { color: var(--pw-blue); }
+.pw-stat-box.total       .pw-stat-number { color: var(--pw-epic); }
+.pw-stat-box.streak      .pw-stat-number { color: #e05c00; }
+.pw-stat-box.best-streak .pw-stat-number { color: #c2410c; }
 
 /* ─── Step entry ─── */
 .pw-step-display {
