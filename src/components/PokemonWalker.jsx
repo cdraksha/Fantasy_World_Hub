@@ -203,6 +203,7 @@ function defaultState(steps) {
     bestStreak: 1,
     lastStreakDate: todayString(),
     bestDay: steps,
+    bestDayDate: todayString(),
   };
 }
 
@@ -570,7 +571,11 @@ export default function PokemonWalker({ onStop }) {
       const newSpendable = prev.spendableSteps + delta;
       const newLevel = getCollectorLevel(newTotalWalked);
       const newAch = checkAchievements({ ...prev, totalStepsWalked: newTotalWalked });
-      const newBestDay = Math.max(prev.bestDay || 0, newTodaySteps);
+      const isNewRecord = newTodaySteps > (prev.bestDay || 0);
+      const newBestDay = isNewRecord ? newTodaySteps : (prev.bestDay || 0);
+      const newBestDayDate = isNewRecord
+        ? new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })
+        : (prev.bestDayDate || todayString());
       const next = {
         ...prev,
         todaySteps: newTodaySteps,
@@ -579,6 +584,7 @@ export default function PokemonWalker({ onStop }) {
         collectorLevel: newLevel,
         achievements: newAch,
         bestDay: newBestDay,
+        bestDayDate: newBestDayDate,
       };
       if (delta > 0) {
         setDeltaFlash(`+${fmtFull(delta)} new steps`);
@@ -881,6 +887,9 @@ export default function PokemonWalker({ onStop }) {
                 <div className="pw-stat-box daily-record">
                   <div className="pw-stat-label">Daily Record</div>
                   <div className="pw-stat-number">{fmtNum(appState.bestDay || 0)}</div>
+                  {appState.bestDayDate && (
+                    <div className="pw-stat-sub">{appState.bestDayDate}</div>
+                  )}
                 </div>
               </div>
             </div>

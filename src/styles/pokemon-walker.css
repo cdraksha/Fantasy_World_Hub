@@ -191,6 +191,14 @@
   margin-top: 2px;
 }
 
+.pw-stat-box .pw-stat-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--pw-muted);
+  margin-top: 3px;
+  letter-spacing: 0.02em;
+}
+
 .pw-stat-box.level       .pw-stat-number { color: var(--pw-legendary); }
 .pw-stat-box.steps       .pw-stat-number { color: #16a34a; }
 .pw-stat-box.vault       .pw-stat-number { color: var(--pw-blue); }
