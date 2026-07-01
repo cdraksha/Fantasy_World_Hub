@@ -467,7 +467,6 @@ export default function PokemonWalker({ onStop }) {
   const [clockTime, setClockTime] = useState('');
   const [packWarning, setPackWarning] = useState(null); // '9pm' | '11pm' | null
   const [stepsWarning, setStepsWarning] = useState(false);
-  const [gbaTab, setGbaTab] = useState('walk');
   const midnightChecked = useRef(false);
   const packWarningChecked = useRef({ '9pm': false, '11pm': false });
   const stepsWarningChecked = useRef(false);
@@ -828,6 +827,20 @@ export default function PokemonWalker({ onStop }) {
   // ─── Total pack count for sticky bar ────────────────────────────────
   const totalPacks = Object.values(appState.packInventory).reduce((a, b) => a + b, 0);
 
+  const allPokes = appState.pokemon;
+  const uniqueDex = new Set(allPokes.map(p => p.dexId));
+  const pokedexRegions = [
+    { name: 'Kanto', min: 1, max: 151 },
+    { name: 'Johto', min: 152, max: 251 },
+    { name: 'Hoenn', min: 252, max: 386 },
+    { name: 'Sinnoh', min: 387, max: 493 },
+    { name: 'Unova', min: 494, max: 649 },
+    { name: 'Kalos', min: 650, max: 721 },
+    { name: 'Alola', min: 722, max: 809 },
+    { name: 'Galar', min: 810, max: 905 },
+    { name: 'Paldea', min: 906, max: 1010 },
+  ];
+
   return (
     <div className="gba-body">
       {showMidnight && (
@@ -873,9 +886,21 @@ export default function PokemonWalker({ onStop }) {
       )}
 
       <div className="gba-shell">
-        <div className="gba-screen-section">
+
+        {/* Left panel — D-pad */}
+        <div className="gba-left-panel">
+          <div className="gba-shoulder-l">L</div>
           <div className="gba-led" />
-          <div className="gba-title-text">POKÉMON WALKER</div>
+          <div className="gba-dpad">
+            <div className="gba-dpad-v" />
+            <div className="gba-dpad-h" />
+            <div className="gba-dpad-center" />
+          </div>
+          <div className="gba-select-btn">SELECT</div>
+        </div>
+
+        {/* Center — screen */}
+        <div className="gba-screen-section">
           <div className="gba-bezel">
             <div className="gba-screen">
               <div className="gba-screen-header">
@@ -890,247 +915,215 @@ export default function PokemonWalker({ onStop }) {
 
               <div className="gba-screen-content">
 
-                {gbaTab === 'walk' && (
-                  <>
-                    <div className="gba-section">
-                      <div className="gba-section-title">Today's Steps</div>
-                      <div className="gba-step-big">{fmtFull(appState.todaySteps)}</div>
-                      <div className="gba-step-row">
-                        <input
-                          className="gba-step-input"
-                          type="number"
-                          min="0"
-                          placeholder="Enter today's total steps"
-                          value={stepInput}
-                          onChange={e => setStepInput(e.target.value)}
-                          onKeyDown={e => e.key === 'Enter' && handleSaveSteps()}
-                        />
-                        <button className="gba-save-btn" onClick={handleSaveSteps}>Save</button>
-                      </div>
-                      {deltaFlash && <div className="gba-delta-flash">{deltaFlash}</div>}
-                    </div>
+                {/* Today's Steps */}
+                <div className="gba-section">
+                  <div className="gba-section-title">Today's Steps</div>
+                  <div className="gba-step-big">{fmtFull(appState.todaySteps)}</div>
+                  <div className="gba-spendable-row">
+                    <span className="gba-spendable-label">Available to spend</span>
+                    <span className="gba-spendable-val">{fmtFull(appState.spendableSteps || 0)}</span>
+                  </div>
+                  <div className="gba-step-row">
+                    <input
+                      className="gba-step-input"
+                      type="number"
+                      min="0"
+                      placeholder="Enter today's total steps"
+                      value={stepInput}
+                      onChange={e => setStepInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSaveSteps()}
+                    />
+                    <button className="gba-save-btn" onClick={handleSaveSteps}>Save</button>
+                  </div>
+                  {deltaFlash && <div className="gba-delta-flash">{deltaFlash}</div>}
+                </div>
 
-                    <div className="gba-section">
-                      <div className="gba-stats-grid">
-                        <div className="gba-stat-box">
-                          <div className="gba-stat-label">Total Walked</div>
-                          <div className="gba-stat-val">{fmtNum(appState.totalStepsWalked)}</div>
+                {/* Stats */}
+                <div className="gba-section">
+                  <div className="gba-stats-grid">
+                    <div className="gba-stat-box">
+                      <div className="gba-stat-label">Total Walked</div>
+                      <div className="gba-stat-val">{fmtNum(appState.totalStepsWalked)}</div>
+                    </div>
+                    <div className="gba-stat-box">
+                      <div className="gba-stat-label">Streak</div>
+                      <div className="gba-stat-val">{appState.streakDays || 0}d</div>
+                    </div>
+                    <div className="gba-stat-box">
+                      <div className="gba-stat-label">Best Streak</div>
+                      <div className="gba-stat-val">{appState.bestStreak || 0}d</div>
+                    </div>
+                    <div className="gba-stat-box">
+                      <div className="gba-stat-label">Daily Record</div>
+                      <div className="gba-stat-val">{fmtNum(appState.bestDay || 0)}</div>
+                      <div className="gba-stat-sub">{appState.bestDayDate || '—'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step Vault */}
+                <div className="gba-section">
+                  <div className="gba-section-title">Step Vault</div>
+                  <div className="gba-vault-row">
+                    <span className="gba-vault-num">{fmtFull(appState.stepVault)}</span>
+                    {appState.spendableSteps > 0 && (
+                      <button className="gba-deposit-btn" onClick={handleDepositAll}>
+                        🏦 Deposit {fmtFull(appState.spendableSteps)}
+                      </button>
+                    )}
+                  </div>
+                  {upcomingMilestones.map(ms => {
+                    const pct = Math.min(100, (appState.stepVault / ms.threshold) * 100);
+                    return (
+                      <div className="gba-milestone" key={ms.threshold}>
+                        <div className="gba-milestone-label">
+                          <span>{ms.reward} pack at {fmtFull(ms.threshold)}</span>
+                          <span>{Math.round(pct)}%</span>
                         </div>
-                        <div className="gba-stat-box">
-                          <div className="gba-stat-label">Streak</div>
-                          <div className="gba-stat-val">{appState.streakDays || 0}d</div>
-                        </div>
-                        <div className="gba-stat-box">
-                          <div className="gba-stat-label">Best Streak</div>
-                          <div className="gba-stat-val">{appState.bestStreak || 0}d</div>
-                        </div>
-                        <div className="gba-stat-box">
-                          <div className="gba-stat-label">Daily Record</div>
-                          <div className="gba-stat-val">{fmtNum(appState.bestDay || 0)}</div>
-                          <div className="gba-stat-sub">{appState.bestDayDate || '—'}</div>
+                        <div className="gba-milestone-bar">
+                          <div className="gba-milestone-fill" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
-                    </div>
+                    );
+                  })}
+                </div>
 
-                    <div className="gba-section">
-                      <div className="gba-section-title">Step Vault</div>
-                      <div className="gba-vault-row">
-                        <span className="gba-vault-num">{fmtFull(appState.stepVault)}</span>
-                        {appState.spendableSteps > 0 && (
-                          <button className="gba-deposit-btn" onClick={handleDepositAll}>
-                            🏦 Deposit {fmtFull(appState.spendableSteps)}
-                          </button>
+                {/* Daily Rewards */}
+                <div className="gba-section">
+                  <div className="gba-section-title">Daily Rewards</div>
+                  <div className="gba-pack-grid">
+                    {(['common', 'rare', 'epic', 'legendary']).map(tier => {
+                      const cost = PACK_COSTS[tier];
+                      const canAfford = (appState.spendableSteps || 0) >= cost;
+                      return (
+                        <div className={`gba-pack-card ${tier}${canAfford ? ' can-afford' : ''}`} key={tier}>
+                          <div className="gba-pack-tier">{tier}</div>
+                          <div className="gba-pack-cost">{fmtNum(cost)}</div>
+                          {canAfford ? (
+                            <button className="gba-pack-btn" onClick={() => handleUnlockPack(tier)}>Unlock</button>
+                          ) : (
+                            <div className="gba-pack-need">−{fmtNum(cost - (appState.spendableSteps || 0))}</div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Pack Inventory */}
+                <div className="gba-section">
+                  <div className="gba-section-title">Pack Inventory</div>
+                  <div className="gba-pack-grid">
+                    {(['common', 'rare', 'epic', 'legendary']).map(tier => (
+                      <div className={`gba-pack-card ${tier}${appState.packInventory[tier] > 0 ? ' has-pack' : ''}`} key={tier}>
+                        <div className="gba-pack-tier">{tier}</div>
+                        <div className="gba-pack-count">×{appState.packInventory[tier]}</div>
+                        {appState.packInventory[tier] > 0 ? (
+                          <button className="gba-pack-btn" onClick={() => handleOpenPack(tier)}>Open</button>
+                        ) : (
+                          <div className="gba-pack-need">Empty</div>
                         )}
                       </div>
-                      {upcomingMilestones.map(ms => {
-                        const pct = Math.min(100, (appState.stepVault / ms.threshold) * 100);
-                        return (
-                          <div className="gba-milestone" key={ms.threshold}>
-                            <div className="gba-milestone-label">
-                              <span>{ms.reward} pack at {fmtFull(ms.threshold)}</span>
-                              <span>{Math.round(pct)}%</span>
-                            </div>
-                            <div className="gba-milestone-bar">
-                              <div className="gba-milestone-fill" style={{ width: `${pct}%` }} />
-                            </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pokédex */}
+                <div className="gba-section">
+                  <div className="gba-section-title">Pokédex · {uniqueDex.size} / 1010</div>
+                  <div className="gba-pokedex-regions">
+                    {pokedexRegions.map(r => {
+                      const count = [...uniqueDex].filter(id => id >= r.min && id <= r.max).length;
+                      const total = r.max - r.min + 1;
+                      return (
+                        <div key={r.name} className="gba-region-row">
+                          <span className="gba-region-name">{r.name}</span>
+                          <div className="gba-region-bar">
+                            <div className="gba-region-fill" style={{ width: `${(count / total) * 100}%` }} />
                           </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="gba-section">
-                      <div className="gba-section-title">Daily Rewards · {fmtFull(appState.spendableSteps)} steps</div>
-                      <div className="gba-pack-grid">
-                        {(['common', 'rare', 'epic', 'legendary']).map(tier => {
-                          const cost = PACK_COSTS[tier];
-                          const canAfford = appState.spendableSteps >= cost;
-                          return (
-                            <div className={`gba-pack-card ${tier}${canAfford ? ' can-afford' : ''}`} key={tier}>
-                              <div className="gba-pack-tier">{tier}</div>
-                              <div className="gba-pack-cost">{fmtNum(cost)}</div>
-                              {canAfford ? (
-                                <button className="gba-pack-btn" onClick={() => handleUnlockPack(tier)}>Unlock</button>
-                              ) : (
-                                <div className="gba-pack-need">−{fmtNum(cost - appState.spendableSteps)}</div>
-                              )}
-                            </div>
-                          );
-                        })}
+                          <span className="gba-region-count">{count}/{total}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="gba-tier-row">
+                    {(['legendary', 'epic', 'rare', 'common']).map(tier => (
+                      <div key={tier} className={`gba-tier-box ${tier}`}>
+                        <div className="gba-tier-count">{allPokes.filter(p => p.packTier === tier).length}</div>
+                        <div className="gba-tier-name">{tier}</div>
                       </div>
-                    </div>
-                  </>
-                )}
+                    ))}
+                  </div>
+                </div>
 
-                {gbaTab === 'packs' && (
-                  <div className="gba-section">
-                    <div className="gba-section-title">Pack Inventory</div>
-                    <div className="gba-pack-grid">
-                      {(['common', 'rare', 'epic', 'legendary']).map(tier => (
-                        <div className={`gba-pack-card ${tier}${appState.packInventory[tier] > 0 ? ' has-pack' : ''}`} key={tier}>
-                          <div className="gba-pack-tier">{tier}</div>
-                          <div className="gba-pack-count">×{appState.packInventory[tier]}</div>
-                          {appState.packInventory[tier] > 0 ? (
-                            <button className="gba-pack-btn" onClick={() => handleOpenPack(tier)}>Open</button>
-                          ) : (
-                            <div className="gba-pack-need">Empty</div>
-                          )}
+                {/* Active Team */}
+                <div className="gba-section">
+                  <div className="gba-section-title">Active Team ({teamPokemon.length}/6)</div>
+                  {teamPokemon.length === 0 ? (
+                    <div className="gba-empty">No team yet. Open packs to catch Pokémon!</div>
+                  ) : (
+                    <div className="gba-team-scroll">
+                      {teamPokemon.map(p => (
+                        <div key={p.uid} className={`gba-team-card ${p.packTier || ''}`} onClick={() => setDetailPokemon(p)}>
+                          {p.sprite && <img src={p.sprite} alt={p.name} className="gba-team-sprite" />}
+                          <div className="gba-team-name">{p.name}</div>
+                          <div className="gba-team-region">{getRegion(p.dexId)}</div>
+                          <div className="gba-team-types">{p.types.map(t => <TypeBadge key={t} type={t} />)}</div>
+                          <div className={`gba-team-tier ${p.packTier}`}>{p.packTier}</div>
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
-                {gbaTab === 'team' && (() => {
-                  const allPokes = appState.pokemon;
-                  const uniqueDex = new Set(allPokes.map(p => p.dexId));
-                  const regions = [
-                    { name: 'Kanto', min: 1, max: 151 },
-                    { name: 'Johto', min: 152, max: 251 },
-                    { name: 'Hoenn', min: 252, max: 386 },
-                    { name: 'Sinnoh', min: 387, max: 493 },
-                    { name: 'Unova', min: 494, max: 649 },
-                    { name: 'Kalos', min: 650, max: 721 },
-                    { name: 'Alola', min: 722, max: 809 },
-                    { name: 'Galar', min: 810, max: 905 },
-                    { name: 'Paldea', min: 906, max: 1010 },
-                  ];
-                  return (
-                    <>
-                      <div className="gba-section">
-                        <div className="gba-section-title">Pokédex · {uniqueDex.size} / 1010</div>
-                        <div className="gba-pokedex-regions">
-                          {regions.map(r => {
-                            const count = [...uniqueDex].filter(id => id >= r.min && id <= r.max).length;
-                            const total = r.max - r.min + 1;
-                            return (
-                              <div key={r.name} className="gba-region-row">
-                                <span className="gba-region-name">{r.name}</span>
-                                <div className="gba-region-bar">
-                                  <div className="gba-region-fill" style={{ width: `${(count / total) * 100}%` }} />
-                                </div>
-                                <span className="gba-region-count">{count}/{total}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <div className="gba-tier-row">
-                          {(['legendary', 'epic', 'rare', 'common']).map(tier => (
-                            <div key={tier} className={`gba-tier-box ${tier}`}>
-                              <div className="gba-tier-count">{allPokes.filter(p => p.packTier === tier).length}</div>
-                              <div className="gba-tier-name">{tier}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="gba-section">
-                        <div className="gba-section-title">Active Team ({teamPokemon.length}/6)</div>
-                        {teamPokemon.length === 0 ? (
-                          <div className="gba-empty">No team yet. Open packs to catch Pokémon!</div>
-                        ) : (
-                          <div className="gba-team-scroll">
-                            {teamPokemon.map(p => (
-                              <div key={p.uid} className={`gba-team-card ${p.packTier || ''}`} onClick={() => setDetailPokemon(p)}>
-                                {p.sprite && <img src={p.sprite} alt={p.name} className="gba-team-sprite" />}
-                                <div className="gba-team-name">{p.name}</div>
-                                <div className="gba-team-region">{getRegion(p.dexId)}</div>
-                                <div className="gba-team-types">{p.types.map(t => <TypeBadge key={t} type={t} />)}</div>
-                                <div className={`gba-team-tier ${p.packTier}`}>{p.packTier}</div>
+                {/* Storage */}
+                <div className="gba-section">
+                  <div className="gba-section-title">Storage ({storagePokemon.length})</div>
+                  {storagePokemon.length === 0 ? (
+                    <div className="gba-empty">Storage is empty.</div>
+                  ) : (
+                    (['legendary', 'epic', 'rare', 'common']).map(tier => {
+                      const group = storagePokemon.filter(p => p.packTier === tier);
+                      if (group.length === 0) return null;
+                      return (
+                        <div key={tier} className="gba-tier-section">
+                          <div className={`gba-tier-header ${tier}`}>{tier} <span>{group.length}</span></div>
+                          <div className="gba-storage-grid">
+                            {group.map(p => (
+                              <div key={p.uid} className="gba-storage-card" onClick={() => setDetailPokemon(p)}>
+                                {p.sprite && <img src={p.sprite} alt={p.name} className="gba-storage-sprite" />}
+                                <div className="gba-storage-name">{p.name}</div>
+                                <div className="gba-storage-region">{getRegion(p.dexId)}</div>
+                                <div className="gba-storage-types">{p.types.map(t => <TypeBadge key={t} type={t} />)}</div>
                               </div>
                             ))}
                           </div>
-                        )}
-                      </div>
-                    </>
-                  );
-                })()}
-
-                {gbaTab === 'box' && (
-                  <div className="gba-section">
-                    <div className="gba-section-title">Storage ({storagePokemon.length})</div>
-                    {storagePokemon.length === 0 ? (
-                      <div className="gba-empty">Storage is empty.</div>
-                    ) : (
-                      (['legendary', 'epic', 'rare', 'common']).map(tier => {
-                        const group = storagePokemon.filter(p => p.packTier === tier);
-                        if (group.length === 0) return null;
-                        return (
-                          <div key={tier} className="gba-tier-section">
-                            <div className={`gba-tier-header ${tier}`}>{tier} <span>{group.length}</span></div>
-                            <div className="gba-storage-grid">
-                              {group.map(p => (
-                                <div key={p.uid} className="gba-storage-card" onClick={() => setDetailPokemon(p)}>
-                                  {p.sprite && <img src={p.sprite} alt={p.name} className="gba-storage-sprite" />}
-                                  <div className="gba-storage-name">{p.name}</div>
-                                  <div className="gba-storage-region">{getRegion(p.dexId)}</div>
-                                  <div className="gba-storage-types">{p.types.map(t => <TypeBadge key={t} type={t} />)}</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
 
               </div>
             </div>
           </div>
+          <div className="gba-brand-bar">
+            <span className="gba-brand-text">GAME BOY ADVANCE</span>
+            <span className="gba-brand-sub">POKÉMON WALKER</span>
+          </div>
         </div>
 
-        <div className="gba-controls">
-          <div className="gba-nav-row">
-            {[
-              { id: 'walk',  icon: '👣', label: 'Walk'  },
-              { id: 'packs', icon: '🎁', label: 'Packs' },
-              { id: 'team',  icon: '⚡', label: 'Team'  },
-              { id: 'box',   icon: '📦', label: 'Box'   },
-            ].map(t => (
-              <button
-                key={t.id}
-                className={`gba-nav-btn ${gbaTab === t.id ? 'active' : ''}`}
-                onClick={() => setGbaTab(t.id)}
-              >
-                <span className="gba-nav-icon">{t.icon}</span>
-                <span className="gba-nav-label">{t.label}</span>
-              </button>
-            ))}
+        {/* Right panel — A/B + Quit */}
+        <div className="gba-right-panel">
+          <div className="gba-shoulder-r">R</div>
+          <div className="gba-ab-group">
+            <div className="gba-btn-b">B</div>
+            <div className="gba-btn-a">A</div>
           </div>
-
-          <div className="gba-gamepad-row">
-            <div className="gba-dpad">
-              <div className="gba-dpad-v" />
-              <div className="gba-dpad-h" />
-              <div className="gba-dpad-center" />
-            </div>
-            <div className="gba-center-controls">
-              <button className="gba-mini-btn" onClick={onStop}>EXIT</button>
-            </div>
-            <div className="gba-ab-group">
-              <div className="gba-btn-b">B</div>
-              <div className="gba-btn-a">A</div>
-            </div>
+          <div className="gba-speaker-grille">
+            {Array.from({ length: 18 }).map((_, i) => <div key={i} className="gba-speaker-dot" />)}
           </div>
+          <button className="gba-mini-btn" onClick={onStop}>QUIT</button>
         </div>
 
       </div>
