@@ -315,16 +315,17 @@ function PokemonDetailPopup({ pokemon, allPokemon, team, vault, onClose, onAddTe
         <div className="pw-popup-action-row">
           {isTeamMember ? (
             <button className="pw-popup-remove-btn" onClick={() => { onRemoveTeam(pokemon.uid); onClose(); }}>
-              ✕ Remove
+              → Put in Storage
             </button>
           ) : (
             <button
               className="pw-popup-toteam-btn"
               onClick={() => { onAddTeam(pokemon.uid); onClose(); }}
               disabled={team.length >= 6}
+              title={team.length >= 6 ? 'Team is full' : ''}
               style={team.length >= 6 ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
             >
-              + Add to Team
+              {team.length >= 6 ? '🔒 Team Full' : '→ Add to Team'}
             </button>
           )}
         </div>
