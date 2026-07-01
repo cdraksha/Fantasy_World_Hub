@@ -196,7 +196,9 @@
 .pw-stat-box.vault       .pw-stat-number { color: var(--pw-blue); }
 .pw-stat-box.total       .pw-stat-number { color: var(--pw-epic); }
 .pw-stat-box.streak      .pw-stat-number { color: #e05c00; }
-.pw-stat-box.best-streak .pw-stat-number { color: #c2410c; }
+.pw-stat-box.best-streak  .pw-stat-number { color: #c2410c; }
+.pw-stat-box.daily-record .pw-stat-number { color: #0369a1; }
+.pw-stat-box.daily-record { grid-column: 1 / -1; }
 
 /* ─── Step entry ─── */
 .pw-step-display {
@@ -504,6 +506,14 @@
   text-transform: capitalize;
   color: var(--pw-text);
   line-height: 1.2;
+  margin-bottom: 1px;
+}
+
+.pw-storage-region {
+  font-size: 8px;
+  color: var(--pw-muted);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
   margin-bottom: 3px;
 }
 
@@ -598,6 +608,14 @@
   font-weight: 700;
   margin-top: 4px;
   line-height: 1.2;
+  margin-bottom: 1px;
+}
+
+.pw-coll-region {
+  font-size: 7px;
+  color: var(--pw-muted);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
 }
 
 .pw-dup-badge {

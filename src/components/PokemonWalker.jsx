@@ -155,6 +155,18 @@ function getCollectorLevel(totalSteps) {
   return Math.floor(totalSteps / 50000) + 1;
 }
 
+function getRegion(dexId) {
+  if (dexId <= 151) return 'Kanto';
+  if (dexId <= 251) return 'Johto';
+  if (dexId <= 386) return 'Hoenn';
+  if (dexId <= 493) return 'Sinnoh';
+  if (dexId <= 649) return 'Unova';
+  if (dexId <= 721) return 'Kalos';
+  if (dexId <= 809) return 'Alola';
+  if (dexId <= 905) return 'Galar';
+  return 'Paldea';
+}
+
 function fmtNum(n) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
   if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
@@ -866,6 +878,10 @@ export default function PokemonWalker({ onStop }) {
                   <div className="pw-stat-label">Best Streak</div>
                   <div className="pw-stat-number">{appState.bestStreak || 0}d</div>
                 </div>
+                <div className="pw-stat-box daily-record">
+                  <div className="pw-stat-label">Daily Record</div>
+                  <div className="pw-stat-number">{fmtNum(appState.bestDay || 0)}</div>
+                </div>
               </div>
             </div>
 
@@ -1013,6 +1029,7 @@ export default function PokemonWalker({ onStop }) {
                         <div style={{ fontSize: 32, lineHeight: '60px', textAlign: 'center' }}>❓</div>
                       )}
                       <div className="pw-storage-name">{p.name}</div>
+                      <div className="pw-storage-region">{getRegion(p.dexId)}</div>
                       <div className="pw-storage-types">
                         {p.types.map(t => <TypeBadge key={t} type={t} />)}
                       </div>
@@ -1067,6 +1084,7 @@ export default function PokemonWalker({ onStop }) {
                               <div style={{ width: 56, height: 56, fontSize: 32, lineHeight: '56px', textAlign: 'center' }}>❓</div>
                             )}
                             <div className="pw-coll-name">{p.name}</div>
+                            <div className="pw-coll-region">{getRegion(p.dexId)}</div>
                           </div>
                         ))}
                       </div>
