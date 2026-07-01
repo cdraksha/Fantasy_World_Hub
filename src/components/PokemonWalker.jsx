@@ -219,6 +219,7 @@ function loadState() {
       saved.todayDate = today;
       saved.todaySteps = 0;
       saved.spendableSteps = 0;
+      saved.packInventory = { common: 0, rare: 0, epic: 0, legendary: 0 };
     }
     return saved;
   } catch {
