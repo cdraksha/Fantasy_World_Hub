@@ -444,11 +444,16 @@
   border: 2px solid var(--pw-border);
   border-radius: 12px;
   padding: 10px 8px;
-  width: 84px;
+  width: 90px;
   cursor: pointer;
   text-align: center;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
+
+.pw-team-card.legendary { border-color: rgba(217,119,6,0.35); }
+.pw-team-card.epic       { border-color: rgba(124,58,237,0.35); }
+.pw-team-card.rare       { border-color: rgba(43,80,161,0.35); }
+.pw-team-card.common     { border-color: rgba(61,158,66,0.35); }
 
 .pw-team-card:hover {
   border-color: var(--pw-yellow);
@@ -469,7 +474,39 @@
   text-transform: capitalize;
   font-weight: 700;
   line-height: 1.2;
+  margin-bottom: 1px;
 }
+
+.pw-team-region {
+  font-size: 8px;
+  color: var(--pw-muted);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 3px;
+}
+
+.pw-team-types {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.pw-team-tier {
+  font-size: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.pw-team-tier.legendary { color: var(--pw-legendary); background: rgba(217,119,6,0.10); }
+.pw-team-tier.epic      { color: var(--pw-epic);      background: rgba(124,58,237,0.10); }
+.pw-team-tier.rare      { color: var(--pw-rare);      background: rgba(43,80,161,0.10); }
+.pw-team-tier.common    { color: var(--pw-common);    background: rgba(61,158,66,0.10); }
 
 .pw-team-lvl {
   font-size: 9px;

@@ -1056,7 +1056,7 @@ export default function PokemonWalker({ onStop }) {
                   {teamPokemon.map(p => (
                     <div
                       key={p.uid}
-                      className="pw-team-card"
+                      className={`pw-team-card ${p.packTier || ''}`}
                       onClick={() => setDetailPokemon(p)}
                     >
                       {p.sprite ? (
@@ -1065,6 +1065,11 @@ export default function PokemonWalker({ onStop }) {
                         <div style={{ width: 56, height: 56, margin: '0 auto', fontSize: 36, lineHeight: '56px' }}>❓</div>
                       )}
                       <div className="pw-team-name">{p.name}</div>
+                      <div className="pw-team-region">{getRegion(p.dexId)}</div>
+                      <div className="pw-team-types">
+                        {p.types.map(t => <TypeBadge key={t} type={t} />)}
+                      </div>
+                      <div className={`pw-team-tier ${p.packTier}`}>{p.packTier}</div>
                     </div>
                   ))}
                 </div>
