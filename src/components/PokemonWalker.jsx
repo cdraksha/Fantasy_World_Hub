@@ -1048,6 +1048,12 @@ export default function PokemonWalker({ onStop }) {
 
             {/* 6. Active Team */}
             <div className="pw-section">
+              <div className="pw-pokedex-banner">
+                <span className="pw-pokedex-label">Pokédex</span>
+                <span className="pw-pokedex-count">
+                  {new Set(appState.pokemon.map(p => p.dexId)).size} <span className="pw-pokedex-total">/ 1010 unlocked</span>
+                </span>
+              </div>
               <div className="pw-section-title">Active Team ({teamPokemon.length}/6)</div>
               {teamPokemon.length === 0 ? (
                 <div className="pw-empty">No team members yet. Catch Pokémon to build your team!</div>

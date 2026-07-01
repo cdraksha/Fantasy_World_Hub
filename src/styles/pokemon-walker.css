@@ -143,6 +143,40 @@
   border-left: 3px solid var(--pw-yellow);
 }
 
+/* ─── Pokédex banner ─── */
+.pw-pokedex-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--pw-yellow);
+  border: 2.5px solid var(--pw-text);
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+}
+
+.pw-pokedex-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pw-text);
+}
+
+.pw-pokedex-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--pw-text);
+}
+
+.pw-pokedex-total {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.6;
+}
+
 /* ─── Header stats ─── */
 .pw-header-date {
   font-size: 11px;
