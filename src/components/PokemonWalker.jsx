@@ -261,8 +261,15 @@ function PokemonDetailPopup({ pokemon, allPokemon, team, vault, onClose, onAddTe
   const ownedCount = allPokemon.filter(p => p.dexId === pokemon.dexId).length;
   const timesEvolved = pokemon.timesEvolved || 0;
   const evolveCost = timesEvolved === 0 ? 50000 : 100000;
-  const canEvolveMore = timesEvolved < 2;
   const isEvolving = evolving === pokemon.uid;
+  const [nextEvoId, setNextEvoId] = useState(undefined); // undefined=loading, null=none, number=has evo
+
+  useEffect(() => {
+    setNextEvoId(undefined);
+    fetchEvolution(pokemon.dexId).then(setNextEvoId).catch(() => setNextEvoId(null));
+  }, [pokemon.dexId]);
+
+  const canEvolveMore = timesEvolved < 2 && nextEvoId !== null;
 
   return (
     <div className="pw-popup-overlay" onClick={onClose}>
@@ -283,7 +290,9 @@ function PokemonDetailPopup({ pokemon, allPokemon, team, vault, onClose, onAddTe
 
         {/* Evolution */}
         <div className="pw-popup-evolve">
-          {canEvolveMore ? (
+          {nextEvoId === undefined ? (
+            <div className="pw-evolve-max">Checking evolution…</div>
+          ) : canEvolveMore ? (
             <>
               <div className="pw-popup-evolve-label">
                 Evolve · {fmtFull(evolveCost)} vault steps
@@ -297,7 +306,9 @@ function PokemonDetailPopup({ pokemon, allPokemon, team, vault, onClose, onAddTe
               </button>
             </>
           ) : (
-            <div className="pw-evolve-max">Max Evolution</div>
+            <div className="pw-evolve-max">
+              {nextEvoId === null && timesEvolved === 0 ? 'Does Not Evolve' : 'Max Evolution'}
+            </div>
           )}
         </div>
 
