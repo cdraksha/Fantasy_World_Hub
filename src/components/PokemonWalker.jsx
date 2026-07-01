@@ -454,7 +454,9 @@ export default function PokemonWalker({ onStop }) {
   const [evolving, setEvolving] = useState(null); // uid of Pokémon being evolved
   const [launchInput, setLaunchInput] = useState('');
   const [clockTime, setClockTime] = useState('');
+  const [packWarning, setPackWarning] = useState(null); // '9pm' | '11pm' | null
   const midnightChecked = useRef(false);
+  const packWarningChecked = useRef({ '9pm': false, '11pm': false });
 
   useEffect(() => {
     const tick = () => {
@@ -494,6 +496,26 @@ export default function PokemonWalker({ onStop }) {
       if (h === 23 && m >= 48 && appState.spendableSteps > 0) {
         setShowMidnight(true);
         midnightChecked.current = true;
+      }
+    };
+    check();
+    const id = setInterval(check, 60000);
+    return () => clearInterval(id);
+  }, [appState]);
+
+  // ─── Pack expiry warning ─────────────────────────────────────────────
+  useEffect(() => {
+    const check = () => {
+      if (!appState) return;
+      const total = Object.values(appState.packInventory).reduce((a, b) => a + b, 0);
+      if (total === 0) return;
+      const h = new Date().getHours();
+      if (h >= 23 && !packWarningChecked.current['11pm']) {
+        packWarningChecked.current['11pm'] = true;
+        setPackWarning('11pm');
+      } else if (h >= 21 && h < 23 && !packWarningChecked.current['9pm']) {
+        packWarningChecked.current['9pm'] = true;
+        setPackWarning('9pm');
       }
     };
     check();
@@ -796,6 +818,19 @@ export default function PokemonWalker({ onStop }) {
           onDeposit={handleMidnightDeposit}
           onIgnore={handleMidnightIgnore}
         />
+      )}
+
+      {/* Pack expiry warning banner */}
+      {packWarning && (
+        <div className="pw-pack-warning-banner">
+          <span className="pw-pack-warning-icon">⚠️</span>
+          <span className="pw-pack-warning-text">
+            {packWarning === '9pm'
+              ? `You have ${totalPacks} unopened pack${totalPacks > 1 ? 's' : ''} — they expire at midnight!`
+              : `Last chance! ${totalPacks} pack${totalPacks > 1 ? 's' : ''} expire${totalPacks === 1 ? 's' : ''} in under an hour.`}
+          </span>
+          <button className="pw-pack-warning-dismiss" onClick={() => setPackWarning(null)}>✕</button>
+        </div>
       )}
 
       {/* Detail popup */}
