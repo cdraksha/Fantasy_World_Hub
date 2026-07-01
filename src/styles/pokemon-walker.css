@@ -143,39 +143,129 @@
   border-left: 3px solid var(--pw-yellow);
 }
 
-/* ─── Pokédex banner ─── */
-.pw-pokedex-banner {
+/* ─── Pokédex card ─── */
+.pw-pokedex-card { }
+
+.pw-pokedex-total-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--pw-yellow);
-  border: 2.5px solid var(--pw-text);
-  border-radius: 10px;
-  padding: 10px 16px;
+  align-items: baseline;
+  gap: 8px;
   margin-bottom: 14px;
 }
 
-.pw-pokedex-label {
+.pw-pokedex-big {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--pw-text);
-}
-
-.pw-pokedex-count {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 20px;
+  font-size: 40px;
   font-weight: 700;
   color: var(--pw-text);
+  line-height: 1;
 }
 
-.pw-pokedex-total {
-  font-size: 11px;
+.pw-pokedex-of {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--pw-muted);
   font-weight: 600;
-  opacity: 0.6;
 }
+
+.pw-pokedex-divider {
+  height: 1px;
+  background: var(--pw-border);
+  margin: 12px 0;
+}
+
+.pw-pokedex-meta-title {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pw-muted);
+  margin-bottom: 10px;
+}
+
+.pw-pokedex-region-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pw-pokedex-region-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pw-pokedex-region-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--pw-text);
+  width: 48px;
+  flex-shrink: 0;
+}
+
+.pw-pokedex-region-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--pw-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.pw-pokedex-region-fill {
+  height: 100%;
+  background: var(--pw-yellow);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
+
+.pw-pokedex-region-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--pw-muted);
+  width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.pw-pokedex-tier-row {
+  display: flex;
+  gap: 8px;
+}
+
+.pw-pokedex-tier-box {
+  flex: 1;
+  border-radius: 8px;
+  padding: 8px 4px;
+  text-align: center;
+  border: 1.5px solid transparent;
+}
+
+.pw-pokedex-tier-box.legendary { background: rgba(217,119,6,0.08);  border-color: rgba(217,119,6,0.25); }
+.pw-pokedex-tier-box.epic      { background: rgba(124,58,237,0.08); border-color: rgba(124,58,237,0.25); }
+.pw-pokedex-tier-box.rare      { background: rgba(43,80,161,0.08);  border-color: rgba(43,80,161,0.25); }
+.pw-pokedex-tier-box.common    { background: rgba(61,158,66,0.08);  border-color: rgba(61,158,66,0.25); }
+
+.pw-pokedex-tier-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--pw-text);
+}
+
+.pw-pokedex-tier-name {
+  font-size: 7px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+
+.pw-pokedex-tier-box.legendary .pw-pokedex-tier-name { color: var(--pw-legendary); }
+.pw-pokedex-tier-box.epic      .pw-pokedex-tier-name { color: var(--pw-epic); }
+.pw-pokedex-tier-box.rare      .pw-pokedex-tier-name { color: var(--pw-rare); }
+.pw-pokedex-tier-box.common    .pw-pokedex-tier-name { color: var(--pw-common); }
 
 /* ─── Header stats ─── */
 .pw-header-date {

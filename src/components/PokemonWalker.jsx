@@ -1046,14 +1046,65 @@ export default function PokemonWalker({ onStop }) {
               </div>
             </div>
 
-            {/* 6. Active Team */}
+            {/* 6. Pokédex Card */}
+            {(() => {
+              const allPokes = appState.pokemon;
+              const uniqueDex = new Set(allPokes.map(p => p.dexId));
+              const regions = [
+                { name: 'Kanto',   min: 1,   max: 151 },
+                { name: 'Johto',   min: 152,  max: 251 },
+                { name: 'Hoenn',   min: 252,  max: 386 },
+                { name: 'Sinnoh',  min: 387,  max: 493 },
+                { name: 'Unova',   min: 494,  max: 649 },
+                { name: 'Kalos',   min: 650,  max: 721 },
+                { name: 'Alola',   min: 722,  max: 809 },
+                { name: 'Galar',   min: 810,  max: 905 },
+                { name: 'Paldea',  min: 906,  max: 1010 },
+              ];
+              const tiers = ['legendary', 'epic', 'rare', 'common'];
+              return (
+                <div className="pw-section pw-pokedex-card">
+                  <div className="pw-section-title">Pokédex</div>
+                  <div className="pw-pokedex-total-row">
+                    <span className="pw-pokedex-big">{uniqueDex.size}</span>
+                    <span className="pw-pokedex-of">/ 1010 unlocked</span>
+                  </div>
+                  <div className="pw-pokedex-divider" />
+                  <div className="pw-pokedex-meta-title">By Region</div>
+                  <div className="pw-pokedex-region-grid">
+                    {regions.map(r => {
+                      const count = [...uniqueDex].filter(id => id >= r.min && id <= r.max).length;
+                      const total = r.max - r.min + 1;
+                      return (
+                        <div key={r.name} className="pw-pokedex-region-row">
+                          <span className="pw-pokedex-region-name">{r.name}</span>
+                          <div className="pw-pokedex-region-bar">
+                            <div className="pw-pokedex-region-fill" style={{ width: `${(count / total) * 100}%` }} />
+                          </div>
+                          <span className="pw-pokedex-region-count">{count}/{total}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="pw-pokedex-divider" />
+                  <div className="pw-pokedex-meta-title">By Tier</div>
+                  <div className="pw-pokedex-tier-row">
+                    {tiers.map(tier => {
+                      const count = allPokes.filter(p => p.packTier === tier).length;
+                      return (
+                        <div key={tier} className={`pw-pokedex-tier-box ${tier}`}>
+                          <div className="pw-pokedex-tier-count">{count}</div>
+                          <div className="pw-pokedex-tier-name">{tier}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 7. Active Team */}
             <div className="pw-section">
-              <div className="pw-pokedex-banner">
-                <span className="pw-pokedex-label">Pokédex</span>
-                <span className="pw-pokedex-count">
-                  {new Set(appState.pokemon.map(p => p.dexId)).size} <span className="pw-pokedex-total">/ 1010 unlocked</span>
-                </span>
-              </div>
               <div className="pw-section-title">Active Team ({teamPokemon.length}/6)</div>
               {teamPokemon.length === 0 ? (
                 <div className="pw-empty">No team members yet. Catch Pokémon to build your team!</div>
