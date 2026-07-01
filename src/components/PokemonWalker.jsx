@@ -455,8 +455,10 @@ export default function PokemonWalker({ onStop }) {
   const [launchInput, setLaunchInput] = useState('');
   const [clockTime, setClockTime] = useState('');
   const [packWarning, setPackWarning] = useState(null); // '9pm' | '11pm' | null
+  const [stepsWarning, setStepsWarning] = useState(false);
   const midnightChecked = useRef(false);
   const packWarningChecked = useRef({ '9pm': false, '11pm': false });
+  const stepsWarningChecked = useRef(false);
 
   useEffect(() => {
     const tick = () => {
@@ -516,6 +518,22 @@ export default function PokemonWalker({ onStop }) {
       } else if (h >= 21 && h < 23 && !packWarningChecked.current['9pm']) {
         packWarningChecked.current['9pm'] = true;
         setPackWarning('9pm');
+      }
+    };
+    check();
+    const id = setInterval(check, 60000);
+    return () => clearInterval(id);
+  }, [appState]);
+
+  // ─── Spendable steps 9 PM warning ───────────────────────────────────
+  useEffect(() => {
+    const check = () => {
+      if (!appState || stepsWarningChecked.current) return;
+      if ((appState.spendableSteps || 0) === 0) return;
+      const h = new Date().getHours();
+      if (h >= 21 && h < 23) {
+        stepsWarningChecked.current = true;
+        setStepsWarning(true);
       }
     };
     check();
@@ -830,6 +848,17 @@ export default function PokemonWalker({ onStop }) {
               : `Last chance! ${totalPacks} pack${totalPacks > 1 ? 's' : ''} expire${totalPacks === 1 ? 's' : ''} in under an hour.`}
           </span>
           <button className="pw-pack-warning-dismiss" onClick={() => setPackWarning(null)}>✕</button>
+        </div>
+      )}
+
+      {/* Spendable steps 9 PM warning */}
+      {stepsWarning && (appState.spendableSteps || 0) > 0 && (
+        <div className="pw-pack-warning-banner pw-steps-warning-banner">
+          <span className="pw-pack-warning-icon">🏃</span>
+          <span className="pw-pack-warning-text">
+            You have {fmtFull(appState.spendableSteps)} undeposited steps — deposit them to the vault before midnight or they'll be lost!
+          </span>
+          <button className="pw-pack-warning-dismiss" onClick={() => setStepsWarning(false)}>✕</button>
         </div>
       )}
 

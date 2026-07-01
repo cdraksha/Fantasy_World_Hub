@@ -1314,3 +1314,10 @@
   transition: opacity 0.2s;
 }
 .pw-pack-warning-dismiss:hover { opacity: 1; }
+
+.pw-steps-warning-banner {
+  top: calc(var(--pw-bar-h) + 68px);
+  background: #1e3a5f;
+  border-color: #3b82f6;
+  color: #dbeafe;
+}
