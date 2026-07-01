@@ -887,9 +887,7 @@ export default function PokemonWalker({ onStop }) {
                 <div className="pw-stat-box daily-record">
                   <div className="pw-stat-label">Daily Record</div>
                   <div className="pw-stat-number">{fmtNum(appState.bestDay || 0)}</div>
-                  {appState.bestDayDate && (
-                    <div className="pw-stat-sub">{appState.bestDayDate}</div>
-                  )}
+                  <div className="pw-stat-sub">{appState.bestDayDate || '—'}</div>
                 </div>
               </div>
             </div>
