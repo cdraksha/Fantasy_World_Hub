@@ -457,7 +457,6 @@ function MidnightWarning({ spendable, onSpend, onDeposit, onIgnore }) {
 
 export default function PokemonWalker({ onStop }) {
   const [appState, setAppState] = useState(() => loadState());
-  const [tab, setTab] = useState('dashboard');
   const [stepInput, setStepInput] = useState('');
   const [deltaFlash, setDeltaFlash] = useState(null);
   const [packOpening, setPackOpening] = useState(null); // tier string or null
@@ -558,16 +557,6 @@ export default function PokemonWalker({ onStop }) {
   const teamPokemon = appState ? appState.pokemon.filter(p => p.onTeam) : [];
   const storagePokemon = appState ? appState.pokemon.filter(p => !p.onTeam) : [];
 
-  // ─── Unique collection by dexId ─────────────────────────────────────
-  const uniqueByDex = appState
-    ? Object.values(
-        appState.pokemon.reduce((acc, p) => {
-          if (!acc[p.dexId]) acc[p.dexId] = { ...p, count: 1 };
-          else acc[p.dexId].count++;
-          return acc;
-        }, {})
-      )
-    : [];
 
   // ─── Level helpers ──────────────────────────────────────────────────
   const collectorLevel = appState ? getCollectorLevel(appState.totalStepsWalked) : 1;
@@ -911,25 +900,9 @@ export default function PokemonWalker({ onStop }) {
         <button className="pw-exit-btn" onClick={onStop}>✕ Exit</button>
       </div>
 
-      {/* Tab bar */}
-      <div className="pw-tabs">
-        {['dashboard', 'collection'].map(t => (
-          <button
-            key={t}
-            className={`pw-tab-btn ${tab === t ? 'active' : ''}`}
-            onClick={() => setTab(t)}
-          >
-            {t === 'dashboard' ? 'Dashboard' : 'Collection'}
-          </button>
-        ))}
-      </div>
-
       {/* Content */}
       <div className="pw-content">
-
-        {/* ─── DASHBOARD TAB ─── */}
-        {tab === 'dashboard' && (
-          <>
+        <>
             {/* 1. Header card */}
             <div className="pw-section">
               <div className="pw-header-date">
@@ -1098,87 +1071,44 @@ export default function PokemonWalker({ onStop }) {
               )}
             </div>
 
-            {/* 7. Storage */}
+            {/* 7. Storage — grouped by tier */}
             <div className="pw-section">
               <div className="pw-section-title">Storage ({storagePokemon.length})</div>
               {storagePokemon.length === 0 ? (
                 <div className="pw-empty">Storage is empty.</div>
               ) : (
-                <div className="pw-storage-grid">
-                  {storagePokemon.map(p => (
-                    <div key={p.uid} className="pw-storage-card" onClick={() => setDetailPokemon(p)}>
-                      {p.sprite ? (
-                        <img src={p.sprite} alt={p.name} className="pw-storage-sprite" />
-                      ) : (
-                        <div style={{ fontSize: 32, lineHeight: '60px', textAlign: 'center' }}>❓</div>
-                      )}
-                      <div className="pw-storage-name">{p.name}</div>
-                      <div className="pw-storage-region">{getRegion(p.dexId)}</div>
-                      <div className="pw-storage-types">
-                        {p.types.map(t => <TypeBadge key={t} type={t} />)}
+                <>
+                  {(['legendary', 'epic', 'rare', 'common']).map(tier => {
+                    const group = storagePokemon.filter(p => p.packTier === tier);
+                    if (group.length === 0) return null;
+                    return (
+                      <div key={tier} className="pw-coll-section">
+                        <div className={`pw-coll-section-title ${tier}`}>
+                          {tier} <span>{group.length}</span>
+                        </div>
+                        <div className="pw-storage-grid">
+                          {group.map(p => (
+                            <div key={p.uid} className="pw-storage-card" onClick={() => setDetailPokemon(p)}>
+                              {p.sprite ? (
+                                <img src={p.sprite} alt={p.name} className="pw-storage-sprite" />
+                              ) : (
+                                <div style={{ fontSize: 32, lineHeight: '60px', textAlign: 'center' }}>❓</div>
+                              )}
+                              <div className="pw-storage-name">{p.name}</div>
+                              <div className="pw-storage-region">{getRegion(p.dexId)}</div>
+                              <div className="pw-storage-types">
+                                {p.types.map(t => <TypeBadge key={t} type={t} />)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <button
-                        className="pw-storage-team-btn"
-                        onClick={e => { e.stopPropagation(); handleAddTeam(p.uid); }}
-                        disabled={team.length >= 6}
-                      >
-                        → Team
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                    );
+                  })}
+                </>
               )}
             </div>
           </>
-        )}
-
-        {/* ─── COLLECTION TAB ─── */}
-        {tab === 'collection' && (
-          <>
-            <div className="pw-collection-header">
-              Unique: <span>{uniqueByDex.length}</span> / 1025 &nbsp;&nbsp;
-              Total: <span>{appState.pokemon.length}</span>
-            </div>
-            {appState.pokemon.length === 0 ? (
-              <div className="pw-empty">No Pokémon yet. Open some packs!</div>
-            ) : (
-              <>
-                {(['legendary', 'epic', 'rare', 'common']).map(tier => {
-                  const group = uniqueByDex.filter(p => p.packTier === tier);
-                  if (group.length === 0) return null;
-                  return (
-                    <div key={tier} className="pw-coll-section">
-                      <div className={`pw-coll-section-title ${tier}`}>
-                        {tier} <span>{group.length}</span>
-                      </div>
-                      <div className="pw-collection-grid">
-                        {group.map(p => (
-                          <div
-                            key={p.dexId}
-                            className={`pw-coll-card ${tier}`}
-                            onClick={() => {
-                              const actual = appState.pokemon.find(pk => pk.dexId === p.dexId);
-                              setDetailPokemon(actual || p);
-                            }}
-                          >
-                            {p.count > 1 && <span className="pw-dup-badge">×{p.count}</span>}
-                            {p.sprite ? (
-                              <img src={p.sprite} alt={p.name} className="pw-coll-sprite" />
-                            ) : (
-                              <div style={{ width: 56, height: 56, fontSize: 32, lineHeight: '56px', textAlign: 'center' }}>❓</div>
-                            )}
-                            <div className="pw-coll-name">{p.name}</div>
-                            <div className="pw-coll-region">{getRegion(p.dexId)}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </>
-            )}
-          </>
-        )}
 
       </div>
     </div>
