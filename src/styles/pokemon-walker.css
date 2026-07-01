@@ -1482,3 +1482,572 @@
   border-color: #3b82f6;
   color: #dbeafe;
 }
+
+/* ═══════════════════════════════════════════
+   GBA Shell
+   ═══════════════════════════════════════════ */
+
+.gba-body {
+  position: fixed;
+  inset: 0;
+  background: #2a0a4a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+.gba-shell {
+  width: min(420px, 100vw);
+  height: 100dvh;
+  background: linear-gradient(160deg, #9b4fd4 0%, #7b35c1 40%, #6228a8 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.gba-screen-section {
+  position: relative;
+  padding: 16px 18px 10px;
+  flex-shrink: 0;
+}
+
+.gba-led {
+  position: absolute;
+  top: 14px;
+  right: 22px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e, 0 0 16px rgba(34,197,94,0.5);
+  animation: gba-led-pulse 2s ease-in-out infinite;
+}
+
+@keyframes gba-led-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.gba-title-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.30);
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.gba-bezel {
+  background: #0f0520;
+  border-radius: 10px;
+  padding: 7px;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.7), 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.gba-screen {
+  background: #f5f3ed;
+  border-radius: 5px;
+  height: calc(100dvh - 295px);
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.gba-screen-header {
+  background: #FFCB05;
+  border-bottom: 2px solid #1a1a2e;
+  padding: 5px 10px;
+  flex-shrink: 0;
+}
+
+.gba-screen-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gba-ss-item {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.gba-screen-datetime {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: rgba(26,26,46,0.55);
+  margin-top: 2px;
+}
+
+.gba-screen-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 10px 14px;
+}
+
+.gba-screen-content::-webkit-scrollbar { width: 3px; }
+.gba-screen-content::-webkit-scrollbar-track { background: transparent; }
+.gba-screen-content::-webkit-scrollbar-thumb { background: #d0cbc0; border-radius: 2px; }
+
+.gba-controls {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px 14px;
+  gap: 8px;
+  min-height: 0;
+}
+
+.gba-nav-row {
+  display: flex;
+  gap: 5px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 10px;
+  padding: 5px;
+}
+
+.gba-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 7px;
+  padding: 7px 4px;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.gba-nav-btn.active {
+  background: #FFCB05;
+  border-color: #FFCB05;
+}
+
+.gba-nav-icon { font-size: 15px; line-height: 1; }
+
+.gba-nav-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.gba-nav-btn.active .gba-nav-label { color: #1a1a2e; }
+
+.gba-gamepad-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  padding: 0 4px;
+}
+
+.gba-dpad {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+}
+
+.gba-dpad-v {
+  position: absolute;
+  left: 50%; top: 0;
+  transform: translateX(-50%);
+  width: 22px; height: 100%;
+  background: #ddd;
+  border-radius: 4px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.gba-dpad-h {
+  position: absolute;
+  top: 50%; left: 0;
+  transform: translateY(-50%);
+  width: 100%; height: 22px;
+  background: #ddd;
+  border-radius: 4px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.gba-dpad-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px; height: 22px;
+  background: #ccc;
+  border-radius: 3px;
+  z-index: 1;
+}
+
+.gba-center-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gba-mini-btn {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.65);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  padding: 5px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.gba-mini-btn:hover { background: rgba(200,30,30,0.4); color: #fff; }
+
+.gba-ab-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.gba-btn-a, .gba-btn-b {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.35);
+  user-select: none;
+}
+
+.gba-btn-a { background: #b91c5a; margin-left: 18px; }
+.gba-btn-b { background: #1c4cc4; margin-right: 18px; }
+
+/* ── Screen content ── */
+
+.gba-section { margin-bottom: 12px; }
+
+.gba-section-title {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7a7a8a;
+  margin-bottom: 7px;
+  padding-left: 7px;
+  border-left: 2px solid #FFCB05;
+}
+
+.gba-step-big {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a1a2e;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.gba-step-row { display: flex; gap: 6px; }
+
+.gba-step-input {
+  flex: 1;
+  border: 2px solid #e0dbd0;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  outline: none;
+  background: #fff;
+  color: #1a1a2e;
+}
+
+.gba-step-input:focus { border-color: #FFCB05; }
+.gba-step-input::placeholder { color: #b0a898; font-size: 11px; }
+
+.gba-save-btn {
+  background: #FFCB05;
+  border: 2px solid #1a1a2e;
+  color: #1a1a2e;
+  font-weight: 800;
+  font-size: 11px;
+  padding: 7px 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.gba-delta-flash {
+  text-align: center;
+  color: #16a34a;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.gba-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.gba-stat-box {
+  background: #fff;
+  border: 1.5px solid #e0dbd0;
+  border-radius: 7px;
+  padding: 7px 9px;
+}
+
+.gba-stat-label {
+  font-size: 7px;
+  color: #7a7a8a;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 600;
+}
+
+.gba-stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.gba-stat-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  color: #7a7a8a;
+}
+
+.gba-vault-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+  gap: 8px;
+}
+
+.gba-vault-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.gba-deposit-btn {
+  background: #2B50A1;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.gba-milestone { margin-bottom: 5px; }
+
+.gba-milestone-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 8px;
+  color: #7a7a8a;
+  margin-bottom: 3px;
+}
+
+.gba-milestone-bar {
+  height: 5px;
+  background: #e0dbd0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.gba-milestone-fill {
+  height: 100%;
+  background: #FFCB05;
+  border-radius: 3px;
+  transition: width 0.4s;
+}
+
+.gba-pack-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.gba-pack-card {
+  border: 1.5px solid #e0dbd0;
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  background: #fff;
+}
+
+.gba-pack-card.legendary { border-color: rgba(217,119,6,0.45); background: rgba(217,119,6,0.05); }
+.gba-pack-card.epic      { border-color: rgba(124,58,237,0.45); background: rgba(124,58,237,0.05); }
+.gba-pack-card.rare      { border-color: rgba(43,80,161,0.45);  background: rgba(43,80,161,0.05); }
+.gba-pack-card.common    { border-color: rgba(61,158,66,0.45);  background: rgba(61,158,66,0.05); }
+.gba-pack-card.can-afford, .gba-pack-card.has-pack { outline: 2px solid #FFCB05; }
+
+.gba-pack-tier {
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+
+.gba-pack-card.legendary .gba-pack-tier { color: #d97706; }
+.gba-pack-card.epic      .gba-pack-tier { color: #7c3aed; }
+.gba-pack-card.rare      .gba-pack-tier { color: #2B50A1; }
+.gba-pack-card.common    .gba-pack-tier { color: #3d9e42; }
+
+.gba-pack-cost, .gba-pack-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+
+.gba-pack-btn {
+  background: #FFCB05;
+  border: 1.5px solid #1a1a2e;
+  border-radius: 5px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 4px 8px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.gba-pack-need { font-size: 9px; color: #7a7a8a; }
+
+.gba-pokedex-regions { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+
+.gba-region-row { display: flex; align-items: center; gap: 6px; }
+
+.gba-region-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 600;
+  color: #1a1a2e;
+  width: 44px;
+  flex-shrink: 0;
+}
+
+.gba-region-bar { flex: 1; height: 5px; background: #e0dbd0; border-radius: 3px; overflow: hidden; }
+.gba-region-fill { height: 100%; background: #FFCB05; border-radius: 3px; min-width: 2px; }
+
+.gba-region-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: #7a7a8a;
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.gba-tier-row { display: flex; gap: 5px; }
+
+.gba-tier-box { flex: 1; border-radius: 6px; padding: 5px 3px; text-align: center; border: 1.5px solid transparent; }
+.gba-tier-box.legendary { background: rgba(217,119,6,0.08);  border-color: rgba(217,119,6,0.25); }
+.gba-tier-box.epic      { background: rgba(124,58,237,0.08); border-color: rgba(124,58,237,0.25); }
+.gba-tier-box.rare      { background: rgba(43,80,161,0.08);  border-color: rgba(43,80,161,0.25); }
+.gba-tier-box.common    { background: rgba(61,158,66,0.08);  border-color: rgba(61,158,66,0.25); }
+
+.gba-tier-count { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #1a1a2e; }
+.gba-tier-name { font-size: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.gba-tier-box.legendary .gba-tier-name { color: #d97706; }
+.gba-tier-box.epic      .gba-tier-name { color: #7c3aed; }
+.gba-tier-box.rare      .gba-tier-name { color: #2B50A1; }
+.gba-tier-box.common    .gba-tier-name { color: #3d9e42; }
+
+.gba-team-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; }
+.gba-team-scroll::-webkit-scrollbar { height: 3px; }
+.gba-team-scroll::-webkit-scrollbar-thumb { background: #d0cbc0; border-radius: 2px; }
+
+.gba-team-card {
+  flex-shrink: 0;
+  width: 78px;
+  background: #fff;
+  border: 1.5px solid #e0dbd0;
+  border-radius: 9px;
+  padding: 7px 5px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.gba-team-card.legendary { border-color: rgba(217,119,6,0.45); }
+.gba-team-card.epic      { border-color: rgba(124,58,237,0.45); }
+.gba-team-card.rare      { border-color: rgba(43,80,161,0.45); }
+.gba-team-card.common    { border-color: rgba(61,158,66,0.45); }
+
+.gba-team-sprite { width: 50px; height: 50px; object-fit: contain; display: block; margin: 0 auto; }
+.gba-team-name { font-size: 8px; font-weight: 700; text-transform: capitalize; color: #1a1a2e; margin-top: 2px; }
+.gba-team-region { font-size: 7px; color: #7a7a8a; font-family: 'JetBrains Mono', monospace; }
+.gba-team-types { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; margin: 2px 0; }
+.gba-team-tier { font-size: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.gba-team-card.legendary .gba-team-tier { color: #d97706; }
+.gba-team-card.epic      .gba-team-tier { color: #7c3aed; }
+.gba-team-card.rare      .gba-team-tier { color: #2B50A1; }
+.gba-team-card.common    .gba-team-tier { color: #3d9e42; }
+
+.gba-tier-section { margin-bottom: 10px; }
+
+.gba-tier-header {
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.gba-tier-header span { font-size: 7px; opacity: 0.65; background: rgba(0,0,0,0.08); border-radius: 8px; padding: 0 5px; }
+.gba-tier-header.legendary { color: #d97706; background: rgba(217,119,6,0.10); border-left: 2px solid #d97706; }
+.gba-tier-header.epic      { color: #7c3aed; background: rgba(124,58,237,0.10); border-left: 2px solid #7c3aed; }
+.gba-tier-header.rare      { color: #2B50A1; background: rgba(43,80,161,0.10); border-left: 2px solid #2B50A1; }
+.gba-tier-header.common    { color: #3d9e42; background: rgba(61,158,66,0.10); border-left: 2px solid #3d9e42; }
+
+.gba-storage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+  gap: 5px;
+}
+
+.gba-storage-card {
+  background: #fff;
+  border: 1.5px solid #e0dbd0;
+  border-radius: 7px;
+  padding: 5px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.gba-storage-card:hover { border-color: #FFCB05; }
+.gba-storage-sprite { width: 44px; height: 44px; object-fit: contain; display: block; margin: 0 auto; }
+.gba-storage-name { font-size: 7px; font-weight: 700; text-transform: capitalize; color: #1a1a2e; margin-top: 2px; }
+.gba-storage-region { font-size: 6px; color: #7a7a8a; font-family: 'JetBrains Mono', monospace; }
+.gba-storage-types { display: flex; flex-wrap: wrap; justify-content: center; gap: 1px; margin-top: 2px; }
+
+.gba-empty { text-align: center; color: #7a7a8a; font-size: 12px; padding: 16px 0; }

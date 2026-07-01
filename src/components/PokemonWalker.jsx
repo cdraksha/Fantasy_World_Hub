@@ -467,6 +467,7 @@ export default function PokemonWalker({ onStop }) {
   const [clockTime, setClockTime] = useState('');
   const [packWarning, setPackWarning] = useState(null); // '9pm' | '11pm' | null
   const [stepsWarning, setStepsWarning] = useState(false);
+  const [gbaTab, setGbaTab] = useState('walk');
   const midnightChecked = useRef(false);
   const packWarningChecked = useRef({ '9pm': false, '11pm': false });
   const stepsWarningChecked = useRef(false);
@@ -828,8 +829,7 @@ export default function PokemonWalker({ onStop }) {
   const totalPacks = Object.values(appState.packInventory).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="pw-root">
-      {/* Midnight warning */}
+    <div className="gba-body">
       {showMidnight && (
         <MidnightWarning
           spendable={appState.spendableSteps}
@@ -838,8 +838,6 @@ export default function PokemonWalker({ onStop }) {
           onIgnore={handleMidnightIgnore}
         />
       )}
-
-      {/* Pack expiry warning banner */}
       {packWarning && (
         <div className="pw-pack-warning-banner">
           <span className="pw-pack-warning-icon">⚠️</span>
@@ -851,19 +849,15 @@ export default function PokemonWalker({ onStop }) {
           <button className="pw-pack-warning-dismiss" onClick={() => setPackWarning(null)}>✕</button>
         </div>
       )}
-
-      {/* Spendable steps 9 PM warning */}
       {stepsWarning && (appState.spendableSteps || 0) > 0 && (
         <div className="pw-pack-warning-banner pw-steps-warning-banner">
           <span className="pw-pack-warning-icon">🏃</span>
           <span className="pw-pack-warning-text">
-            You have {fmtFull(appState.spendableSteps)} undeposited steps — deposit them to the vault before midnight or they'll be lost!
+            You have {fmtFull(appState.spendableSteps)} undeposited steps — deposit them before midnight or they'll be lost!
           </span>
           <button className="pw-pack-warning-dismiss" onClick={() => setStepsWarning(false)}>✕</button>
         </div>
       )}
-
-      {/* Detail popup */}
       {detailPokemon && (
         <PokemonDetailPopup
           pokemon={detailPokemon}
@@ -878,299 +872,266 @@ export default function PokemonWalker({ onStop }) {
         />
       )}
 
-      {/* Sticky bar */}
-      <div className="pw-sticky-bar">
-        <div className="pw-stat-chip">
-          <span>👣</span>
-          <span className="pw-val pw-mono">{fmtNum(appState.todaySteps)}</span>
-        </div>
-        <div className="pw-stat-chip">
-          <span>🏦</span>
-          <span className="pw-val pw-mono">{fmtNum(appState.stepVault)}</span>
-        </div>
-        <div className="pw-stat-chip">
-          <span>🎁</span>
-          <span className="pw-val pw-mono">{totalPacks}</span>
-        </div>
-        <div className="pw-stat-chip">
-          <span>⭐</span>
-          <span className="pw-label">Lv</span>
-          <span className="pw-val pw-mono">{collectorLevel}</span>
-        </div>
-        <button className="pw-exit-btn" onClick={onStop}>✕ Exit</button>
-      </div>
-
-      {/* Content */}
-      <div className="pw-content">
-        <>
-            {/* 1. Header card */}
-            <div className="pw-section">
-              <div className="pw-header-date">
-                {appState.todayDate}
-                <span className="pw-header-clock">{clockTime}</span>
+      <div className="gba-shell">
+        <div className="gba-screen-section">
+          <div className="gba-led" />
+          <div className="gba-title-text">POKÉMON WALKER</div>
+          <div className="gba-bezel">
+            <div className="gba-screen">
+              <div className="gba-screen-header">
+                <div className="gba-screen-stats">
+                  <span className="gba-ss-item">👣 {fmtNum(appState.todaySteps)}</span>
+                  <span className="gba-ss-item">🏦 {fmtNum(appState.stepVault)}</span>
+                  <span className="gba-ss-item">🎁 {totalPacks}</span>
+                  <span className="gba-ss-item">⭐ Lv{collectorLevel}</span>
+                </div>
+                <div className="gba-screen-datetime">{appState.todayDate} · {clockTime}</div>
               </div>
-              <div className="pw-stats-grid">
-                <div className="pw-stat-box level">
-                  <div className="pw-stat-label">Collector Level</div>
-                  <div className="pw-stat-number">{collectorLevel}</div>
-                </div>
-                <div className="pw-stat-box steps">
-                  <div className="pw-stat-label">Today's Steps</div>
-                  <div className="pw-stat-number">{fmtNum(appState.todaySteps)}</div>
-                </div>
-                <div className="pw-stat-box vault">
-                  <div className="pw-stat-label">Step Vault</div>
-                  <div className="pw-stat-number">{fmtNum(appState.stepVault)}</div>
-                </div>
-                <div className="pw-stat-box total">
-                  <div className="pw-stat-label">Total Walked</div>
-                  <div className="pw-stat-number">{fmtNum(appState.totalStepsWalked)}</div>
-                </div>
-                <div className="pw-stat-box streak">
-                  <div className="pw-stat-label">Daily Streak</div>
-                  <div className="pw-stat-number">{appState.streakDays || 0}d</div>
-                </div>
-                <div className="pw-stat-box best-streak">
-                  <div className="pw-stat-label">Best Streak</div>
-                  <div className="pw-stat-number">{appState.bestStreak || 0}d</div>
-                </div>
-                <div className="pw-stat-box daily-record">
-                  <div className="pw-stat-label">Daily Record</div>
-                  <div className="pw-stat-number">{fmtNum(appState.bestDay || 0)}</div>
-                  <div className="pw-stat-sub">{appState.bestDayDate || '—'}</div>
-                </div>
-              </div>
-            </div>
 
-            {/* 2. Step Entry */}
-            <div className="pw-section">
-              <div className="pw-section-title">Step Entry</div>
-              <div className="pw-step-display">{fmtFull(appState.todaySteps)}</div>
-              <div className="pw-step-row">
-                <input
-                  className="pw-step-input"
-                  type="number"
-                  min="0"
-                  placeholder="Enter current total steps for today"
-                  value={stepInput}
-                  onChange={e => setStepInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSaveSteps()}
-                />
-                <button className="pw-save-btn" onClick={handleSaveSteps}>Save</button>
-              </div>
-              {deltaFlash && <div className="pw-delta-flash">{deltaFlash}</div>}
-            </div>
+              <div className="gba-screen-content">
 
-            {/* 3. Daily Rewards */}
-            <div className="pw-section">
-              <div className="pw-section-title">Daily Rewards</div>
-              <div className="pw-balance-big">
-                {fmtFull(appState.spendableSteps)}
-                <span style={{ fontSize: 13, color: '#6b7280', marginLeft: 8, fontFamily: 'inherit', fontWeight: 400 }}>
-                  spendable steps
-                </span>
-              </div>
-              <div className="pw-pack-grid">
-                {(['common', 'rare', 'epic', 'legendary']).map(tier => {
-                  const cost = PACK_COSTS[tier];
-                  const canAfford = appState.spendableSteps >= cost;
-                  return (
-                    <div className={`pw-pack-store-card ${tier}${canAfford ? ' can-afford' : ''}`} key={tier}>
-                      <div className="pw-psc-tier">{tier}</div>
-                      <div className="pw-psc-cost">{fmtFull(cost)}</div>
-                      <div className="pw-psc-unit">steps</div>
-                      {canAfford ? (
-                        <button className="pw-psc-btn" onClick={() => handleUnlockPack(tier)}>
-                          Unlock
-                        </button>
-                      ) : (
-                        <div className="pw-psc-need">
-                          Need {fmtNum(cost - appState.spendableSteps)} more
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 4. Step Vault */}
-            <div className="pw-section">
-              <div className="pw-section-title">Step Vault</div>
-              <div className="pw-vault-total">{fmtFull(appState.stepVault)}</div>
-              <div className="pw-vault-sub">
-                Lifetime deposits: {fmtFull(appState.lifetimeVaultDeposits)}
-              </div>
-              {appState.spendableSteps > 0 && (
-                <button className="pw-deposit-btn" onClick={handleDepositAll}>
-                  🏦 Deposit All ({fmtFull(appState.spendableSteps)})
-                </button>
-              )}
-              {upcomingMilestones.map(ms => {
-                const pct = Math.min(100, (appState.stepVault / ms.threshold) * 100);
-                return (
-                  <div className="pw-milestone-row" key={ms.threshold}>
-                    <div className="pw-milestone-label">
-                      <span>{fmtFull(appState.stepVault)} / {fmtFull(ms.threshold)}</span>
-                      <span>{Math.round(pct)}%</span>
-                    </div>
-                    <div className="pw-milestone-bar-bg">
-                      <div className="pw-milestone-bar-fill" style={{ width: `${pct}%` }} />
-                    </div>
-                    <div className={`pw-milestone-reward ${ms.reward}`}>
-                      Reward: {ms.reward} pack · resets to 0
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* 5. Pack Inventory */}
-            <div className="pw-section">
-              <div className="pw-section-title">Pack Inventory</div>
-              <div className="pw-pack-grid">
-                {(['common', 'rare', 'epic', 'legendary']).map(tier => (
-                  <div className={`pw-pack-store-card ${tier}${appState.packInventory[tier] > 0 ? ' has-pack' : ''}`} key={tier}>
-                    <div className="pw-psc-tier">{tier}</div>
-                    <div className="pw-psc-count">×{appState.packInventory[tier]}</div>
-                    <div className="pw-psc-unit">packs</div>
-                    {appState.packInventory[tier] > 0 ? (
-                      <button className="pw-psc-btn" onClick={() => handleOpenPack(tier)}>
-                        Open
-                      </button>
-                    ) : (
-                      <div className="pw-psc-need">Empty</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 6. Pokédex Card */}
-            {(() => {
-              const allPokes = appState.pokemon;
-              const uniqueDex = new Set(allPokes.map(p => p.dexId));
-              const regions = [
-                { name: 'Kanto',   min: 1,   max: 151 },
-                { name: 'Johto',   min: 152,  max: 251 },
-                { name: 'Hoenn',   min: 252,  max: 386 },
-                { name: 'Sinnoh',  min: 387,  max: 493 },
-                { name: 'Unova',   min: 494,  max: 649 },
-                { name: 'Kalos',   min: 650,  max: 721 },
-                { name: 'Alola',   min: 722,  max: 809 },
-                { name: 'Galar',   min: 810,  max: 905 },
-                { name: 'Paldea',  min: 906,  max: 1010 },
-              ];
-              const tiers = ['legendary', 'epic', 'rare', 'common'];
-              return (
-                <div className="pw-section pw-pokedex-card">
-                  <div className="pw-section-title">Pokédex</div>
-                  <div className="pw-pokedex-total-row">
-                    <span className="pw-pokedex-big">{uniqueDex.size}</span>
-                    <span className="pw-pokedex-of">/ 1010 unlocked</span>
-                  </div>
-                  <div className="pw-pokedex-divider" />
-                  <div className="pw-pokedex-meta-title">By Region</div>
-                  <div className="pw-pokedex-region-grid">
-                    {regions.map(r => {
-                      const count = [...uniqueDex].filter(id => id >= r.min && id <= r.max).length;
-                      const total = r.max - r.min + 1;
-                      return (
-                        <div key={r.name} className="pw-pokedex-region-row">
-                          <span className="pw-pokedex-region-name">{r.name}</span>
-                          <div className="pw-pokedex-region-bar">
-                            <div className="pw-pokedex-region-fill" style={{ width: `${(count / total) * 100}%` }} />
-                          </div>
-                          <span className="pw-pokedex-region-count">{count}/{total}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="pw-pokedex-divider" />
-                  <div className="pw-pokedex-meta-title">By Tier</div>
-                  <div className="pw-pokedex-tier-row">
-                    {tiers.map(tier => {
-                      const count = allPokes.filter(p => p.packTier === tier).length;
-                      return (
-                        <div key={tier} className={`pw-pokedex-tier-box ${tier}`}>
-                          <div className="pw-pokedex-tier-count">{count}</div>
-                          <div className="pw-pokedex-tier-name">{tier}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* 7. Active Team */}
-            <div className="pw-section">
-              <div className="pw-section-title">Active Team ({teamPokemon.length}/6)</div>
-              {teamPokemon.length === 0 ? (
-                <div className="pw-empty">No team members yet. Catch Pokémon to build your team!</div>
-              ) : (
-                <div className="pw-team-scroll">
-                  {teamPokemon.map(p => (
-                    <div
-                      key={p.uid}
-                      className={`pw-team-card ${p.packTier || ''}`}
-                      onClick={() => setDetailPokemon(p)}
-                    >
-                      {p.sprite ? (
-                        <img src={p.sprite} alt={p.name} className="pw-team-sprite" />
-                      ) : (
-                        <div style={{ width: 56, height: 56, margin: '0 auto', fontSize: 36, lineHeight: '56px' }}>❓</div>
-                      )}
-                      <div className="pw-team-name">{p.name}</div>
-                      <div className="pw-team-region">{getRegion(p.dexId)}</div>
-                      <div className="pw-team-types">
-                        {p.types.map(t => <TypeBadge key={t} type={t} />)}
+                {gbaTab === 'walk' && (
+                  <>
+                    <div className="gba-section">
+                      <div className="gba-section-title">Today's Steps</div>
+                      <div className="gba-step-big">{fmtFull(appState.todaySteps)}</div>
+                      <div className="gba-step-row">
+                        <input
+                          className="gba-step-input"
+                          type="number"
+                          min="0"
+                          placeholder="Enter today's total steps"
+                          value={stepInput}
+                          onChange={e => setStepInput(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && handleSaveSteps()}
+                        />
+                        <button className="gba-save-btn" onClick={handleSaveSteps}>Save</button>
                       </div>
-                      <div className={`pw-team-tier ${p.packTier}`}>{p.packTier}</div>
+                      {deltaFlash && <div className="gba-delta-flash">{deltaFlash}</div>}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            {/* 7. Storage — grouped by tier */}
-            <div className="pw-section">
-              <div className="pw-section-title">Storage ({storagePokemon.length})</div>
-              {storagePokemon.length === 0 ? (
-                <div className="pw-empty">Storage is empty.</div>
-              ) : (
-                <>
-                  {(['legendary', 'epic', 'rare', 'common']).map(tier => {
-                    const group = storagePokemon.filter(p => p.packTier === tier);
-                    if (group.length === 0) return null;
-                    return (
-                      <div key={tier} className="pw-coll-section">
-                        <div className={`pw-coll-section-title ${tier}`}>
-                          {tier} <span>{group.length}</span>
+                    <div className="gba-section">
+                      <div className="gba-stats-grid">
+                        <div className="gba-stat-box">
+                          <div className="gba-stat-label">Total Walked</div>
+                          <div className="gba-stat-val">{fmtNum(appState.totalStepsWalked)}</div>
                         </div>
-                        <div className="pw-storage-grid">
-                          {group.map(p => (
-                            <div key={p.uid} className="pw-storage-card" onClick={() => setDetailPokemon(p)}>
-                              {p.sprite ? (
-                                <img src={p.sprite} alt={p.name} className="pw-storage-sprite" />
+                        <div className="gba-stat-box">
+                          <div className="gba-stat-label">Streak</div>
+                          <div className="gba-stat-val">{appState.streakDays || 0}d</div>
+                        </div>
+                        <div className="gba-stat-box">
+                          <div className="gba-stat-label">Best Streak</div>
+                          <div className="gba-stat-val">{appState.bestStreak || 0}d</div>
+                        </div>
+                        <div className="gba-stat-box">
+                          <div className="gba-stat-label">Daily Record</div>
+                          <div className="gba-stat-val">{fmtNum(appState.bestDay || 0)}</div>
+                          <div className="gba-stat-sub">{appState.bestDayDate || '—'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="gba-section">
+                      <div className="gba-section-title">Step Vault</div>
+                      <div className="gba-vault-row">
+                        <span className="gba-vault-num">{fmtFull(appState.stepVault)}</span>
+                        {appState.spendableSteps > 0 && (
+                          <button className="gba-deposit-btn" onClick={handleDepositAll}>
+                            🏦 Deposit {fmtFull(appState.spendableSteps)}
+                          </button>
+                        )}
+                      </div>
+                      {upcomingMilestones.map(ms => {
+                        const pct = Math.min(100, (appState.stepVault / ms.threshold) * 100);
+                        return (
+                          <div className="gba-milestone" key={ms.threshold}>
+                            <div className="gba-milestone-label">
+                              <span>{ms.reward} pack at {fmtFull(ms.threshold)}</span>
+                              <span>{Math.round(pct)}%</span>
+                            </div>
+                            <div className="gba-milestone-bar">
+                              <div className="gba-milestone-fill" style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="gba-section">
+                      <div className="gba-section-title">Daily Rewards · {fmtFull(appState.spendableSteps)} steps</div>
+                      <div className="gba-pack-grid">
+                        {(['common', 'rare', 'epic', 'legendary']).map(tier => {
+                          const cost = PACK_COSTS[tier];
+                          const canAfford = appState.spendableSteps >= cost;
+                          return (
+                            <div className={`gba-pack-card ${tier}${canAfford ? ' can-afford' : ''}`} key={tier}>
+                              <div className="gba-pack-tier">{tier}</div>
+                              <div className="gba-pack-cost">{fmtNum(cost)}</div>
+                              {canAfford ? (
+                                <button className="gba-pack-btn" onClick={() => handleUnlockPack(tier)}>Unlock</button>
                               ) : (
-                                <div style={{ fontSize: 32, lineHeight: '60px', textAlign: 'center' }}>❓</div>
+                                <div className="gba-pack-need">−{fmtNum(cost - appState.spendableSteps)}</div>
                               )}
-                              <div className="pw-storage-name">{p.name}</div>
-                              <div className="pw-storage-region">{getRegion(p.dexId)}</div>
-                              <div className="pw-storage-types">
-                                {p.types.map(t => <TypeBadge key={t} type={t} />)}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {gbaTab === 'packs' && (
+                  <div className="gba-section">
+                    <div className="gba-section-title">Pack Inventory</div>
+                    <div className="gba-pack-grid">
+                      {(['common', 'rare', 'epic', 'legendary']).map(tier => (
+                        <div className={`gba-pack-card ${tier}${appState.packInventory[tier] > 0 ? ' has-pack' : ''}`} key={tier}>
+                          <div className="gba-pack-tier">{tier}</div>
+                          <div className="gba-pack-count">×{appState.packInventory[tier]}</div>
+                          {appState.packInventory[tier] > 0 ? (
+                            <button className="gba-pack-btn" onClick={() => handleOpenPack(tier)}>Open</button>
+                          ) : (
+                            <div className="gba-pack-need">Empty</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {gbaTab === 'team' && (() => {
+                  const allPokes = appState.pokemon;
+                  const uniqueDex = new Set(allPokes.map(p => p.dexId));
+                  const regions = [
+                    { name: 'Kanto', min: 1, max: 151 },
+                    { name: 'Johto', min: 152, max: 251 },
+                    { name: 'Hoenn', min: 252, max: 386 },
+                    { name: 'Sinnoh', min: 387, max: 493 },
+                    { name: 'Unova', min: 494, max: 649 },
+                    { name: 'Kalos', min: 650, max: 721 },
+                    { name: 'Alola', min: 722, max: 809 },
+                    { name: 'Galar', min: 810, max: 905 },
+                    { name: 'Paldea', min: 906, max: 1010 },
+                  ];
+                  return (
+                    <>
+                      <div className="gba-section">
+                        <div className="gba-section-title">Pokédex · {uniqueDex.size} / 1010</div>
+                        <div className="gba-pokedex-regions">
+                          {regions.map(r => {
+                            const count = [...uniqueDex].filter(id => id >= r.min && id <= r.max).length;
+                            const total = r.max - r.min + 1;
+                            return (
+                              <div key={r.name} className="gba-region-row">
+                                <span className="gba-region-name">{r.name}</span>
+                                <div className="gba-region-bar">
+                                  <div className="gba-region-fill" style={{ width: `${(count / total) * 100}%` }} />
+                                </div>
+                                <span className="gba-region-count">{count}/{total}</span>
                               </div>
+                            );
+                          })}
+                        </div>
+                        <div className="gba-tier-row">
+                          {(['legendary', 'epic', 'rare', 'common']).map(tier => (
+                            <div key={tier} className={`gba-tier-box ${tier}`}>
+                              <div className="gba-tier-count">{allPokes.filter(p => p.packTier === tier).length}</div>
+                              <div className="gba-tier-name">{tier}</div>
                             </div>
                           ))}
                         </div>
                       </div>
-                    );
-                  })}
-                </>
-              )}
+                      <div className="gba-section">
+                        <div className="gba-section-title">Active Team ({teamPokemon.length}/6)</div>
+                        {teamPokemon.length === 0 ? (
+                          <div className="gba-empty">No team yet. Open packs to catch Pokémon!</div>
+                        ) : (
+                          <div className="gba-team-scroll">
+                            {teamPokemon.map(p => (
+                              <div key={p.uid} className={`gba-team-card ${p.packTier || ''}`} onClick={() => setDetailPokemon(p)}>
+                                {p.sprite && <img src={p.sprite} alt={p.name} className="gba-team-sprite" />}
+                                <div className="gba-team-name">{p.name}</div>
+                                <div className="gba-team-region">{getRegion(p.dexId)}</div>
+                                <div className="gba-team-types">{p.types.map(t => <TypeBadge key={t} type={t} />)}</div>
+                                <div className={`gba-team-tier ${p.packTier}`}>{p.packTier}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+
+                {gbaTab === 'box' && (
+                  <div className="gba-section">
+                    <div className="gba-section-title">Storage ({storagePokemon.length})</div>
+                    {storagePokemon.length === 0 ? (
+                      <div className="gba-empty">Storage is empty.</div>
+                    ) : (
+                      (['legendary', 'epic', 'rare', 'common']).map(tier => {
+                        const group = storagePokemon.filter(p => p.packTier === tier);
+                        if (group.length === 0) return null;
+                        return (
+                          <div key={tier} className="gba-tier-section">
+                            <div className={`gba-tier-header ${tier}`}>{tier} <span>{group.length}</span></div>
+                            <div className="gba-storage-grid">
+                              {group.map(p => (
+                                <div key={p.uid} className="gba-storage-card" onClick={() => setDetailPokemon(p)}>
+                                  {p.sprite && <img src={p.sprite} alt={p.name} className="gba-storage-sprite" />}
+                                  <div className="gba-storage-name">{p.name}</div>
+                                  <div className="gba-storage-region">{getRegion(p.dexId)}</div>
+                                  <div className="gba-storage-types">{p.types.map(t => <TypeBadge key={t} type={t} />)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+
+              </div>
             </div>
-          </>
+          </div>
+        </div>
+
+        <div className="gba-controls">
+          <div className="gba-nav-row">
+            {[
+              { id: 'walk',  icon: '👣', label: 'Walk'  },
+              { id: 'packs', icon: '🎁', label: 'Packs' },
+              { id: 'team',  icon: '⚡', label: 'Team'  },
+              { id: 'box',   icon: '📦', label: 'Box'   },
+            ].map(t => (
+              <button
+                key={t.id}
+                className={`gba-nav-btn ${gbaTab === t.id ? 'active' : ''}`}
+                onClick={() => setGbaTab(t.id)}
+              >
+                <span className="gba-nav-icon">{t.icon}</span>
+                <span className="gba-nav-label">{t.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="gba-gamepad-row">
+            <div className="gba-dpad">
+              <div className="gba-dpad-v" />
+              <div className="gba-dpad-h" />
+              <div className="gba-dpad-center" />
+            </div>
+            <div className="gba-center-controls">
+              <button className="gba-mini-btn" onClick={onStop}>EXIT</button>
+            </div>
+            <div className="gba-ab-group">
+              <div className="gba-btn-b">B</div>
+              <div className="gba-btn-a">A</div>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>
