@@ -2179,3 +2179,222 @@
 .gba-storage-types { display: flex; flex-wrap: wrap; justify-content: center; gap: 1px; margin-top: 2px; }
 
 .gba-empty { text-align: center; color: #7a7a8a; font-size: 12px; padding: 16px 0; }
+
+/* ─── Step Loan ─── */
+
+.loan-eligible-btn {
+  width: 100%;
+  background: rgba(124,58,237,0.08);
+  border: 1.5px solid rgba(124,58,237,0.30);
+  color: #7c3aed;
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+  text-align: center;
+}
+.loan-eligible-btn:hover {
+  background: rgba(124,58,237,0.15);
+  border-color: #7c3aed;
+}
+
+.loan-panel {
+  margin-top: 8px;
+  border-radius: 10px;
+  padding: 10px 11px;
+  border: 1.5px solid #e0dbd0;
+  background: #fff;
+}
+
+/* Active loan */
+.loan-active {
+  border-color: rgba(124,58,237,0.35);
+  background: rgba(124,58,237,0.04);
+}
+
+/* Offer */
+.loan-offer {
+  border-color: #FFCB05;
+  background: rgba(255,203,5,0.06);
+}
+
+/* Locked */
+.loan-locked {
+  text-align: center;
+  background: #fafaf8;
+}
+
+/* All done */
+.loan-complete-all {
+  text-align: center;
+  border-color: #d97706;
+  background: rgba(217,119,6,0.06);
+}
+
+.loan-complete-icon { font-size: 28px; margin-bottom: 4px; }
+.loan-complete-title { font-size: 12px; font-weight: 800; color: #d97706; margin-bottom: 4px; }
+.loan-complete-msg { font-size: 10px; color: #7a7a8a; line-height: 1.5; }
+
+/* Header row */
+.loan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  gap: 6px;
+}
+
+.loan-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7c3aed;
+}
+
+.loan-grace-warn {
+  font-size: 8px;
+  font-weight: 700;
+  color: #d97706;
+  background: rgba(217,119,6,0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.loan-penalty-note {
+  font-size: 8px;
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* Pokémon row */
+.loan-poke-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.loan-poke-sprite { width: 44px; height: 44px; object-fit: contain; }
+
+.loan-poke-info { flex: 1; min-width: 0; }
+
+.loan-poke-name {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: capitalize;
+  color: #1a1a2e;
+}
+
+.loan-poke-tier {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: #7c3aed;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 1px;
+}
+
+.loan-today-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.loan-today-badge.paid   { background: #dcfce7; color: #16a34a; }
+.loan-today-badge.grace  { background: #fef3c7; color: #d97706; }
+.loan-today-badge.unpaid { background: #fee2e2; color: #dc2626; }
+
+/* Progress bar */
+.loan-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+
+.loan-progress-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.loan-bar {
+  flex: 1;
+  height: 6px;
+  background: #e0dbd0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.loan-bar-muted { margin: 6px 0; }
+
+.loan-bar-fill {
+  height: 100%;
+  background: #7c3aed;
+  border-radius: 4px;
+  transition: width 0.4s;
+}
+
+.loan-daily-reminder {
+  font-size: 9px;
+  color: #7a7a8a;
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* Offer details */
+.loan-offer-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.loan-offer-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #1a1a2e;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(26,26,46,0.06);
+}
+
+.loan-offer-row:last-child { border-bottom: none; }
+
+.loan-offer-row span:first-child { color: #7a7a8a; }
+.loan-offer-row span:last-child { font-weight: 700; }
+
+.loan-offer-interest span:last-child { color: #d97706; }
+
+.loan-take-btn {
+  width: 100%;
+  background: #7c3aed;
+  border: none;
+  color: #fff;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  letter-spacing: 0.02em;
+}
+.loan-take-btn:hover:not(:disabled) { opacity: 0.88; transform: scale(1.02); }
+.loan-take-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Locked state */
+.loan-locked-icon { font-size: 24px; margin-bottom: 4px; }
+.loan-locked-title { font-size: 11px; font-weight: 800; color: #1a1a2e; margin-bottom: 4px; }
+.loan-locked-desc { font-size: 10px; color: #7a7a8a; margin-bottom: 8px; line-height: 1.5; }
+.loan-locked-desc strong { color: #1a1a2e; }
+.loan-locked-remaining { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7a7a8a; margin-top: 4px; }

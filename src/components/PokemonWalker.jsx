@@ -5,8 +5,33 @@ import '../styles/pokemon-walker.css';
 
 const LS_KEY = 'fw_pokemon_walker';
 
-
 const PACK_COSTS = { common: 5000, rare: 10000, epic: 20000, legendary: 40000 };
+
+// ─── Loan constants ───────────────────────────────────────────────────────────
+const LOAN_COUNT       = 20;
+const LOAN_BASE        = 50_000;   // first loan unlocks at 50k lifetime steps
+const LOAN_STEP        = 50_000;   // every 50k after that
+const LOAN_PENALTY     = 50_000;   // next threshold penalty on default
+const LOAN_DAILY_REQ   = 3_000;    // steps/day required during repayment
+const LOAN_REPAY_DAYS  = 10;       // days to pay back (30k total @ 50% interest on 20k)
+
+function loanThreshold(index, prevDefaulted) {
+  return LOAN_BASE * (index + 1) + (prevDefaulted ? LOAN_PENALTY : 0);
+}
+
+function initLoan() {
+  return {
+    index: 0,
+    status: 'locked',      // locked | active | complete | defaulted
+    pokemon: null,
+    pokemonUid: null,
+    startDate: null,
+    daysCompleted: 0,
+    graceUsed: false,
+    lastPaidDate: null,
+    prevDefaulted: false,
+  };
+}
 
 const VAULT_MILESTONES = [
   { threshold: 200000, reward: 'epic' },
@@ -204,6 +229,7 @@ function defaultState(steps) {
     lastStreakDate: todayString(),
     bestDay: steps,
     bestDayDate: todayString(),
+    loan: initLoan(),
   };
 }
 
@@ -213,9 +239,28 @@ function loadState() {
     if (!raw) return null;
     const saved = JSON.parse(raw);
     if (!saved.initialized) return null;
+    // Migrate older saves
+    if (!saved.loan) saved.loan = initLoan();
+
     // Daily reset
     const today = todayString();
     if (saved.todayDate !== today) {
+      // Check loan daily payment for the day that just ended
+      if (saved.loan.status === 'active') {
+        const yesterday = saved.todayDate;
+        if (saved.loan.lastPaidDate !== yesterday) {
+          if (!saved.loan.graceUsed) {
+            saved.loan = { ...saved.loan, graceUsed: true };
+          } else {
+            // Second miss — default, remove pokemon, advance
+            saved.pokemon = (saved.pokemon || []).filter(p => p.uid !== saved.loan.pokemonUid);
+            const nextIdx = saved.loan.index + 1;
+            saved.loan = nextIdx < LOAN_COUNT
+              ? { index: nextIdx, status: 'locked', pokemon: null, pokemonUid: null, startDate: null, daysCompleted: 0, graceUsed: false, lastPaidDate: null, prevDefaulted: true }
+              : { ...saved.loan, status: 'defaulted' };
+          }
+        }
+      }
       saved.todayDate = today;
       saved.todaySteps = 0;
       saved.spendableSteps = 0;
@@ -469,6 +514,8 @@ export default function PokemonWalker({ onStop }) {
   const [stepsWarning, setStepsWarning] = useState(false);
   const [editingSpendable, setEditingSpendable] = useState(false);
   const [spendableEditVal, setSpendableEditVal] = useState('');
+  const [showLoanPanel, setShowLoanPanel] = useState(false);
+  const [takingLoan, setTakingLoan] = useState(false);
   const midnightChecked = useRef(false);
   const packWarningChecked = useRef({ '9pm': false, '11pm': false });
   const stepsWarningChecked = useRef(false);
@@ -620,6 +667,30 @@ export default function PokemonWalker({ onStop }) {
       const newBestDayDate = isNewRecord
         ? new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })
         : (prev.bestDayDate || todayString());
+      // ── Loan daily payment check ──────────────────────────────────────
+      let newLoan = prev.loan;
+      let newPokemon = [...prev.pokemon];
+      if (newLoan.status === 'active' && newTodaySteps >= LOAN_DAILY_REQ) {
+        const today = todayString();
+        if (newLoan.lastPaidDate !== today) {
+          const newDays = newLoan.daysCompleted + 1;
+          if (newDays >= LOAN_REPAY_DAYS) {
+            // Loan paid off — Pokémon is permanently theirs
+            newPokemon = newPokemon.map(p =>
+              p.uid === newLoan.pokemonUid ? { ...p, isLoan: false } : p
+            );
+            const nextIdx = newLoan.index + 1;
+            newLoan = nextIdx < LOAN_COUNT
+              ? { index: nextIdx, status: 'locked', pokemon: null, pokemonUid: null, startDate: null, daysCompleted: 0, graceUsed: false, lastPaidDate: null, prevDefaulted: false }
+              : { ...newLoan, status: 'complete', daysCompleted: newDays, lastPaidDate: today };
+            setDeltaFlash('🎉 Loan paid off! Pokémon is yours!');
+            setTimeout(() => setDeltaFlash(null), 4000);
+          } else {
+            newLoan = { ...newLoan, daysCompleted: newDays, lastPaidDate: today };
+          }
+        }
+      }
+
       const next = {
         ...prev,
         todaySteps: newTodaySteps,
@@ -629,8 +700,10 @@ export default function PokemonWalker({ onStop }) {
         achievements: newAch,
         bestDay: newBestDay,
         bestDayDate: newBestDayDate,
+        loan: newLoan,
+        pokemon: newPokemon,
       };
-      if (delta > 0) {
+      if (delta > 0 && !newLoan.status?.startsWith('complete')) {
         setDeltaFlash(`+${fmtFull(delta)} new steps`);
         setTimeout(() => setDeltaFlash(null), 3000);
       }
@@ -652,6 +725,42 @@ export default function PokemonWalker({ onStop }) {
     }
     setEditingSpendable(false);
     setSpendableEditVal('');
+  };
+
+  // ─── Take loan ───────────────────────────────────────────────────────
+  const handleTakeLoan = async () => {
+    setTakingLoan(true);
+    try {
+      const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
+      const id = pickFromPool('epic', ownedDexIds);
+      const poke = await fetchPokemonById(id);
+      const uid = makeUID();
+      setAppState(prev => ({
+        ...prev,
+        pokemon: [...prev.pokemon, {
+          uid,
+          ...poke,
+          packTier: 'epic',
+          slot: 'storage',
+          xp: 0,
+          level: 1,
+          isLoan: true,
+        }],
+        loan: {
+          ...prev.loan,
+          status: 'active',
+          pokemon: poke,
+          pokemonUid: uid,
+          startDate: todayString(),
+          daysCompleted: 0,
+          graceUsed: false,
+          lastPaidDate: null,
+        },
+      }));
+    } catch {
+      // fetchPokemonById failed — silently ignore, user can retry
+    }
+    setTakingLoan(false);
   };
 
   // ─── Unlock pack ─────────────────────────────────────────────────────
@@ -1140,6 +1249,110 @@ export default function PokemonWalker({ onStop }) {
                       );
                     })
                   )}
+                </div>
+
+                {/* Step Loan */}
+                <div className="gba-section">
+                  <button
+                    className="loan-eligible-btn"
+                    onClick={() => setShowLoanPanel(p => !p)}
+                  >
+                    🏦 {showLoanPanel ? 'Hide loan info' : 'Eligible for a loan?'}
+                  </button>
+
+                  {showLoanPanel && (() => {
+                    const loan = appState.loan;
+                    const totalSteps = appState.totalStepsWalked;
+
+                    if (loan.index >= LOAN_COUNT) {
+                      return (
+                        <div className="loan-panel loan-complete-all">
+                          <div className="loan-complete-icon">🎊</div>
+                          <div className="loan-complete-title">All 20 Loans Complete!</div>
+                          <div className="loan-complete-msg">Incredible journey — every Epic Pokémon earned is permanently yours.</div>
+                        </div>
+                      );
+                    }
+
+                    const threshold = loanThreshold(loan.index, loan.prevDefaulted);
+
+                    if (loan.status === 'active') {
+                      const today = todayString();
+                      const paidToday = loan.lastPaidDate === today;
+                      const loanPoke = loan.pokemon;
+                      return (
+                        <div className="loan-panel loan-active">
+                          <div className="loan-header">
+                            <span className="loan-label">Active Loan · #{loan.index + 1} of {LOAN_COUNT}</span>
+                            {loan.graceUsed && !paidToday && (
+                              <span className="loan-grace-warn">⚠ Grace used — pay today!</span>
+                            )}
+                          </div>
+                          <div className="loan-poke-row">
+                            {loanPoke?.sprite && <img src={loanPoke.sprite} alt={loanPoke.name} className="loan-poke-sprite" />}
+                            <div className="loan-poke-info">
+                              <div className="loan-poke-name">{loanPoke?.name}</div>
+                              <div className="loan-poke-tier">Epic · on loan</div>
+                            </div>
+                            <div className={`loan-today-badge ${paidToday ? 'paid' : loan.graceUsed ? 'grace' : 'unpaid'}`}>
+                              {paidToday ? '✓ Paid' : loan.graceUsed ? '⚠ Grace' : '● Unpaid'}
+                            </div>
+                          </div>
+                          <div className="loan-progress-row">
+                            <span className="loan-progress-label">Day {loan.daysCompleted} / {LOAN_REPAY_DAYS}</span>
+                            <div className="loan-bar">
+                              <div className="loan-bar-fill" style={{ width: `${(loan.daysCompleted / LOAN_REPAY_DAYS) * 100}%` }} />
+                            </div>
+                          </div>
+                          <div className="loan-daily-reminder">
+                            Hit {fmtNum(LOAN_DAILY_REQ)} steps/day · {LOAN_REPAY_DAYS - loan.daysCompleted} days left
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (loan.status === 'locked' && totalSteps >= threshold) {
+                      return (
+                        <div className="loan-panel loan-offer">
+                          <div className="loan-header">
+                            <span className="loan-label">Loan Offer #{loan.index + 1}</span>
+                            {loan.prevDefaulted && <span className="loan-penalty-note">+50k threshold (default penalty)</span>}
+                          </div>
+                          <div className="loan-offer-details">
+                            <div className="loan-offer-row"><span>🏆 Reward</span><span>Epic Pokémon</span></div>
+                            <div className="loan-offer-row"><span>📅 Duration</span><span>{LOAN_REPAY_DAYS} days</span></div>
+                            <div className="loan-offer-row"><span>👟 Daily req.</span><span>{fmtNum(LOAN_DAILY_REQ)} steps</span></div>
+                            <div className="loan-offer-row"><span>💰 Total cost</span><span>30,000 steps (3k × 10)</span></div>
+                            <div className="loan-offer-row loan-offer-interest"><span>📈 Interest</span><span>50% on 20k base</span></div>
+                          </div>
+                          <button
+                            className="loan-take-btn"
+                            onClick={handleTakeLoan}
+                            disabled={takingLoan}
+                          >
+                            {takingLoan ? 'Fetching Pokémon…' : '🤝 Take This Loan'}
+                          </button>
+                        </div>
+                      );
+                    }
+
+                    // Locked, not yet eligible
+                    const stepsNeeded = threshold - totalSteps;
+                    const progress = Math.min(totalSteps / threshold, 1);
+                    return (
+                      <div className="loan-panel loan-locked">
+                        <div className="loan-locked-icon">🔒</div>
+                        <div className="loan-locked-title">Loan #{loan.index + 1} Locked</div>
+                        <div className="loan-locked-desc">
+                          Reach <strong>{fmtNum(threshold)}</strong> lifetime steps to unlock
+                        </div>
+                        <div className="loan-bar loan-bar-muted">
+                          <div className="loan-bar-fill" style={{ width: `${progress * 100}%` }} />
+                        </div>
+                        <div className="loan-locked-remaining">{fmtNum(stepsNeeded)} steps to go</div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
               </div>
