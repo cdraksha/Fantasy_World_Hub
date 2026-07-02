@@ -1173,6 +1173,17 @@ export const EXPERIENCES = {
     modelsUsed: 'PokeAPI for Pokémon data',
     status: 'available',
     createdDate: 'June 2026'
+  },
+
+  'gba-emulator': {
+    title: 'Game Library',
+    icon: '🎮',
+    contentType: 'Game',
+    description: 'Play classic console games in your browser — Game Boy Advance, SNES, NES, Nintendo 64, Sega Genesis, and more. Load your own ROMs and play offline. Save states and game progress stored locally via IndexedDB. No AI. Just games.',
+    example: 'Load Pokémon Emerald and pick up right where you left off — save states persist across sessions.',
+    modelsUsed: 'EmulatorJS (self-hosted, offline-capable)',
+    status: 'available',
+    createdDate: 'July 2026'
   }
 };
 

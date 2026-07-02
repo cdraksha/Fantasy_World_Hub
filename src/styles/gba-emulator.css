@@ -1,0 +1,331 @@
+/* ── GBA Emulator ── */
+
+.emu-root {
+  position: fixed;
+  inset: 0;
+  background: #0a0a12;
+  color: #f0f0f0;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.emu-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(255,203,5,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 30%, rgba(43,80,161,0.05) 0%, transparent 55%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Selector ── */
+.emu-selector {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  padding: 0 20px 20px;
+  overflow-y: auto;
+}
+
+.emu-back-btn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.30);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 20px 0 0;
+  transition: color 0.2s;
+}
+.emu-back-btn:hover { color: rgba(255,255,255,0.65); }
+
+.emu-header {
+  text-align: center;
+  margin: 28px 0 32px;
+}
+
+.emu-header-icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.emu-header-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #f5f5f5;
+  margin-bottom: 6px;
+}
+
+.emu-header-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.38);
+  letter-spacing: 0.04em;
+}
+
+/* ── Empty state ── */
+.emu-empty {
+  text-align: center;
+  padding: 48px 24px;
+  max-width: 420px;
+}
+
+.emu-empty-icon { font-size: 48px; margin-bottom: 16px; }
+
+.emu-empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.70);
+  margin-bottom: 10px;
+}
+
+.emu-empty-body {
+  font-size: 13px;
+  color: rgba(255,255,255,0.38);
+  line-height: 1.7;
+}
+
+.emu-empty-body code {
+  background: rgba(255,203,5,0.12);
+  color: #FFCB05;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+/* ── Game grid ── */
+.emu-game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+  width: 100%;
+  max-width: 820px;
+  padding-bottom: 80px;
+}
+
+.emu-game-card {
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 16px 12px 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.18s, border-color 0.18s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.emu-game-card:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,203,5,0.35);
+  transform: translateY(-2px);
+}
+
+.emu-game-card.selected {
+  background: rgba(255,203,5,0.08);
+  border-color: #FFCB05;
+}
+
+.emu-game-icon {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emu-game-cover {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.emu-game-emoji { font-size: 44px; line-height: 1; }
+
+.emu-game-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.3;
+}
+
+.emu-game-system {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: #FFCB05;
+  opacity: 0.65;
+}
+
+/* ── Launch bar ── */
+.emu-launch-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 28px;
+  background: rgba(10,10,18,0.92);
+  border-top: 1px solid rgba(255,203,5,0.18);
+  backdrop-filter: blur(12px);
+  z-index: 10;
+}
+
+.emu-launch-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.emu-launch-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f5f5f5;
+}
+
+.emu-launch-system {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: rgba(255,203,5,0.65);
+}
+
+.emu-launch-btn {
+  background: #FFCB05;
+  color: #0a0a12;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 32px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+
+.emu-launch-btn:hover {
+  background: #ffe040;
+  transform: scale(1.03);
+}
+
+/* ── Player ── */
+.emu-playing {
+  background: #000;
+}
+
+.emu-player-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 16px;
+  background: rgba(0,0,0,0.85);
+  border-bottom: 1px solid rgba(255,203,5,0.12);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.emu-player-back {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.45);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 4px 0;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.emu-player-back:hover { color: rgba(255,255,255,0.80); }
+
+.emu-player-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.80);
+  flex: 1;
+}
+
+.emu-player-system {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: rgba(255,203,5,0.55);
+}
+
+.emu-player-quit {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.40);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.10em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.emu-player-quit:hover { border-color: rgba(200,30,30,0.6); color: rgba(255,80,80,0.8); }
+
+.emu-player-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #000;
+}
+
+#emu-player {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Error ── */
+.emu-error {
+  background: rgba(180,20,20,0.15);
+  border: 1px solid rgba(255,80,80,0.3);
+  border-radius: 8px;
+  margin: 12px 20px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: rgba(255,150,150,0.9);
+  flex-shrink: 0;
+  z-index: 5;
+}
+
+.emu-error button {
+  margin-left: auto;
+  background: none;
+  border: 1px solid rgba(255,150,150,0.4);
+  color: rgba(255,150,150,0.8);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 11px;
+  cursor: pointer;
+}

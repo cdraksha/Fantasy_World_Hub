@@ -111,6 +111,7 @@ import TheConvergence from './components/TheConvergence';
 import RoadsideReverie from './components/RoadsideReverie';
 import Darshan from './components/Darshan';
 import PokemonWalker from './components/PokemonWalker';
+import GBAEmulator from './components/GBAEmulator';
 import TiberiusInterviewImprovedPage from './components/TiberiusInterviewImprovedPage';
 import VideoGenerationPage from './components/VideoGenerationPage';
 import './index.css'
@@ -751,6 +752,10 @@ function App() {
 
   if (currentExperience === 'pokemon-walker') {
     return <PokemonWalker onStop={stopExperience} />;
+  }
+
+  if (currentExperience === 'gba-emulator') {
+    return <GBAEmulator onStop={stopExperience} />;
   }
 
   return (
