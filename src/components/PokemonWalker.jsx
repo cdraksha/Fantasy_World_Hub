@@ -8,10 +8,8 @@ const LS_KEY = 'fw_pokemon_walker';
 const PACK_COSTS = { common: 5000, rare: 10000, epic: 20000, legendary: 40000 };
 
 // ─── Loan constants ───────────────────────────────────────────────────────────
-const LOAN_COUNT       = 20;
-const LOAN_BASE        = 50_000;   // first loan unlocks at 50k lifetime steps
-const LOAN_STEP        = 50_000;   // every 50k after that
-const LOAN_PENALTY     = 50_000;   // next threshold penalty on default
+const LOAN_BASE        = 50_000;   // unlocks at every multiple of 50k lifetime steps
+const LOAN_PENALTY     = 50_000;   // next threshold moves up by 50k on default
 const LOAN_DAILY_REQ   = 3_000;    // steps/day required during repayment
 const LOAN_REPAY_DAYS  = 10;       // days to pay back (30k total @ 50% interest on 20k)
 
@@ -252,12 +250,9 @@ function loadState() {
           if (!saved.loan.graceUsed) {
             saved.loan = { ...saved.loan, graceUsed: true };
           } else {
-            // Second miss — default, remove pokemon, advance
+            // Second miss — default, remove pokemon, advance with 50k penalty on next threshold
             saved.pokemon = (saved.pokemon || []).filter(p => p.uid !== saved.loan.pokemonUid);
-            const nextIdx = saved.loan.index + 1;
-            saved.loan = nextIdx < LOAN_COUNT
-              ? { index: nextIdx, status: 'locked', pokemon: null, pokemonUid: null, startDate: null, daysCompleted: 0, graceUsed: false, lastPaidDate: null, prevDefaulted: true }
-              : { ...saved.loan, status: 'defaulted' };
+            saved.loan = { index: saved.loan.index + 1, status: 'locked', pokemon: null, pokemonUid: null, startDate: null, daysCompleted: 0, graceUsed: false, lastPaidDate: null, prevDefaulted: true };
           }
         }
       }
@@ -679,10 +674,7 @@ export default function PokemonWalker({ onStop }) {
             newPokemon = newPokemon.map(p =>
               p.uid === newLoan.pokemonUid ? { ...p, isLoan: false } : p
             );
-            const nextIdx = newLoan.index + 1;
-            newLoan = nextIdx < LOAN_COUNT
-              ? { index: nextIdx, status: 'locked', pokemon: null, pokemonUid: null, startDate: null, daysCompleted: 0, graceUsed: false, lastPaidDate: null, prevDefaulted: false }
-              : { ...newLoan, status: 'complete', daysCompleted: newDays, lastPaidDate: today };
+            newLoan = { index: newLoan.index + 1, status: 'locked', pokemon: null, pokemonUid: null, startDate: null, daysCompleted: 0, graceUsed: false, lastPaidDate: null, prevDefaulted: false };
             setDeltaFlash('🎉 Loan paid off! Pokémon is yours!');
             setTimeout(() => setDeltaFlash(null), 4000);
           } else {
@@ -703,7 +695,7 @@ export default function PokemonWalker({ onStop }) {
         loan: newLoan,
         pokemon: newPokemon,
       };
-      if (delta > 0 && !newLoan.status?.startsWith('complete')) {
+      if (delta > 0) {
         setDeltaFlash(`+${fmtFull(delta)} new steps`);
         setTimeout(() => setDeltaFlash(null), 3000);
       }
@@ -1263,17 +1255,6 @@ export default function PokemonWalker({ onStop }) {
                   {showLoanPanel && (() => {
                     const loan = appState.loan;
                     const totalSteps = appState.totalStepsWalked;
-
-                    if (loan.index >= LOAN_COUNT) {
-                      return (
-                        <div className="loan-panel loan-complete-all">
-                          <div className="loan-complete-icon">🎊</div>
-                          <div className="loan-complete-title">All 20 Loans Complete!</div>
-                          <div className="loan-complete-msg">Incredible journey — every Epic Pokémon earned is permanently yours.</div>
-                        </div>
-                      );
-                    }
-
                     const threshold = loanThreshold(loan.index, loan.prevDefaulted);
 
                     if (loan.status === 'active') {
@@ -1283,7 +1264,7 @@ export default function PokemonWalker({ onStop }) {
                       return (
                         <div className="loan-panel loan-active">
                           <div className="loan-header">
-                            <span className="loan-label">Active Loan · #{loan.index + 1} of {LOAN_COUNT}</span>
+                            <span className="loan-label">Active Loan · #{loan.index + 1}</span>
                             {loan.graceUsed && !paidToday && (
                               <span className="loan-grace-warn">⚠ Grace used — pay today!</span>
                             )}
