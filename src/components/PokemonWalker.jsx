@@ -8,10 +8,11 @@ const LS_KEY = 'fw_pokemon_walker';
 const PACK_COSTS = { common: 5000, rare: 10000, epic: 20000, legendary: 40000 };
 
 // ─── Loan constants ───────────────────────────────────────────────────────────
-const LOAN_BASE        = 50_000;   // unlocks at every multiple of 50k lifetime steps
-const LOAN_PENALTY     = 50_000;   // next threshold moves up by 50k on default
-const LOAN_DAILY_REQ   = 3_000;    // steps/day required during repayment
-const LOAN_REPAY_DAYS  = 10;       // days to pay back (30k total @ 50% interest on 20k)
+const LOAN_BASE           = 50_000;   // unlocks at every multiple of 50k lifetime steps
+const LOAN_PENALTY        = 50_000;   // next threshold moves up by 50k on default
+const LOAN_DAILY_REQ      = 3_000;    // steps/day required during repayment
+const LOAN_REPAY_DAYS     = 10;       // days to pay back (30k total @ 50% interest on 20k)
+const LOAN_PREVIEW_WINDOW = 20_000;   // panel reveals info only within 20k steps of threshold
 
 function loanThreshold(index, prevDefaulted) {
   return LOAN_BASE * (index + 1) + (prevDefaulted ? LOAN_PENALTY : 0);
@@ -1317,22 +1318,27 @@ export default function PokemonWalker({ onStop }) {
                       );
                     }
 
-                    // Locked, not yet eligible
+                    // Within the 20k preview window — show progress toward threshold
                     const stepsNeeded = threshold - totalSteps;
-                    const progress = Math.min(totalSteps / threshold, 1);
-                    return (
-                      <div className="loan-panel loan-locked">
-                        <div className="loan-locked-icon">🔒</div>
-                        <div className="loan-locked-title">Loan #{loan.index + 1} Locked</div>
-                        <div className="loan-locked-desc">
-                          Reach <strong>{fmtNum(threshold)}</strong> lifetime steps to unlock
+                    if (stepsNeeded <= LOAN_PREVIEW_WINDOW) {
+                      const progress = Math.min(totalSteps / threshold, 1);
+                      return (
+                        <div className="loan-panel loan-locked">
+                          <div className="loan-locked-icon">🔓</div>
+                          <div className="loan-locked-title">Almost there — Loan #{loan.index + 1}</div>
+                          <div className="loan-locked-desc">
+                            <strong>{fmtNum(stepsNeeded)}</strong> more steps to unlock
+                          </div>
+                          <div className="loan-bar loan-bar-muted">
+                            <div className="loan-bar-fill" style={{ width: `${progress * 100}%` }} />
+                          </div>
+                          <div className="loan-locked-remaining">Goal: {fmtNum(threshold)} lifetime steps</div>
                         </div>
-                        <div className="loan-bar loan-bar-muted">
-                          <div className="loan-bar-fill" style={{ width: `${progress * 100}%` }} />
-                        </div>
-                        <div className="loan-locked-remaining">{fmtNum(stepsNeeded)} steps to go</div>
-                      </div>
-                    );
+                      );
+                    }
+
+                    // Too far from next threshold — show nothing
+                    return null;
                   })()}
                 </div>
 
