@@ -607,10 +607,10 @@ export default function PokemonWalker({ onStop }) {
     const newTotal = parseInt(stepInput, 10);
     if (isNaN(newTotal) || newTotal < 0) return;
     setAppState(prev => {
-      const delta = Math.max(0, newTotal - prev.todaySteps);
+      const delta = newTotal - prev.todaySteps;
       const newTodaySteps = newTotal;
-      const newTotalWalked = prev.totalStepsWalked + delta;
-      const newSpendable = prev.spendableSteps + delta;
+      const newTotalWalked = Math.max(0, prev.totalStepsWalked + delta);
+      const newSpendable = Math.max(0, prev.spendableSteps + delta);
       const newLevel = getCollectorLevel(newTotalWalked);
       const newAch = checkAchievements({ ...prev, totalStepsWalked: newTotalWalked });
       const isNewRecord = newTodaySteps > (prev.bestDay || 0);
@@ -629,7 +629,10 @@ export default function PokemonWalker({ onStop }) {
         bestDayDate: newBestDayDate,
       };
       if (delta > 0) {
-        setDeltaFlash(`+${fmtFull(delta)} new steps`);
+        setDeltaFlash(`+${fmtFull(delta)} steps added`);
+        setTimeout(() => setDeltaFlash(null), 3000);
+      } else if (delta < 0) {
+        setDeltaFlash(`corrected ${fmtFull(Math.abs(delta))} steps`);
         setTimeout(() => setDeltaFlash(null), 3000);
       }
       return next;
@@ -928,14 +931,18 @@ export default function PokemonWalker({ onStop }) {
                       className="gba-step-input"
                       type="number"
                       min="0"
-                      placeholder="Enter today's total steps"
+                      placeholder="Total steps (lower = correction)"
                       value={stepInput}
                       onChange={e => setStepInput(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleSaveSteps()}
                     />
                     <button className="gba-save-btn" onClick={handleSaveSteps}>Save</button>
                   </div>
-                  {deltaFlash && <div className="gba-delta-flash">{deltaFlash}</div>}
+                  {deltaFlash && (
+                    <div className={`gba-delta-flash${deltaFlash.startsWith('corrected') ? ' correction' : ''}`}>
+                      {deltaFlash}
+                    </div>
+                  )}
                 </div>
 
                 {/* Stats */}
