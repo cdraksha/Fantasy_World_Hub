@@ -467,6 +467,8 @@ export default function PokemonWalker({ onStop }) {
   const [clockTime, setClockTime] = useState('');
   const [packWarning, setPackWarning] = useState(null); // '9pm' | '11pm' | null
   const [stepsWarning, setStepsWarning] = useState(false);
+  const [editingSpendable, setEditingSpendable] = useState(false);
+  const [spendableEditVal, setSpendableEditVal] = useState('');
   const midnightChecked = useRef(false);
   const packWarningChecked = useRef({ '9pm': false, '11pm': false });
   const stepsWarningChecked = useRef(false);
@@ -607,10 +609,10 @@ export default function PokemonWalker({ onStop }) {
     const newTotal = parseInt(stepInput, 10);
     if (isNaN(newTotal) || newTotal < 0) return;
     setAppState(prev => {
-      const delta = newTotal - prev.todaySteps;
+      const delta = Math.max(0, newTotal - prev.todaySteps);
       const newTodaySteps = newTotal;
-      const newTotalWalked = Math.max(0, prev.totalStepsWalked + delta);
-      const newSpendable = Math.max(0, prev.spendableSteps + delta);
+      const newTotalWalked = prev.totalStepsWalked + delta;
+      const newSpendable = prev.spendableSteps + delta;
       const newLevel = getCollectorLevel(newTotalWalked);
       const newAch = checkAchievements({ ...prev, totalStepsWalked: newTotalWalked });
       const isNewRecord = newTodaySteps > (prev.bestDay || 0);
@@ -629,15 +631,27 @@ export default function PokemonWalker({ onStop }) {
         bestDayDate: newBestDayDate,
       };
       if (delta > 0) {
-        setDeltaFlash(`+${fmtFull(delta)} steps added`);
-        setTimeout(() => setDeltaFlash(null), 3000);
-      } else if (delta < 0) {
-        setDeltaFlash(`corrected ${fmtFull(Math.abs(delta))} steps`);
+        setDeltaFlash(`+${fmtFull(delta)} new steps`);
         setTimeout(() => setDeltaFlash(null), 3000);
       }
       return next;
     });
     setStepInput('');
+  };
+
+  // ─── Edit spendable directly ─────────────────────────────────────────
+  const handleSpendableEdit = () => {
+    setSpendableEditVal(String(appState.spendableSteps || 0));
+    setEditingSpendable(true);
+  };
+
+  const handleSpendableSave = () => {
+    const val = parseInt(spendableEditVal, 10);
+    if (!isNaN(val) && val >= 0) {
+      setAppState(prev => ({ ...prev, spendableSteps: val }));
+    }
+    setEditingSpendable(false);
+    setSpendableEditVal('');
   };
 
   // ─── Unlock pack ─────────────────────────────────────────────────────
@@ -923,26 +937,43 @@ export default function PokemonWalker({ onStop }) {
                   <div className="gba-section-title">Today's Steps</div>
                   <div className="gba-step-big">{fmtFull(appState.todaySteps)}</div>
                   <div className="gba-spendable-row">
-                    <span className="gba-spendable-label">Available to spend</span>
-                    <span className="gba-spendable-val">{fmtFull(appState.spendableSteps || 0)}</span>
+                    <span className="gba-spendable-label">
+                      Available to spend
+                      {!editingSpendable && (
+                        <button className="gba-spendable-edit-btn" onClick={handleSpendableEdit} title="Correct">✎</button>
+                      )}
+                    </span>
+                    {editingSpendable ? (
+                      <div className="gba-spendable-edit-row">
+                        <input
+                          className="gba-spendable-edit-input"
+                          type="number"
+                          min="0"
+                          value={spendableEditVal}
+                          onChange={e => setSpendableEditVal(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') handleSpendableSave(); if (e.key === 'Escape') setEditingSpendable(false); }}
+                          autoFocus
+                        />
+                        <button className="gba-spendable-save-btn" onClick={handleSpendableSave}>✓</button>
+                        <button className="gba-spendable-cancel-btn" onClick={() => setEditingSpendable(false)}>✕</button>
+                      </div>
+                    ) : (
+                      <span className="gba-spendable-val">{fmtFull(appState.spendableSteps || 0)}</span>
+                    )}
                   </div>
                   <div className="gba-step-row">
                     <input
                       className="gba-step-input"
                       type="number"
                       min="0"
-                      placeholder="Total steps (lower = correction)"
+                      placeholder="Enter today's total steps"
                       value={stepInput}
                       onChange={e => setStepInput(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleSaveSteps()}
                     />
                     <button className="gba-save-btn" onClick={handleSaveSteps}>Save</button>
                   </div>
-                  {deltaFlash && (
-                    <div className={`gba-delta-flash${deltaFlash.startsWith('corrected') ? ' correction' : ''}`}>
-                      {deltaFlash}
-                    </div>
-                  )}
+                  {deltaFlash && <div className="gba-delta-flash">{deltaFlash}</div>}
                 </div>
 
                 {/* Stats */}
