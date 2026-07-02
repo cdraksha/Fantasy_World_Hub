@@ -28,11 +28,9 @@ const SYSTEM_LABEL = {
 function getExt(filename) {
   return filename.split('.').pop().toLowerCase();
 }
-
 function getCore(filename) {
   return CORE_MAP[getExt(filename)] || 'mgba';
 }
-
 function getSystemLabel(filename) {
   return SYSTEM_LABEL[getExt(filename)] || 'Unknown';
 }
@@ -42,7 +40,6 @@ function cleanupEmulator() {
   if (loader) loader.remove();
   const style = document.getElementById('ejs-style');
   if (style) style.remove();
-  // Clean up global EJS state
   [
     'EJS_player', 'EJS_gameUrl', 'EJS_core', 'EJS_pathtodata',
     'EJS_color', 'EJS_startOnLoaded', 'EJS_GameName', 'EJS_emulator',
@@ -56,9 +53,7 @@ export default function GBAEmulator({ onStop }) {
   const [playing, setPlaying] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const playerRef = useRef(null);
-  const ejsLoadedRef = useRef(false);
 
-  // Load manifest
   useEffect(() => {
     fetch('/roms/manifest.json')
       .then(r => r.json())
@@ -66,7 +61,6 @@ export default function GBAEmulator({ onStop }) {
       .catch(() => setRoms([]));
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => cleanupEmulator();
   }, []);
@@ -74,12 +68,9 @@ export default function GBAEmulator({ onStop }) {
   const launchGame = useCallback((rom) => {
     setLoadError(null);
     setPlaying(true);
-    ejsLoadedRef.current = false;
 
-    // Give React time to render the player div, then boot the emulator
     setTimeout(() => {
       cleanupEmulator();
-
       window.EJS_player = '#emu-player';
       window.EJS_gameUrl = `/roms/${rom.file}`;
       window.EJS_core = getCore(rom.file);
@@ -91,7 +82,7 @@ export default function GBAEmulator({ onStop }) {
       const script = document.createElement('script');
       script.id = 'ejs-loader-script';
       script.src = `${EJS_PATH}loader.js`;
-      script.onerror = () => setLoadError('Failed to load emulator. Check that EmulatorJS files are in public/emulatorjs/.');
+      script.onerror = () => setLoadError('Failed to load emulator. Check public/emulatorjs/.');
       document.body.appendChild(script);
     }, 80);
   }, []);
@@ -100,88 +91,118 @@ export default function GBAEmulator({ onStop }) {
     cleanupEmulator();
     setPlaying(false);
     setSelectedRom(null);
-    ejsLoadedRef.current = false;
   }, []);
 
-  // ── Selector screen ──────────────────────────────────────────────
-  if (!playing) {
-    return (
-      <div className="emu-root">
-        <div className="emu-bg" />
+  return (
+    <div className="gba-body">
+      <div className="gba-shell">
 
-        <div className="emu-selector">
-          <button className="emu-back-btn" onClick={onStop}>◂ Back</button>
+        {/* ── Left panel ── */}
+        <div className="gba-left-panel">
+          <div className="gba-shoulder-l">L</div>
+          <div className="gba-led" />
+          <div className="gba-dpad">
+            <div className="gba-dpad-v" />
+            <div className="gba-dpad-h" />
+            <div className="gba-dpad-center" />
+          </div>
+          <div className="gba-select-btn">SELECT</div>
+        </div>
 
-          <div className="emu-header">
-            <div className="emu-header-icon">🎮</div>
-            <div className="emu-header-title">Game Library</div>
-            <div className="emu-header-sub">Select a game to play</div>
+        {/* ── Screen section ── */}
+        <div className="gba-screen-section">
+          <div className="gba-bezel">
+
+            {playing ? (
+              /* Player mode — EmulatorJS fills the screen */
+              <div className="gba-screen emu-active-screen">
+                {loadError && (
+                  <div className="emu-error">
+                    <span>⚠️ {loadError}</span>
+                    <button onClick={exitGame}>Go Back</button>
+                  </div>
+                )}
+                <div id="emu-player" ref={playerRef} />
+              </div>
+            ) : (
+              /* Selector mode */
+              <div className="gba-screen">
+                <div className="gba-screen-header emu-sel-header">
+                  <div className="emu-sel-title">🎮 Game Library</div>
+                  <div className="emu-sel-sub">Select a game · save states auto-stored</div>
+                </div>
+
+                <div className="gba-screen-content">
+                  {roms.length === 0 ? (
+                    <div className="emu-empty">
+                      <div className="emu-empty-icon">📂</div>
+                      <div className="emu-empty-title">No ROMs loaded yet</div>
+                      <div className="emu-empty-body">
+                        Drop ROM files into <code>public/roms/</code> and update the manifest.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="emu-game-grid">
+                      {roms.map(rom => (
+                        <button
+                          key={rom.file}
+                          className={`emu-game-card${selectedRom?.file === rom.file ? ' selected' : ''}`}
+                          onClick={() => setSelectedRom(selectedRom?.file === rom.file ? null : rom)}
+                        >
+                          <div className="emu-game-icon">
+                            {rom.cover
+                              ? <img src={rom.cover} alt={rom.name} className="emu-game-cover" />
+                              : <span className="emu-game-emoji">🕹️</span>
+                            }
+                          </div>
+                          <div className="emu-game-name">{rom.name}</div>
+                          <div className="emu-game-system">{getSystemLabel(rom.file)}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {selectedRom && (
+                  <div className="emu-sel-launch">
+                    <div className="emu-launch-info">
+                      <span className="emu-launch-name">{selectedRom.name}</span>
+                      <span className="emu-launch-system">{getSystemLabel(selectedRom.file)}</span>
+                    </div>
+                    <button className="emu-launch-btn" onClick={() => launchGame(selectedRom)}>
+                      ▶ Play
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
 
-          {roms.length === 0 ? (
-            <div className="emu-empty">
-              <div className="emu-empty-icon">📂</div>
-              <div className="emu-empty-title">No ROMs loaded yet</div>
-              <div className="emu-empty-body">
-                Drop your ROM files into <code>public/roms/</code> and let me know — I'll add them to the library instantly.
-              </div>
-            </div>
-          ) : (
-            <div className="emu-game-grid">
-              {roms.map(rom => (
-                <button
-                  key={rom.file}
-                  className={`emu-game-card${selectedRom?.file === rom.file ? ' selected' : ''}`}
-                  onClick={() => setSelectedRom(rom)}
-                >
-                  <div className="emu-game-icon">
-                    {rom.cover
-                      ? <img src={rom.cover} alt={rom.name} className="emu-game-cover" />
-                      : <span className="emu-game-emoji">🕹️</span>
-                    }
-                  </div>
-                  <div className="emu-game-name">{rom.name}</div>
-                  <div className="emu-game-system">{getSystemLabel(rom.file)}</div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {selectedRom && (
-            <div className="emu-launch-bar">
-              <div className="emu-launch-info">
-                <span className="emu-launch-name">{selectedRom.name}</span>
-                <span className="emu-launch-system">{getSystemLabel(selectedRom.file)}</span>
-              </div>
-              <button className="emu-launch-btn" onClick={() => launchGame(selectedRom)}>
-                ▶ Play
-              </button>
-            </div>
-          )}
+          <div className="gba-brand-bar">
+            <span className="gba-brand-text">Nintendo Game Boy Advance SP</span>
+            <span className="gba-brand-sub">GAME LIBRARY</span>
+          </div>
         </div>
-      </div>
-    );
-  }
 
-  // ── Player screen ─────────────────────────────────────────────────
-  return (
-    <div className="emu-root emu-playing">
-      <div className="emu-player-bar">
-        <button className="emu-player-back" onClick={exitGame}>◂ Library</button>
-        <span className="emu-player-title">{selectedRom?.name}</span>
-        <span className="emu-player-system">{selectedRom ? getSystemLabel(selectedRom.file) : ''}</span>
-        <button className="emu-player-quit" onClick={onStop}>✕ Quit</button>
-      </div>
-
-      {loadError && (
-        <div className="emu-error">
-          <span>⚠️ {loadError}</span>
-          <button onClick={exitGame}>Go Back</button>
+        {/* ── Right panel ── */}
+        <div className="gba-right-panel">
+          <div className="gba-shoulder-r">R</div>
+          <div className="gba-ab-group">
+            <div className="gba-btn-b">B</div>
+            <div className="gba-btn-a">A</div>
+          </div>
+          <div className="gba-speaker-grille">
+            {Array.from({ length: 18 }).map((_, i) => (
+              <div key={i} className="gba-speaker-dot" />
+            ))}
+          </div>
+          {playing
+            ? <button className="gba-mini-btn" onClick={exitGame}>BACK</button>
+            : <button className="gba-mini-btn" onClick={onStop}>QUIT</button>
+          }
         </div>
-      )}
 
-      <div className="emu-player-wrap">
-        <div id="emu-player" ref={playerRef} />
       </div>
     </div>
   );
