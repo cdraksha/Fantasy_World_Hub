@@ -42,7 +42,7 @@ function cleanupEmulator() {
   if (style) style.remove();
   [
     'EJS_player', 'EJS_gameUrl', 'EJS_core', 'EJS_pathtodata',
-    'EJS_color', 'EJS_startOnLoaded', 'EJS_GameName', 'EJS_emulator',
+    'EJS_color', 'EJS_startOnLoaded', 'EJS_gameName', 'EJS_emulator',
     'EJS_onGameStart', 'EJS_onSaveState', 'EJS_onLoadState',
   ].forEach(k => { try { delete window[k]; } catch {} });
 }
@@ -77,7 +77,7 @@ export default function GBAEmulator({ onStop }) {
       window.EJS_pathtodata = EJS_PATH;
       window.EJS_color = '#FFCB05';
       window.EJS_startOnLoaded = true;
-      window.EJS_GameName = rom.name;
+      window.EJS_gameName = rom.name;
 
       const script = document.createElement('script');
       script.id = 'ejs-loader-script';
@@ -88,9 +88,15 @@ export default function GBAEmulator({ onStop }) {
   }, []);
 
   const exitGame = useCallback(() => {
-    cleanupEmulator();
-    setPlaying(false);
-    setSelectedRom(null);
+    // Flush SRAM to IndexedDB before tearing down the emulator
+    try {
+      window.EJS_emulator?.gameManager?.saveSaveFiles();
+    } catch(e) {}
+    setTimeout(() => {
+      cleanupEmulator();
+      setPlaying(false);
+      setSelectedRom(null);
+    }, 600);
   }, []);
 
   return (
