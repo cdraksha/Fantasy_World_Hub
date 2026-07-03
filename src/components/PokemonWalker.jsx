@@ -528,6 +528,63 @@ function MidnightWarning({ spendable, onSpend, onDeposit, onIgnore }) {
   );
 }
 
+// ─── World View ──────────────────────────────────────────────────────────
+
+const WORLD_TILE_COLORS = {
+  E: '#162a09',  // dark edge
+  T: '#2b6612',  // tall grass
+  G: '#48a824',  // short grass
+  R: '#7a3010',  // roof
+  W: '#d4b896',  // wall
+  N: '#a8d4e8',  // window
+  D: '#4a1e0a',  // door
+  P: '#c4a050',  // path
+};
+
+function buildWorldMap() {
+  const { E, T, G, R, W, N, D, P } = Object.fromEntries(
+    Object.keys(WORLD_TILE_COLORS).map(k => [k, k])
+  );
+  return [
+    [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
+    [E,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,E],
+    [E,T,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,T,E],
+    [E,T,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,T,E],
+    [E,T,G,G,G,G,R,R,R,R,R,G,G,G,G,G,G,G,T,E],
+    [E,T,G,G,G,G,R,R,R,R,R,G,G,G,G,G,G,G,T,E],
+    [E,T,G,G,G,G,W,N,W,N,W,G,G,G,G,G,G,G,T,E],
+    [E,T,G,G,G,G,W,W,D,W,W,G,G,G,G,G,G,G,T,E],
+    [E,T,G,G,G,G,G,G,P,G,G,G,G,G,G,G,G,G,T,E],
+    [E,T,G,G,G,G,G,G,P,G,G,G,G,G,G,G,G,G,T,E],
+    [E,T,T,T,T,T,T,T,P,T,T,T,T,T,T,T,T,T,T,E],
+    [E,E,E,E,E,E,E,E,P,E,E,E,E,E,E,E,E,E,E,E],
+  ];
+}
+
+const WORLD_MAP_COLS = 20;
+const WORLD_MAP_ROWS = 12;
+
+function WorldView() {
+  const tiles = buildWorldMap().flat();
+  return (
+    <div className="world-view">
+      <div className="world-map-grid">
+        {tiles.map((tile, i) => (
+          <div
+            key={i}
+            className="world-tile"
+            style={{ background: WORLD_TILE_COLORS[tile] }}
+          />
+        ))}
+      </div>
+      <div className="world-status-bar">
+        <span className="world-status-item">🏠 Your house · 5k steps</span>
+        <span className="world-status-item world-status-next">Next: Grass Fields at 10k</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ──────────────────────────────────────────────────────
 
 export default function PokemonWalker({ onStop }) {
@@ -547,6 +604,7 @@ export default function PokemonWalker({ onStop }) {
   const [showLoanPanel, setShowLoanPanel] = useState(false);
   const [takingLoan, setTakingLoan] = useState(false);
   const [showEggPanel, setShowEggPanel] = useState(false);
+  const [activeTab, setActiveTab] = useState('stats');
   const midnightChecked = useRef(false);
   const packWarningChecked = useRef({ '9pm': false, '11pm': false });
   const stepsWarningChecked = useRef(false);
@@ -1124,9 +1182,13 @@ export default function PokemonWalker({ onStop }) {
                   <span className="gba-ss-item">⭐ Lv{collectorLevel}</span>
                 </div>
                 <div className="gba-screen-datetime">{appState.todayDate} · {clockTime}</div>
+                <div className="gba-tab-row">
+                  <button className={`gba-tab${activeTab === 'stats' ? ' active' : ''}`} onClick={() => setActiveTab('stats')}>Stats</button>
+                  <button className={`gba-tab${activeTab === 'world' ? ' active' : ''}`} onClick={() => setActiveTab('world')}>🏠 World</button>
+                </div>
               </div>
 
-              <div className="gba-screen-content">
+              {activeTab === 'world' ? <WorldView /> : <div className="gba-screen-content">
 
                 {/* Today's Steps */}
                 <div className="gba-section">
@@ -1513,9 +1575,9 @@ export default function PokemonWalker({ onStop }) {
                   })()}
                 </div>
 
-              </div>
-            </div>
-          </div>
+              </div>}
+            </div>{/* gba-screen */}
+          </div>{/* gba-bezel */}
           <div className="gba-brand-bar">
             <span className="gba-brand-text">GAME BOY ADVANCE</span>
             <span className="gba-brand-sub">POKÉMON WALKER</span>

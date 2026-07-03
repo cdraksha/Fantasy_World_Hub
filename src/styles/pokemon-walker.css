@@ -2538,3 +2538,75 @@
   line-height: 1.5;
 }
 .egg-locked-desc strong { color: #1a1a2e; }
+
+/* ─── Tabs ─── */
+
+.gba-tab-row {
+  display: flex;
+  gap: 3px;
+  padding: 4px 8px 0;
+  border-top: 1px solid rgba(26,26,46,0.10);
+  margin-top: 4px;
+}
+
+.gba-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 3px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #7a7a8a;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.gba-tab:hover { color: #1a1a2e; }
+.gba-tab.active { color: #1a1a2e; border-bottom-color: #FFCB05; }
+
+/* ─── World View ─── */
+
+.world-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #162a09;
+  overflow: hidden;
+  image-rendering: pixelated;
+}
+
+.world-map-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(20, 1fr);
+  grid-template-rows: repeat(12, 1fr);
+}
+
+.world-tile {
+  width: 100%;
+  height: 100%;
+}
+
+.world-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: rgba(0,0,0,0.55);
+  flex-shrink: 0;
+}
+
+.world-status-item {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.75);
+  letter-spacing: 0.06em;
+}
+
+.world-status-next { color: #FFCB05; }
