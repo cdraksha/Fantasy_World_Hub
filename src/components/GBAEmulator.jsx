@@ -25,60 +25,103 @@ const SYSTEM_LABEL = {
   bin: 'PlayStation', cue: 'PlayStation',
 };
 
-function getExt(filename) {
-  return filename.split('.').pop().toLowerCase();
-}
-function getCore(filename) {
-  return CORE_MAP[getExt(filename)] || 'mgba';
-}
-function getSystemLabel(filename) {
-  return SYSTEM_LABEL[getExt(filename)] || 'Unknown';
-}
+function getExt(f) { return f.split('.').pop().toLowerCase(); }
+function getCore(f) { return CORE_MAP[getExt(f)] || 'mgba'; }
+function getSystemLabel(f) { return SYSTEM_LABEL[getExt(f)] || 'Unknown'; }
 
 function cleanupEmulator() {
   const loader = document.getElementById('ejs-loader-script');
   if (loader) loader.remove();
   const style = document.getElementById('ejs-style');
   if (style) style.remove();
-  [
-    'EJS_player', 'EJS_gameUrl', 'EJS_core', 'EJS_pathtodata',
-    'EJS_color', 'EJS_startOnLoaded', 'EJS_gameName', 'EJS_emulator',
-    'EJS_onGameStart', 'EJS_onSaveState', 'EJS_onLoadState',
+  ['EJS_player','EJS_gameUrl','EJS_core','EJS_pathtodata','EJS_color',
+   'EJS_startOnLoaded','EJS_gameName','EJS_emulator','EJS_onGameStart',
+   'EJS_onSaveState','EJS_onLoadState',
   ].forEach(k => { try { delete window[k]; } catch {} });
 }
+
+// ── Save state helpers ──────────────────────────────────────────────────────
+
+const SS_KEY = (f) => `fw_ss_${f}`;
+const MAX_SLOTS = 3;
+
+function loadSlots(romFile) {
+  try { return JSON.parse(localStorage.getItem(SS_KEY(romFile)) || 'null') || []; }
+  catch { return []; }
+}
+
+function persistSlots(romFile, slots) {
+  localStorage.setItem(SS_KEY(romFile), JSON.stringify(slots));
+}
+
+function stateToBase64(data) {
+  try {
+    const bytes = ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : new Uint8Array(data);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  } catch { return null; }
+}
+
+function base64ToBytes(b64) {
+  try {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  } catch { return null; }
+}
+
+// ── Main component ──────────────────────────────────────────────────────────
 
 export default function GBAEmulator({ onStop }) {
   const [roms, setRoms] = useState([]);
   const [selectedRom, setSelectedRom] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [loadError, setLoadError] = useState(null);
+  const [slots, setSlots] = useState([null, null, null]);
+  const [slotAction, setSlotAction] = useState(null); // { idx, type: 'load'|'overwrite' }
+  const [flash, setFlash] = useState(null);
   const playerRef = useRef(null);
+  const flashTimer = useRef(null);
 
   useEffect(() => {
     fetch('/roms/manifest.json')
       .then(r => r.json())
-      .then(data => setRoms(Array.isArray(data) ? data : []))
+      .then(d => setRoms(Array.isArray(d) ? d : []))
       .catch(() => setRoms([]));
   }, []);
 
+  useEffect(() => { return () => cleanupEmulator(); }, []);
+
   useEffect(() => {
-    return () => cleanupEmulator();
+    if (selectedRom) {
+      const saved = loadSlots(selectedRom.file);
+      setSlots([saved[0] || null, saved[1] || null, saved[2] || null]);
+    } else {
+      setSlots([null, null, null]);
+    }
+    setSlotAction(null);
+  }, [selectedRom?.file]);
+
+  const showFlash = useCallback((msg) => {
+    clearTimeout(flashTimer.current);
+    setFlash(msg);
+    flashTimer.current = setTimeout(() => setFlash(null), 2500);
   }, []);
 
   const launchGame = useCallback((rom) => {
     setLoadError(null);
     setPlaying(true);
-
     setTimeout(() => {
       cleanupEmulator();
-      window.EJS_player = '#emu-player';
+      window.EJS_player = '#ds-game-screen';
       window.EJS_gameUrl = `/roms/${rom.file}`;
       window.EJS_core = getCore(rom.file);
       window.EJS_pathtodata = EJS_PATH;
-      window.EJS_color = '#FFCB05';
+      window.EJS_color = '#1a6aff';
       window.EJS_startOnLoaded = true;
       window.EJS_gameName = rom.name;
-
       const script = document.createElement('script');
       script.id = 'ejs-loader-script';
       script.src = `${EJS_PATH}loader.js`;
@@ -88,125 +131,195 @@ export default function GBAEmulator({ onStop }) {
   }, []);
 
   const exitGame = useCallback(() => {
-    // Flush SRAM to IndexedDB before tearing down the emulator
-    try {
-      window.EJS_emulator?.gameManager?.saveSaveFiles();
-    } catch(e) {}
+    try { window.EJS_emulator?.gameManager?.saveSaveFiles(); } catch {}
     setTimeout(() => {
       cleanupEmulator();
       setPlaying(false);
-      setSelectedRom(null);
     }, 600);
   }, []);
 
+  const doSave = useCallback((idx) => {
+    setSlotAction(null);
+    try {
+      const data = window.EJS_emulator?.gameManager?.saveState?.();
+      if (!data) { showFlash('Start the game first to save'); return; }
+      const b64 = stateToBase64(data);
+      if (!b64) { showFlash('Save failed'); return; }
+      const slot = {
+        label: `Slot ${idx + 1}`,
+        date: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }),
+        data: b64,
+      };
+      const next = [...slots];
+      next[idx] = slot;
+      setSlots(next);
+      persistSlots(selectedRom.file, next);
+      showFlash(`Saved to Slot ${idx + 1}`);
+    } catch {
+      showFlash('Save failed');
+    }
+  }, [slots, selectedRom, showFlash]);
+
+  const doLoad = useCallback((idx) => {
+    setSlotAction(null);
+    try {
+      const slot = slots[idx];
+      if (!slot) return;
+      const bytes = base64ToBytes(slot.data);
+      if (!bytes) { showFlash('Load failed'); return; }
+      window.EJS_emulator?.gameManager?.loadState?.(bytes);
+      showFlash(`Loaded Slot ${idx + 1}`);
+    } catch {
+      showFlash('Load failed');
+    }
+  }, [slots, showFlash]);
+
+  const handleSlotTap = (idx) => {
+    if (!playing) return;
+    if (slots[idx]) {
+      setSlotAction({ idx, type: 'filled' });
+    } else {
+      doSave(idx);
+    }
+  };
+
   return (
-    <div className="gba-body">
-      <div className="gba-shell">
+    <div className="ds-body">
+      <div className="ds-shell">
 
-        {/* ── Left panel ── */}
-        <div className="gba-left-panel">
-          <div className="gba-shoulder-l">L</div>
-          <div className="gba-led" />
-          <div className="gba-dpad">
-            <div className="gba-dpad-v" />
-            <div className="gba-dpad-h" />
-            <div className="gba-dpad-center" />
+        {/* ── Top half — main screen ── */}
+        <div className="ds-top-half">
+          <div className="ds-shoulder-bar">
+            <div className="ds-shoulder-btn">L</div>
+            <span className="ds-brand">NINTENDO DS</span>
+            <div className="ds-shoulder-btn">R</div>
           </div>
-          <div className="gba-select-btn">SELECT</div>
-        </div>
 
-        {/* ── Screen section ── */}
-        <div className="gba-screen-section">
-          <div className="gba-bezel">
-
+          <div className="ds-top-bezel">
+            <div className="ds-led" />
             {playing ? (
-              /* Player mode — EmulatorJS fills the screen */
-              <div className="gba-screen emu-active-screen">
+              <div className="ds-top-screen ds-screen-game">
                 {loadError && (
-                  <div className="emu-error">
+                  <div className="ds-error">
                     <span>⚠️ {loadError}</span>
-                    <button onClick={exitGame}>Go Back</button>
+                    <button onClick={exitGame}>Back</button>
                   </div>
                 )}
-                <div id="emu-player" ref={playerRef} />
+                <div id="ds-game-screen" ref={playerRef} />
               </div>
             ) : (
-              /* Selector mode */
-              <div className="gba-screen">
-                <div className="gba-screen-header emu-sel-header">
-                  <div className="emu-sel-title">🎮 Game Library</div>
-                  <div className="emu-sel-sub">Select a game · save states auto-stored</div>
-                </div>
-
-                <div className="gba-screen-content">
-                  {roms.length === 0 ? (
-                    <div className="emu-empty">
-                      <div className="emu-empty-icon">📂</div>
-                      <div className="emu-empty-title">No ROMs loaded yet</div>
-                      <div className="emu-empty-body">
-                        Drop ROM files into <code>public/roms/</code> and update the manifest.
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="emu-game-grid">
-                      {roms.map(rom => (
-                        <button
-                          key={rom.file}
-                          className={`emu-game-card${selectedRom?.file === rom.file ? ' selected' : ''}`}
-                          onClick={() => setSelectedRom(selectedRom?.file === rom.file ? null : rom)}
-                        >
-                          <div className="emu-game-icon">
-                            {rom.cover
-                              ? <img src={rom.cover} alt={rom.name} className="emu-game-cover" />
-                              : <span className="emu-game-emoji">🕹️</span>
-                            }
-                          </div>
-                          <div className="emu-game-name">{rom.name}</div>
-                          <div className="emu-game-system">{getSystemLabel(rom.file)}</div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {selectedRom && (
-                  <div className="emu-sel-launch">
-                    <div className="emu-launch-info">
-                      <span className="emu-launch-name">{selectedRom.name}</span>
-                      <span className="emu-launch-system">{getSystemLabel(selectedRom.file)}</span>
-                    </div>
-                    <button className="emu-launch-btn" onClick={() => launchGame(selectedRom)}>
-                      ▶ Play
-                    </button>
+              <div className="ds-top-screen ds-screen-idle">
+                <div className="ds-idle-icon">🎮</div>
+                <div className="ds-idle-title">Game Library</div>
+                {selectedRom ? (
+                  <div className="ds-idle-ready">
+                    <div className="ds-idle-game">{selectedRom.name}</div>
+                    <div className="ds-idle-sys">{getSystemLabel(selectedRom.file)}</div>
+                    <button className="ds-play-btn" onClick={() => launchGame(selectedRom)}>▶ Play</button>
                   </div>
+                ) : (
+                  <div className="ds-idle-hint">Pick a game below ↓</div>
                 )}
               </div>
             )}
-
-          </div>
-
-          <div className="gba-brand-bar">
-            <span className="gba-brand-text">Nintendo Game Boy Advance SP</span>
-            <span className="gba-brand-sub">GAME LIBRARY</span>
           </div>
         </div>
 
-        {/* ── Right panel ── */}
-        <div className="gba-right-panel">
-          <div className="gba-shoulder-r">R</div>
-          <div className="gba-ab-group">
-            <div className="gba-btn-b">B</div>
-            <div className="gba-btn-a">A</div>
+        {/* ── Hinge ── */}
+        <div className="ds-hinge">
+          <div className="ds-hinge-pill left" />
+          <div className="ds-hinge-pill right" />
+        </div>
+
+        {/* ── Bottom half — touch screen + controls ── */}
+        <div className="ds-bottom-half">
+          <div className="ds-controls-row">
+
+            {/* D-pad */}
+            <div className="ds-dpad">
+              <div className="ds-dpad-v" />
+              <div className="ds-dpad-h" />
+              <div className="ds-dpad-center" />
+            </div>
+
+            {/* Bottom screen */}
+            <div className="ds-bottom-bezel">
+              {flash && <div className="ds-flash">{flash}</div>}
+
+              {playing ? (
+                /* ── Save state manager ── */
+                <div className="ds-bottom-screen">
+                  <div className="ds-ss-title">Save States</div>
+                  <div className="ds-ss-list">
+                    {slots.map((slot, idx) => {
+                      if (slotAction?.idx === idx) {
+                        return (
+                          <div key={idx} className="ds-ss-slot ds-ss-confirming">
+                            <span className="ds-ss-confirm-q">
+                              {slotAction.type === 'filled' ? `Slot ${idx + 1} — what do you want?` : ''}
+                            </span>
+                            <div className="ds-ss-confirm-row">
+                              <button className="ds-ss-action-btn load" onClick={() => doLoad(idx)}>Load</button>
+                              <button className="ds-ss-action-btn save" onClick={() => doSave(idx)}>Overwrite</button>
+                              <button className="ds-ss-action-btn cancel" onClick={() => setSlotAction(null)}>✕</button>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <button key={idx} className={`ds-ss-slot${slot ? ' ds-ss-filled' : ' ds-ss-empty'}`} onClick={() => handleSlotTap(idx)}>
+                          <span className="ds-ss-slot-num">Slot {idx + 1}</span>
+                          {slot
+                            ? <span className="ds-ss-slot-date">{slot.date}</span>
+                            : <span className="ds-ss-slot-empty">— empty —</span>
+                          }
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="ds-ss-hint">Tap a slot to save · tap a filled slot to load or overwrite</div>
+                </div>
+              ) : (
+                /* ── ROM selector ── */
+                <div className="ds-bottom-screen">
+                  <div className="ds-rom-list">
+                    {roms.length === 0 ? (
+                      <div className="ds-no-roms">No ROMs — add files to public/roms/</div>
+                    ) : roms.map(rom => (
+                      <button
+                        key={rom.file}
+                        className={`ds-rom-row${selectedRom?.file === rom.file ? ' ds-rom-selected' : ''}`}
+                        onClick={() => setSelectedRom(selectedRom?.file === rom.file ? null : rom)}
+                      >
+                        <span className="ds-rom-name">{rom.name}</span>
+                        <span className="ds-rom-sys">{getSystemLabel(rom.file)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ABXY */}
+            <div className="ds-abxy">
+              <div className="ds-btn-x">X</div>
+              <div className="ds-btn-mid-row">
+                <div className="ds-btn-y">Y</div>
+                <div className="ds-btn-a">A</div>
+              </div>
+              <div className="ds-btn-b">B</div>
+            </div>
+
           </div>
-          <div className="gba-speaker-grille">
-            {Array.from({ length: 18 }).map((_, i) => (
-              <div key={i} className="gba-speaker-dot" />
-            ))}
+
+          {/* Start / Select / Quit */}
+          <div className="ds-bottom-bar">
+            <button className="ds-sys-btn" onClick={() => { setSelectedRom(null); setSlotAction(null); }}>SELECT</button>
+            {playing
+              ? <button className="ds-sys-btn ds-back-btn" onClick={exitGame}>BACK</button>
+              : <button className="ds-sys-btn ds-quit-btn" onClick={onStop}>QUIT</button>
+            }
           </div>
-          {playing
-            ? <button className="gba-mini-btn" onClick={exitGame}>BACK</button>
-            : <button className="gba-mini-btn" onClick={onStop}>QUIT</button>
-          }
         </div>
 
       </div>
