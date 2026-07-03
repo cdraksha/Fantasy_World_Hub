@@ -2398,3 +2398,143 @@
 .loan-locked-desc { font-size: 10px; color: #7a7a8a; margin-bottom: 8px; line-height: 1.5; }
 .loan-locked-desc strong { color: #1a1a2e; }
 .loan-locked-remaining { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7a7a8a; margin-top: 4px; }
+
+/* ─── Egg ─── */
+
+.egg-eligible-btn {
+  width: 100%;
+  background: rgba(22,163,74,0.08);
+  border: 1.5px solid rgba(22,163,74,0.30);
+  color: #16a34a;
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+  text-align: center;
+}
+.egg-eligible-btn:hover {
+  background: rgba(22,163,74,0.15);
+  border-color: #16a34a;
+}
+
+.egg-panel {
+  margin-top: 8px;
+  border-radius: 10px;
+  padding: 10px 11px;
+  border: 1.5px solid #e0dbd0;
+  background: #fff;
+  text-align: center;
+}
+
+.egg-active  { border-color: rgba(22,163,74,0.35); background: rgba(22,163,74,0.04); text-align: left; }
+.egg-available { border-color: #FFCB05; background: rgba(255,203,5,0.06); }
+.egg-locked  { background: #fafaf8; }
+
+.egg-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.egg-icon { font-size: 36px; line-height: 1; display: block; }
+.egg-dim   { opacity: 0.40; }
+
+@keyframes egg-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.06); }
+}
+.egg-glow { animation: egg-pulse 1.4s ease-in-out infinite; }
+
+.egg-tier-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  margin-top: 4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.egg-active .egg-tier-badge, .egg-locked .egg-tier-badge {
+  color: #16a34a;
+  background: rgba(22,163,74,0.12);
+}
+.egg-available .egg-tier-badge {
+  color: #d97706;
+  background: rgba(217,119,6,0.12);
+}
+
+.egg-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+
+.egg-progress-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.egg-bar-fill { background: #16a34a; }
+
+.egg-today-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-align: center;
+}
+.egg-today-badge.paid   { background: #dcfce7; color: #16a34a; }
+.egg-today-badge.unpaid { background: #f9f8f5; color: #7a7a8a; border: 1px solid #e0dbd0; }
+
+.egg-avail-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 3px;
+}
+
+.egg-avail-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: #d97706;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.egg-avail-terms {
+  font-size: 9px;
+  color: #7a7a8a;
+  margin-bottom: 10px;
+}
+
+.egg-claim-btn {
+  width: 100%;
+  background: #16a34a;
+  border: none;
+  color: #fff;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.egg-claim-btn:hover { opacity: 0.88; transform: scale(1.02); }
+
+.egg-locked-desc {
+  font-size: 10px;
+  color: #7a7a8a;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.egg-locked-desc strong { color: #1a1a2e; }
