@@ -1137,7 +1137,6 @@ export default function PokemonWalker({ onStop }) {
                   <span className="gba-ss-item">👣 {fmtNum(appState.todaySteps)}</span>
                   <span className="gba-ss-item">🏦 {fmtNum(appState.stepVault)}</span>
                   <span className="gba-ss-item">🎁 {totalPacks}</span>
-                  <span className="gba-ss-item">⭐ Lv{collectorLevel}</span>
                 </div>
                 <div className="gba-screen-datetime">{appState.todayDate} · {clockTime}</div>
               </div>
