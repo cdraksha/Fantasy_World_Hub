@@ -158,6 +158,10 @@ function pickFromPool(tier, ownedDexIds) {
 
 // ─── PokeAPI ──────────────────────────────────────────────────────────────
 
+function pokemonSpriteUrl(dexId) {
+  return `https://assets.pokemon.com/assets/cms2/img/pokedex/full/${String(dexId).padStart(3, '0')}.png`;
+}
+
 async function fetchPokemonById(id) {
   const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
   if (!res.ok) throw new Error(`PokeAPI ${res.status}`);
@@ -165,7 +169,7 @@ async function fetchPokemonById(id) {
   return {
     dexId: data.id,
     name: data.name,
-    sprite: data.sprites?.other?.['official-artwork']?.front_default || data.sprites?.front_default || '',
+    sprite: pokemonSpriteUrl(data.id),
     types: data.types.map(t => t.type.name),
   };
 }
@@ -269,6 +273,18 @@ function loadState() {
     // Migrate older saves
     if (!saved.loan) saved.loan = initLoan();
     if (!saved.egg)  saved.egg  = initEgg();
+
+    // Fix broken GitHub raw sprite URLs → official Pokémon CDN
+    if (Array.isArray(saved.pokemon)) {
+      saved.pokemon = saved.pokemon.map(p =>
+        p.sprite && p.sprite.includes('raw.githubusercontent.com')
+          ? { ...p, sprite: pokemonSpriteUrl(p.dexId) }
+          : p
+      );
+    }
+    if (saved.loan?.pokemon?.sprite?.includes('raw.githubusercontent.com')) {
+      saved.loan.pokemon.sprite = pokemonSpriteUrl(saved.loan.pokemon.dexId);
+    }
 
     // Expire unclaimed egg
     if (saved.egg.status === 'available' && Date.now() > saved.egg.availableUntil) {
