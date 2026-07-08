@@ -254,9 +254,9 @@ function defaultState(steps) {
       firstEpic: false, firstLegendary: false, fullTeam: false,
       steps100k: false, steps500k: false, steps1m: false,
     },
-    streakDays: 1,
-    bestStreak: 1,
-    lastStreakDate: todayString(),
+    streakDays: 0,
+    bestStreak: 0,
+    lastStreakDate: null,
     bestDay: steps,
     bestDayDate: todayString(),
     loan: initLoan(),
@@ -273,6 +273,13 @@ function loadState() {
     // Migrate older saves
     if (!saved.loan) saved.loan = initLoan();
     if (!saved.egg)  saved.egg  = initEgg();
+    // Reset streak fields that were never properly tracked
+    if (!saved.streak10kMigrated) {
+      saved.streakDays = 0;
+      saved.bestStreak = 0;
+      saved.lastStreakDate = null;
+      saved.streak10kMigrated = true;
+    }
 
     // Fix broken GitHub raw sprite URLs → official Pokémon CDN
     if (Array.isArray(saved.pokemon)) {
@@ -306,6 +313,11 @@ function loadState() {
             saved.loan = { index: saved.loan.index + 1, status: 'locked', pokemon: null, pokemonUid: null, startDate: null, daysCompleted: 0, graceUsed: false, lastPaidDate: null, prevDefaulted: true };
           }
         }
+      }
+      // Break 10k streak if yesterday's steps fell short
+      if (saved.todaySteps < 10000) {
+        saved.streakDays = 0;
+        saved.lastStreakDate = null;
       }
       saved.todayDate = today;
       saved.todaySteps = 0;
@@ -738,6 +750,20 @@ export default function PokemonWalker({ onStop }) {
       const newBestDayDate = isNewRecord
         ? new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })
         : (prev.bestDayDate || todayString());
+      // ── 10k streak ───────────────────────────────────────────────────
+      let newStreakDays = prev.streakDays || 0;
+      let newBestStreak = prev.bestStreak || 0;
+      let newLastStreakDate = prev.lastStreakDate || null;
+      const todayStr = todayString();
+      if (newTodaySteps >= 10000 && newLastStreakDate !== todayStr) {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        const yesterdayStr = d.toISOString().slice(0, 10);
+        newStreakDays = newLastStreakDate === yesterdayStr ? newStreakDays + 1 : 1;
+        newBestStreak = Math.max(newBestStreak, newStreakDays);
+        newLastStreakDate = todayStr;
+      }
+
       // ── Loan daily payment check ──────────────────────────────────────
       let newLoan = prev.loan;
       let newPokemon = [...prev.pokemon];
@@ -783,6 +809,9 @@ export default function PokemonWalker({ onStop }) {
         loan: newLoan,
         egg: newEgg,
         pokemon: newPokemon,
+        streakDays: newStreakDays,
+        bestStreak: newBestStreak,
+        lastStreakDate: newLastStreakDate,
       };
       if (delta > 0) {
         setDeltaFlash(`+${fmtFull(delta)} new steps`);
@@ -1195,9 +1224,9 @@ export default function PokemonWalker({ onStop }) {
                       <div className="gba-stat-val">{fmtNum(appState.totalStepsWalked)}</div>
                     </div>
                     <div className="gba-stat-box">
-                      <div className="gba-stat-label">Streak</div>
+                      <div className="gba-stat-label">10K Streak</div>
                       <div className="gba-stat-val">{appState.streakDays || 0}d</div>
-                    </div>
+  </div>
                     <div className="gba-stat-box">
                       <div className="gba-stat-label">Best Streak</div>
                       <div className="gba-stat-val">{appState.bestStreak || 0}d</div>
