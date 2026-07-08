@@ -949,11 +949,6 @@ export default function PokemonWalker({ onStop }) {
   // ─── Open pack (start pack screen) ───────────────────────────────────
   const handleOpenPack = (tier) => {
     if (!appState || appState.packInventory[tier] <= 0) return;
-    // Consume the pack first
-    setAppState(prev => ({
-      ...prev,
-      packInventory: { ...prev.packInventory, [tier]: prev.packInventory[tier] - 1 },
-    }));
     setPackOpening(tier);
   };
 
@@ -963,6 +958,7 @@ export default function PokemonWalker({ onStop }) {
     setAppState(prev => {
       const isTeam = destination === 'team' && prev.pokemon.filter(p => p.onTeam).length < 6;
       const newPoke = {
+
         uid: makeUID(),
         dexId: fetched.dexId,
         name: fetched.name,
@@ -976,7 +972,12 @@ export default function PokemonWalker({ onStop }) {
       };
       const newPokemon = [...prev.pokemon, newPoke];
       const newAch = checkAchievements({ ...prev, pokemon: newPokemon });
-      return { ...prev, pokemon: newPokemon, achievements: newAch };
+      return {
+        ...prev,
+        pokemon: newPokemon,
+        achievements: newAch,
+        packInventory: { ...prev.packInventory, [newPoke.packTier]: prev.packInventory[newPoke.packTier] - 1 },
+      };
     });
   };
 
@@ -1082,17 +1083,7 @@ export default function PokemonWalker({ onStop }) {
       <div className="pw-root">
         <PackOpeningScreen
           tier={packOpening}
-          onClose={() => {
-            // Put pack back if closed without catching
-            setAppState(prev => ({
-              ...prev,
-              packInventory: {
-                ...prev.packInventory,
-                [packOpening]: prev.packInventory[packOpening] + 1,
-              },
-            }));
-            setPackOpening(null);
-          }}
+          onClose={() => setPackOpening(null)}
           onCatch={handleCatch}
         />
       </div>
