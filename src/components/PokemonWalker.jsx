@@ -41,6 +41,63 @@ function initEgg() {
   };
 }
 
+// ─── Debt Trap constants ──────────────────────────────────────────────────────
+const DT_FACTIONS = [
+  'The Eastern Consortium', 'The Iron Peninsula', 'The Northern Accord',
+  'The Pacific Syndicate', 'The Southern Coalition', 'The Amber Alliance',
+  'The Steel Dominion', 'The Crimson Republic',
+];
+
+function dtRand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateDebtTrap(index, defaultCount) {
+  const dailyTarget = Math.min(
+    Math.max(5000 + index * 400 + dtRand(-500, 500) + defaultCount * 2000, 3000),
+    15000
+  );
+  const duration = Math.min(Math.max(10 + Math.floor(index / 2) + dtRand(-2, 2), 8), 30);
+  const compoundRate = index < 5 ? 1 : 2;
+
+  const reward = { common: 0, rare: 0, epic: 0, legendary: 0, vaultBonus: 0 };
+  if (index <= 1) {
+    reward.common = dtRand(1, 3); reward.rare = dtRand(1, 2);
+    reward.vaultBonus = dtRand(1, 3) * 1000;
+  } else if (index <= 3) {
+    reward.rare = dtRand(2, 3); reward.epic = dtRand(1, 2);
+    reward.vaultBonus = dtRand(3, 6) * 1000;
+  } else if (index <= 5) {
+    reward.epic = dtRand(2, 3); reward.legendary = dtRand(0, 1);
+    reward.vaultBonus = dtRand(5, 10) * 1000;
+  } else {
+    reward.epic = dtRand(1, 2); reward.legendary = dtRand(1, 2);
+    reward.vaultBonus = dtRand(8, 15) * 1000;
+  }
+
+  return {
+    index,
+    defaultCount,
+    status: 'available',
+    faction: DT_FACTIONS[Math.floor(Math.random() * DT_FACTIONS.length)],
+    dailyTarget,
+    duration,
+    compoundRate,
+    reward,
+    hasVaultMultiplier: index >= 3,
+    hasLegendaryCompanion: index >= 5,
+    collateralUid: null,
+    legendaryCompanionUid: null,
+    daysCompleted: 0,
+    daysCompounded: 0,
+    missedDays: 0,
+    lastPaidDate: null,
+    startDate: null,
+  };
+}
+
+function initDebtTrap() { return generateDebtTrap(0, 0); }
+
 function loanThreshold(index, prevDefaulted) {
   return LOAN_BASE * (index + 1) + (prevDefaulted ? LOAN_PENALTY : 0);
 }
@@ -264,6 +321,8 @@ function defaultState(steps) {
     bestDayDate: todayString(),
     loan: initLoan(),
     egg: initEgg(),
+    debtTrap: initDebtTrap(),
+    vaultFrozenUntil: null,
   };
 }
 
@@ -276,6 +335,8 @@ function loadState() {
     // Migrate older saves
     if (!saved.loan) saved.loan = initLoan();
     if (!saved.egg)  saved.egg  = initEgg();
+    if (!saved.debtTrap) saved.debtTrap = initDebtTrap();
+    if (saved.vaultFrozenUntil === undefined) saved.vaultFrozenUntil = null;
     // Add 10k streak fields if missing (new, never existed before)
     if (saved.streak10k === undefined) {
       saved.streak10k = 0;
@@ -313,6 +374,28 @@ function loadState() {
             // Second miss — default, remove pokemon, advance with 50k penalty on next threshold
             saved.pokemon = (saved.pokemon || []).filter(p => p.uid !== saved.loan.pokemonUid);
             saved.loan = { index: saved.loan.index + 1, status: 'locked', pokemon: null, pokemonUid: null, startDate: null, daysCompleted: 0, graceUsed: false, lastPaidDate: null, prevDefaulted: true };
+          }
+        }
+      }
+      // Debt Trap miss check
+      if (saved.debtTrap?.status === 'active') {
+        const dtYesterday = saved.todayDate;
+        if (saved.debtTrap.lastPaidDate !== dtYesterday && saved.todaySteps < saved.debtTrap.dailyTarget) {
+          const missedDays = (saved.debtTrap.missedDays || 0) + 1;
+          const daysCompounded = saved.debtTrap.daysCompounded + saved.debtTrap.compoundRate;
+          const totalRequired = saved.debtTrap.duration + Math.ceil(daysCompounded);
+          if (missedDays >= 5 || saved.debtTrap.daysCompleted + (saved.debtTrap.duration - missedDays * saved.debtTrap.compoundRate) <= 0) {
+            // DEFAULT
+            const newDefaultCount = saved.debtTrap.defaultCount + 1;
+            saved.pokemon = (saved.pokemon || []).filter(
+              p => p.uid !== saved.debtTrap.collateralUid && p.uid !== saved.debtTrap.legendaryCompanionUid
+            );
+            if (saved.debtTrap.index >= 3) {
+              saved.vaultFrozenUntil = Date.now() + (3 + newDefaultCount) * 24 * 60 * 60 * 1000;
+            }
+            saved.debtTrap = generateDebtTrap(saved.debtTrap.index + 1, newDefaultCount);
+          } else {
+            saved.debtTrap = { ...saved.debtTrap, missedDays, daysCompounded };
           }
         }
       }
@@ -581,6 +664,9 @@ export default function PokemonWalker({ onStop }) {
   const [showLoanPanel, setShowLoanPanel] = useState(false);
   const [takingLoan, setTakingLoan] = useState(false);
   const [showEggPanel, setShowEggPanel] = useState(false);
+  const [showChallengePanel, setShowChallengePanel] = useState(false);
+  const [acceptingDT, setAcceptingDT] = useState(false);
+  const [selectedCollateral, setSelectedCollateral] = useState(null);
   const midnightChecked = useRef(false);
   const packWarningChecked = useRef({ '9pm': false, '11pm': false });
   const stepsWarningChecked = useRef(false);
@@ -814,6 +900,29 @@ export default function PokemonWalker({ onStop }) {
         }
       }
 
+      // ── Debt Trap daily payment ────────────────────────────────────────
+      let newDT = prev.debtTrap;
+      if (newDT?.status === 'active' && newTodaySteps >= newDT.dailyTarget) {
+        const dtToday = todayString();
+        if (newDT.lastPaidDate !== dtToday) {
+          const newDaysCompleted = newDT.daysCompleted + 1;
+          const totalRequired = newDT.duration + Math.ceil(newDT.daysCompounded);
+          if (newDaysCompleted >= totalRequired) {
+            // COMPLETED — release collateral, companion becomes permanent
+            newPokemon = newPokemon.map(p => {
+              if (p.uid === newDT.collateralUid) return { ...p, isDTCollateral: false };
+              if (p.uid === newDT.legendaryCompanionUid) return { ...p, isDTLoan: false };
+              return p;
+            });
+            setDeltaFlash('🎉 Challenge complete! New deal generated.');
+            setTimeout(() => setDeltaFlash(null), 4000);
+            newDT = generateDebtTrap(newDT.index + 1, newDT.defaultCount);
+          } else {
+            newDT = { ...newDT, daysCompleted: newDaysCompleted, lastPaidDate: dtToday };
+          }
+        }
+      }
+
       const next = {
         ...prev,
         todaySteps: newTodaySteps,
@@ -825,6 +934,7 @@ export default function PokemonWalker({ onStop }) {
         bestDayDate: newBestDayDate,
         loan: newLoan,
         egg: newEgg,
+        debtTrap: newDT,
         pokemon: newPokemon,
         streakDays: newStreakDays,
         bestStreak: newBestStreak,
@@ -893,6 +1003,64 @@ export default function PokemonWalker({ onStop }) {
     setTakingLoan(false);
   };
 
+  // ─── Accept Debt Trap ────────────────────────────────────────────────
+  const handleAcceptDebtTrap = async (collateralUid) => {
+    if (!appState?.debtTrap || appState.debtTrap.status !== 'available' || !collateralUid) return;
+    setAcceptingDT(true);
+    let legendaryPoke = null;
+    let legendaryCompanionUid = null;
+    try {
+      if (appState.debtTrap.hasLegendaryCompanion) {
+        const pool = [144,145,146,150,151,249,250,251,377,378,379,380,381,382,383,384,385,386];
+        const unowned = pool.filter(id => !appState.pokemon.find(p => p.dexId === id));
+        const src = unowned.length > 0 ? unowned : pool;
+        const id = src[Math.floor(Math.random() * src.length)];
+        legendaryPoke = await fetchPokemonById(id);
+        legendaryCompanionUid = makeUID();
+      }
+    } catch {}
+    setAppState(prev => {
+      const dt = prev.debtTrap;
+      const newPacks = { ...prev.packInventory };
+      ['common','rare','epic','legendary'].forEach(tier => {
+        if (dt.reward[tier] > 0) newPacks[tier] = (newPacks[tier] || 0) + dt.reward[tier];
+      });
+      let newPokemon = prev.pokemon.map(p =>
+        p.uid === collateralUid ? { ...p, isDTCollateral: true } : p
+      );
+      if (legendaryPoke && legendaryCompanionUid) {
+        newPokemon = [...newPokemon, {
+          uid: legendaryCompanionUid,
+          dexId: legendaryPoke.dexId,
+          name: legendaryPoke.name,
+          sprite: legendaryPoke.sprite,
+          types: legendaryPoke.types,
+          timesEvolved: 0,
+          location: 'Debt Trap Companion',
+          packTier: 'legendary',
+          caughtDate: todayString(),
+          onTeam: false,
+          isDTLoan: true,
+        }];
+      }
+      return {
+        ...prev,
+        packInventory: newPacks,
+        stepVault: prev.stepVault + dt.reward.vaultBonus,
+        pokemon: newPokemon,
+        debtTrap: {
+          ...dt,
+          status: 'active',
+          collateralUid,
+          legendaryCompanionUid,
+          startDate: todayString(),
+        },
+      };
+    });
+    setSelectedCollateral(null);
+    setAcceptingDT(false);
+  };
+
   // ─── Claim egg ───────────────────────────────────────────────────────
   const handleClaimEgg = () => {
     setAppState(prev => {
@@ -921,6 +1089,7 @@ export default function PokemonWalker({ onStop }) {
   const handleDepositAll = () => {
     setAppState(prev => {
       if (prev.spendableSteps <= 0) return prev;
+      if (prev.vaultFrozenUntil && Date.now() < prev.vaultFrozenUntil) return prev;
       const deposit = prev.spendableSteps;
       const newVault = prev.stepVault + deposit;
       const newLifetime = prev.lifetimeVaultDeposits + deposit;
@@ -1564,6 +1733,125 @@ export default function PokemonWalker({ onStop }) {
                       );
                     }
 
+                    return null;
+                  })()}
+                </div>
+
+                {/* Debt Trap Challenge */}
+                <div className="gba-section">
+                  <button className="dt-challenge-btn" onClick={() => setShowChallengePanel(p => !p)}>
+                    ⚔️ Challenge
+                    {appState.debtTrap?.status === 'active' && <span className="dt-active-dot" />}
+                  </button>
+
+                  {showChallengePanel && (() => {
+                    const dt = appState.debtTrap;
+                    if (!dt) return null;
+                    const vaultFrozen = appState.vaultFrozenUntil && Date.now() < appState.vaultFrozenUntil;
+
+                    if (dt.status === 'active') {
+                      const today = todayString();
+                      const paidToday = dt.lastPaidDate === today;
+                      const totalRequired = dt.duration + Math.ceil(dt.daysCompounded);
+                      const collateral = appState.pokemon.find(p => p.uid === dt.collateralUid);
+                      const companion = dt.legendaryCompanionUid ? appState.pokemon.find(p => p.uid === dt.legendaryCompanionUid) : null;
+                      return (
+                        <div className="dt-panel dt-active">
+                          <div className="dt-header">
+                            <span className="dt-faction">{dt.faction}</span>
+                            <span className="dt-deal-num">Deal #{dt.index + 1}</span>
+                          </div>
+                          {vaultFrozen && <div className="dt-vault-frozen">❄️ Vault frozen — repay first</div>}
+                          <div className="dt-progress-row">
+                            <span className="dt-progress-label">Day {dt.daysCompleted} / {totalRequired}</span>
+                            {dt.daysCompounded > 0 && <span className="dt-compounded">+{Math.ceil(dt.daysCompounded)}d added</span>}
+                          </div>
+                          <div className="loan-bar">
+                            <div className="loan-bar-fill dt-bar-fill" style={{ width: `${Math.min((dt.daysCompleted / totalRequired) * 100, 100)}%` }} />
+                          </div>
+                          <div className="dt-daily-row">
+                            <span>👟 {fmtNum(dt.dailyTarget)} steps/day</span>
+                            <div className={`dt-today-badge ${paidToday ? 'paid' : 'unpaid'}`}>
+                              {paidToday ? '✓ Paid' : '● Due'}
+                            </div>
+                          </div>
+                          {dt.missedDays > 0 && (
+                            <div className="dt-missed-warn">⚠ {dt.missedDays} missed — {5 - dt.missedDays} left before default</div>
+                          )}
+                          {collateral && (
+                            <div className="dt-poke-row">
+                              <span className="dt-poke-label">🔒 At risk</span>
+                              {collateral.sprite && <img src={collateral.sprite} alt={collateral.name} className="dt-poke-sprite" />}
+                              <span className="dt-poke-name">{collateral.name}</span>
+                            </div>
+                          )}
+                          {companion && (
+                            <div className="dt-poke-row dt-companion-row">
+                              <span className="dt-poke-label">👑 Companion</span>
+                              {companion.sprite && <img src={companion.sprite} alt={companion.name} className="dt-poke-sprite" />}
+                              <span className="dt-poke-name">{companion.name}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    if (dt.status === 'available') {
+                      const myPokemon = appState.pokemon.filter(p => !p.isDTCollateral && !p.isDTLoan && !p.isLoan);
+                      return (
+                        <div className="dt-panel dt-offer">
+                          <div className="dt-header">
+                            <span className="dt-faction">{dt.faction}</span>
+                            <span className="dt-deal-num">Deal #{dt.index + 1}</span>
+                          </div>
+                          <div className="dt-offer-title">Chandan's Debt Trap Diplomacy Challenge</div>
+                          <div className="dt-offer-grid">
+                            <div className="dt-offer-row"><span>👟 Daily target</span><span>{fmtNum(dt.dailyTarget)} steps</span></div>
+                            <div className="dt-offer-row"><span>📅 Duration</span><span>{dt.duration} days</span></div>
+                            <div className="dt-offer-row"><span>📈 Miss penalty</span><span>+{dt.compoundRate}d per miss</span></div>
+                            <div className="dt-offer-row dt-risk-row"><span>⚠ Default risk</span><span>lose collateral{dt.index >= 3 ? ' + vault freeze' : ''}</span></div>
+                          </div>
+                          <div className="dt-reward-section">
+                            <div className="dt-reward-title">Immediate Rewards</div>
+                            <div className="dt-reward-chips">
+                              {dt.reward.common > 0 && <span className="dt-chip common">{dt.reward.common}× Common</span>}
+                              {dt.reward.rare > 0 && <span className="dt-chip rare">{dt.reward.rare}× Rare</span>}
+                              {dt.reward.epic > 0 && <span className="dt-chip epic">{dt.reward.epic}× Epic</span>}
+                              {dt.reward.legendary > 0 && <span className="dt-chip legendary">{dt.reward.legendary}× Legendary</span>}
+                              {dt.reward.vaultBonus > 0 && <span className="dt-chip vault">+{fmtNum(dt.reward.vaultBonus)} vault</span>}
+                              {dt.hasLegendaryCompanion && <span className="dt-chip companion">👑 Legendary companion</span>}
+                            </div>
+                          </div>
+                          <div className="dt-collateral-section">
+                            <div className="dt-collateral-title">🔒 Pick your collateral (lost on default)</div>
+                            {myPokemon.length === 0 ? (
+                              <div className="dt-no-pokemon">Catch Pokémon first to proceed</div>
+                            ) : (
+                              <div className="dt-pokemon-picker">
+                                {myPokemon.map(p => (
+                                  <button
+                                    key={p.uid}
+                                    className={`dt-poke-pick${selectedCollateral === p.uid ? ' dt-poke-pick-sel' : ''}`}
+                                    onClick={() => setSelectedCollateral(selectedCollateral === p.uid ? null : p.uid)}
+                                  >
+                                    {p.sprite && <img src={p.sprite} alt={p.name} className="dt-poke-sprite-sm" />}
+                                    <span className="dt-pick-name">{p.name}</span>
+                                    <span className={`dt-pick-tier ${p.packTier}`}>{p.packTier}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            className="dt-accept-btn"
+                            disabled={!selectedCollateral || acceptingDT || myPokemon.length === 0}
+                            onClick={() => handleAcceptDebtTrap(selectedCollateral)}
+                          >
+                            {acceptingDT ? 'Sealing the deal…' : '⚔️ Accept the Challenge'}
+                          </button>
+                        </div>
+                      );
+                    }
                     return null;
                   })()}
                 </div>

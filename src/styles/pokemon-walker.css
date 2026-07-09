@@ -2539,3 +2539,284 @@
 }
 .egg-locked-desc strong { color: #1a1a2e; }
 
+/* ── Debt Trap Challenge ─────────────────────────────────────────────────── */
+
+.dt-challenge-btn {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(220,38,38,0.12), rgba(124,58,237,0.12));
+  border: 1px solid rgba(220,38,38,0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+}
+.dt-challenge-btn:hover {
+  background: linear-gradient(135deg, rgba(220,38,38,0.2), rgba(124,58,237,0.2));
+  border-color: rgba(220,38,38,0.45);
+}
+
+.dt-active-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239,68,68,0.7);
+  animation: dt-pulse 1.5s ease-in-out infinite;
+  margin-left: auto;
+}
+@keyframes dt-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.dt-panel {
+  margin-top: 8px;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dt-offer {
+  background: rgba(220,38,38,0.07);
+  border: 1px solid rgba(220,38,38,0.22);
+}
+
+.dt-active {
+  background: rgba(124,58,237,0.07);
+  border: 1px solid rgba(124,58,237,0.25);
+}
+
+.dt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dt-faction {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.55);
+  font-style: italic;
+}
+
+.dt-deal-num {
+  font-size: 9px;
+  color: rgba(255,255,255,0.3);
+}
+
+.dt-offer-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+
+.dt-offer-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dt-offer-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: rgba(255,255,255,0.65);
+}
+
+.dt-risk-row span:last-child {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.dt-reward-section { display: flex; flex-direction: column; gap: 5px; }
+
+.dt-reward-title, .dt-collateral-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+
+.dt-reward-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dt-chip {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 6px;
+}
+.dt-chip.common    { background: rgba(106,176,76,0.2);  color: #86efac; }
+.dt-chip.rare      { background: rgba(74,144,217,0.2);  color: #93c5fd; }
+.dt-chip.epic      { background: rgba(155,89,182,0.2);  color: #c4b5fd; }
+.dt-chip.legendary { background: rgba(241,196,15,0.2);  color: #fde68a; }
+.dt-chip.vault     { background: rgba(52,211,153,0.15); color: #6ee7b7; }
+.dt-chip.companion { background: rgba(241,196,15,0.15); color: #fde68a; }
+
+.dt-collateral-section { display: flex; flex-direction: column; gap: 6px; }
+
+.dt-no-pokemon {
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  text-align: center;
+  padding: 8px;
+}
+
+.dt-pokemon-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.dt-poke-pick {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 7px;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: left;
+  color: inherit;
+}
+.dt-poke-pick:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); }
+.dt-poke-pick-sel  { background: rgba(220,38,38,0.15) !important; border-color: rgba(220,38,38,0.45) !important; }
+
+.dt-poke-sprite-sm { width: 28px; height: 28px; object-fit: contain; }
+.dt-poke-sprite    { width: 34px; height: 34px; object-fit: contain; }
+
+.dt-pick-name {
+  flex: 1;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.dt-pick-tier {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+.dt-pick-tier.common    { color: #86efac; background: rgba(106,176,76,0.15); }
+.dt-pick-tier.rare      { color: #93c5fd; background: rgba(74,144,217,0.15); }
+.dt-pick-tier.epic      { color: #c4b5fd; background: rgba(155,89,182,0.15); }
+.dt-pick-tier.legendary { color: #fde68a; background: rgba(241,196,15,0.15); }
+
+.dt-accept-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #dc2626, #7c3aed);
+  border: none;
+  color: #fff;
+  padding: 10px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.dt-accept-btn:hover:not(:disabled) { opacity: 0.88; transform: scale(1.02); }
+.dt-accept-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Active deal UI */
+.dt-vault-frozen {
+  background: rgba(59,130,246,0.12);
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 10px;
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.dt-progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: rgba(255,255,255,0.6);
+}
+
+.dt-compounded {
+  font-size: 9px;
+  color: #f87171;
+  font-weight: 700;
+}
+
+.dt-progress-label { font-weight: 700; color: #fff; }
+
+.dt-bar-fill { background: linear-gradient(90deg, #dc2626, #7c3aed) !important; }
+
+.dt-daily-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: rgba(255,255,255,0.65);
+}
+
+.dt-today-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.dt-today-badge.paid   { background: rgba(34,197,94,0.2);  color: #4ade80; }
+.dt-today-badge.unpaid { background: rgba(239,68,68,0.15); color: #f87171; }
+
+.dt-missed-warn {
+  font-size: 9px;
+  color: #f87171;
+  font-weight: 700;
+  background: rgba(239,68,68,0.1);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+
+.dt-poke-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 7px;
+  padding: 5px 8px;
+}
+
+.dt-companion-row { border: 1px solid rgba(241,196,15,0.2); }
+
+.dt-poke-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.4);
+  width: 52px;
+  flex-shrink: 0;
+}
+
+.dt-poke-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+}
+
