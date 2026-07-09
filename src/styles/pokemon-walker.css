@@ -2543,19 +2543,21 @@
 
 .dt-challenge-btn {
   width: 100%;
-  background: linear-gradient(135deg, rgba(220,38,38,0.12), rgba(124,58,237,0.12));
-  border: 1px solid rgba(220,38,38,0.25);
+  background: linear-gradient(135deg, rgba(220,38,38,0.22), rgba(124,58,237,0.22));
+  border: 1px solid rgba(220,38,38,0.5);
   border-radius: 10px;
   padding: 10px 14px;
   color: #fff;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 800;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
+  justify-content: center;
   display: flex;
   align-items: center;
   gap: 6px;
   position: relative;
+  letter-spacing: 0.04em;
   transition: background 0.2s, border-color 0.2s;
 }
 .dt-challenge-btn:hover {
