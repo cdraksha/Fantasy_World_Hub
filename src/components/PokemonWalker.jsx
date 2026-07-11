@@ -324,6 +324,8 @@ function defaultState(steps) {
     egg: initEgg(),
     debtTrap: initDebtTrap(),
     vaultFrozenUntil: null,
+    buddy: null,
+    buddySteps: 0,
   };
 }
 
@@ -338,6 +340,8 @@ function loadState() {
     if (!saved.egg)  saved.egg  = initEgg();
     if (!saved.debtTrap) saved.debtTrap = initDebtTrap();
     if (saved.vaultFrozenUntil === undefined) saved.vaultFrozenUntil = null;
+    if (saved.buddy === undefined) saved.buddy = null;
+    if (saved.buddySteps === undefined) saved.buddySteps = 0;
     // Add 10k streak fields if missing (new, never existed before)
     if (saved.streak10k === undefined) {
       saved.streak10k = 0;
@@ -449,7 +453,7 @@ function TypeBadge({ type }) {
 
 // ─── Pokémon Detail Popup ─────────────────────────────────────────────────
 
-function PokemonDetailPopup({ pokemon, allPokemon, team, vault, onClose, onAddTeam, onRemoveTeam, onEvolve, evolving }) {
+function PokemonDetailPopup({ pokemon, allPokemon, team, vault, buddy, onClose, onAddTeam, onRemoveTeam, onEvolve, onSetBuddy, evolving }) {
   const isTeamMember = team.includes(pokemon.uid);
   const ownedCount = allPokemon.filter(p => p.dexId === pokemon.dexId).length;
   const timesEvolved = pokemon.timesEvolved || 0;
@@ -505,6 +509,14 @@ function PokemonDetailPopup({ pokemon, allPokemon, team, vault, onClose, onAddTe
           )}
         </div>
 
+        <div className="pw-popup-action-row">
+          <button
+            className={`pw-popup-buddy-btn${buddy === pokemon.uid ? ' active' : ''}`}
+            onClick={() => { onSetBuddy(pokemon.uid); onClose(); }}
+          >
+            {buddy === pokemon.uid ? '👑 Remove Buddy' : '🤝 Set as Buddy'}
+          </button>
+        </div>
         <div className="pw-popup-action-row">
           {isTeamMember ? (
             <button className="pw-popup-remove-btn" onClick={() => { onRemoveTeam(pokemon.uid); onClose(); }}>
@@ -666,8 +678,19 @@ export default function PokemonWalker({ onStop }) {
   const [takingLoan, setTakingLoan] = useState(false);
   const [showEggPanel, setShowEggPanel] = useState(false);
   const [showChallengePanel, setShowChallengePanel] = useState(false);
+  const [showBuddyDetail, setShowBuddyDetail] = useState(false);
   const [acceptingDT, setAcceptingDT] = useState(false);
   const [selectedCollateral, setSelectedCollateral] = useState(null);
+  const [showVaultPanel, setShowVaultPanel] = useState(false);
+  const [showPacksPanel, setShowPacksPanel] = useState(false);
+  const [showMyPokemonPanel, setShowMyPokemonPanel] = useState(false);
+  const [showSystemsPanel, setShowSystemsPanel] = useState(false);
+  const [mysteryIds] = useState(() => ({
+    common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
+    rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
+    epic: POOLS.epic[Math.floor(Math.random() * POOLS.epic.length)],
+    legendary: POOLS.legendary[Math.floor(Math.random() * POOLS.legendary.length)],
+  }));
   const midnightChecked = useRef(false);
   const packWarningChecked = useRef({ '9pm': false, '11pm': false });
   const stepsWarningChecked = useRef(false);
@@ -846,7 +869,8 @@ export default function PokemonWalker({ onStop }) {
       const todayStr = todayString();
       const d = new Date();
       d.setDate(d.getDate() - 1);
-      const yesterdayStr = d.toISOString().slice(0, 10);
+      const yesterdayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const newBuddySteps = (prev.buddy && delta > 0) ? (prev.buddySteps || 0) + delta : (prev.buddySteps || 0);
 
       // ── Daily streak (any steps logged) ──────────────────────────────
       let newStreakDays = prev.streakDays || 0;
@@ -943,6 +967,7 @@ export default function PokemonWalker({ onStop }) {
         streak10k: newStreak10k,
         bestStreak10k: newBestStreak10k,
         lastStreak10kDate: newLastStreak10kDate,
+        buddySteps: newBuddySteps,
       };
       if (delta > 0) {
         setDeltaFlash(`+${fmtFull(delta)} new steps`);
@@ -1206,6 +1231,49 @@ export default function PokemonWalker({ onStop }) {
     setEvolving(null);
   };
 
+  // ─── Close all icon panels ───────────────────────────────────────────
+  const closeAllPanels = () => {
+    setShowVaultPanel(false);
+    setShowPacksPanel(false);
+    setShowMyPokemonPanel(false);
+    setShowSystemsPanel(false);
+  };
+
+  // ─── Set / unset buddy ────────────────────────────────────────────────
+  const handleSetBuddy = (uid) => {
+    setAppState(prev => ({ ...prev, buddy: prev.buddy === uid ? null : uid }));
+  };
+
+  // ─── Evolve buddy via 50k buddy steps ────────────────────────────────
+  const handleBuddyEvolve = async () => {
+    if (!appState?.buddy || (appState.buddySteps || 0) < 50000 || evolving) return;
+    const poke = appState.pokemon.find(p => p.uid === appState.buddy);
+    if (!poke) return;
+    setEvolving(appState.buddy);
+    try {
+      const nextId = await fetchEvolution(poke.dexId);
+      if (!nextId) {
+        setDeltaFlash(`${poke.name} has no further evolution`);
+        setTimeout(() => setDeltaFlash(null), 3000);
+        setEvolving(null);
+        return;
+      }
+      const evolved = await fetchPokemonById(nextId);
+      setAppState(prev => ({
+        ...prev,
+        buddySteps: (prev.buddySteps || 0) - 50000,
+        pokemon: prev.pokemon.map(p =>
+          p.uid === prev.buddy
+            ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1 }
+            : p
+        ),
+      }));
+      setDeltaFlash(`✨ ${poke.name} evolved into ${evolved.name}!`);
+      setTimeout(() => setDeltaFlash(null), 4000);
+    } catch {}
+    setEvolving(null);
+  };
+
   // ─── Midnight handlers ────────────────────────────────────────────────
   const handleMidnightSpend = () => { setShowMidnight(false); };
   const handleMidnightDeposit = () => { handleDepositAll(); setShowMidnight(false); };
@@ -1316,10 +1384,12 @@ export default function PokemonWalker({ onStop }) {
           allPokemon={appState.pokemon}
           team={team}
           vault={appState.stepVault}
+          buddy={appState.buddy}
           onClose={() => setDetailPokemon(null)}
           onAddTeam={handleAddTeam}
           onRemoveTeam={handleRemoveTeam}
           onEvolve={handleEvolve}
+          onSetBuddy={handleSetBuddy}
           evolving={evolving}
         />
       )}
@@ -1351,7 +1421,106 @@ export default function PokemonWalker({ onStop }) {
                 <div className="gba-screen-datetime">{appState.todayDate} · {clockTime}</div>
               </div>
 
+              <div className="gba-screen-main">
+              {/* ── Icon Sidebar ── */}
+              <div className="pw-icon-sidebar">
+                <button
+                  className={`pw-icon-btn pw-icon-home${!showVaultPanel && !showPacksPanel && !showMyPokemonPanel && !showSystemsPanel ? ' active' : ''}`}
+                  onClick={closeAllPanels}
+                >
+                  <span className="pw-icon-emoji">⌂</span>
+                  <span className="pw-icon-tip">Home</span>
+                </button>
+                <div className="pw-sidebar-sep" />
+                {[
+                  { key: 'vault',   icon: '🏦', label: 'Vault',    active: showVaultPanel,     toggle: () => { setShowVaultPanel(p => !p); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); } },
+                  { key: 'packs',   icon: '📦', label: 'Packs',    active: showPacksPanel,     toggle: () => { setShowPacksPanel(p => !p); setShowVaultPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); } },
+                  { key: 'pokemon', icon: '🎒', label: 'Pokémon',  active: showMyPokemonPanel, toggle: () => { setShowMyPokemonPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowSystemsPanel(false); } },
+                  { key: 'systems', icon: '⚔️', label: 'Systems',  active: showSystemsPanel,   toggle: () => { setShowSystemsPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); } },
+                ].map(({ key, icon, label, active, toggle }) => (
+                  <button key={key} className={`pw-icon-btn${active ? ' active' : ''}`} onClick={toggle}>
+                    <span className="pw-icon-emoji">{icon}</span>
+                    <span className="pw-icon-tip">{label}</span>
+                  </button>
+                ))}
+              </div>
               <div className="gba-screen-content">
+
+                {/* ── Home header ── */}
+                <div className="pw-home-header">
+                  <span className="pw-ip-title">Home</span>
+                </div>
+
+                {/* ── Top Area: Stat Boxes + Buddy Ring ── */}
+                {(() => {
+                  const buddyPoke = appState.buddy ? appState.pokemon.find(p => p.uid === appState.buddy) : null;
+                  const buddySteps = appState.buddySteps || 0;
+                  const buddyPct = Math.min(100, (buddySteps / 50000) * 100);
+                  const ringColor = buddyPct >= 100 ? '#16a34a' : buddyPct >= 50 ? '#FFCB05' : '#9ca3af';
+                  const ringGradient = buddyPoke
+                    ? `conic-gradient(from -90deg, ${ringColor} ${buddyPct.toFixed(1)}%, rgba(0,0,0,0.10) ${buddyPct.toFixed(1)}%)`
+                    : 'conic-gradient(rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.08) 100%)';
+                  return (
+                    <div className="pw-top-area">
+                      <div className="pw-stats-boxes">
+                        <div className="pw-stat-box-sm">
+                          <span className="pw-stat-box-val">{fmtNum(appState.totalStepsWalked)}</span>
+                          <span className="pw-stat-box-label">Total Walked</span>
+                        </div>
+                        <div className="pw-stat-box-sm">
+                          <span className="pw-stat-box-val">{fmtNum(appState.bestDay || 0)}</span>
+                          <span className="pw-stat-box-label">Daily Record</span>
+                          {appState.bestDayDate && <span className="pw-stat-box-sub">{appState.bestDayDate}</span>}
+                        </div>
+                        <div className="pw-stat-box-sm">
+                          <span className="pw-stat-box-val">{appState.streakDays || 0}d</span>
+                          <span className="pw-stat-box-label">Daily Streak</span>
+                        </div>
+                        <div className="pw-stat-box-sm">
+                          <span className="pw-stat-box-val">{appState.streak10k || 0}d</span>
+                          <span className="pw-stat-box-label">10K Streak</span>
+                        </div>
+                      </div>
+                      <div
+                        className={`pw-buddy-ring-wrap${buddyPoke ? ' has-buddy' : ''}`}
+                        onClick={() => buddyPoke && setShowBuddyDetail(p => !p)}
+                        title={buddyPoke ? 'Click to see steps' : 'Set a buddy from your Pokémon'}
+                      >
+                        <div className="pw-buddy-ring" style={{ background: ringGradient }}>
+                          <div className="pw-buddy-ring-inner">
+                            {buddyPoke?.sprite && (
+                              <img src={buddyPoke.sprite} alt={buddyPoke.name} className="pw-buddy-ring-sprite" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="pw-buddy-ring-label">Buddy</div>
+                        {showBuddyDetail && buddyPoke && (
+                          <div className="pw-buddy-popup" onClick={e => e.stopPropagation()}>
+                            <div className="pw-buddy-popup-name">{buddyPoke.name}</div>
+                            <div className="pw-buddy-popup-progress-row">
+                              <span className="pw-buddy-popup-done">{fmtFull(buddySteps)}</span>
+                              <span className="pw-buddy-popup-max">/ 50,000</span>
+                            </div>
+                            <div className="pw-buddy-popup-bar">
+                              <div className="pw-buddy-popup-bar-fill" style={{ width: `${buddyPct.toFixed(1)}%`, background: ringColor }} />
+                            </div>
+                            {buddySteps >= 50000 ? (
+                              <button
+                                className="pw-buddy-popup-evolve"
+                                onClick={e => { e.stopPropagation(); handleBuddyEvolve(); }}
+                                disabled={!!evolving}
+                              >
+                                {evolving === appState.buddy ? 'Evolving…' : '✨ Ready to Evolve!'}
+                              </button>
+                            ) : (
+                              <div className="pw-buddy-popup-left">{fmtFull(50000 - buddySteps)} steps left to evolve</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Today's Steps */}
                 <div className="gba-section">
@@ -1397,66 +1566,22 @@ export default function PokemonWalker({ onStop }) {
                   {deltaFlash && <div className="gba-delta-flash">{deltaFlash}</div>}
                 </div>
 
-                {/* Stats */}
-                <div className="gba-section">
-                  <div className="gba-stats-grid">
-                    <div className="gba-stat-box">
-                      <div className="gba-stat-label">Total Walked</div>
-                      <div className="gba-stat-val">{fmtNum(appState.totalStepsWalked)}</div>
-                    </div>
-                    <div className="gba-stat-box">
-                      <div className="gba-stat-label">Daily Streak</div>
-                      <div className="gba-stat-val">{appState.streakDays || 0}d</div>
-                    </div>
-                    <div className="gba-stat-box">
-                      <div className="gba-stat-label">10K Streak</div>
-                      <div className="gba-stat-val">{appState.streak10k || 0}d</div>
-                    </div>
-                    <div className="gba-stat-box">
-                      <div className="gba-stat-label">Daily Record</div>
-                      <div className="gba-stat-val">{fmtNum(appState.bestDay || 0)}</div>
-                      <div className="gba-stat-sub">{appState.bestDayDate || '—'}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Step Vault */}
-                <div className="gba-section">
-                  <div className="gba-section-title">Step Vault</div>
-                  <div className="gba-vault-row">
-                    <span className="gba-vault-num">{fmtFull(appState.stepVault)}</span>
-                    {appState.spendableSteps > 0 && (
-                      <button className="gba-deposit-btn" onClick={handleDepositAll}>
-                        🏦 Deposit {fmtFull(appState.spendableSteps)}
-                      </button>
-                    )}
-                  </div>
-                  {upcomingMilestones.map(ms => {
-                    const pct = Math.min(100, (appState.stepVault / ms.threshold) * 100);
-                    return (
-                      <div className="gba-milestone" key={ms.threshold}>
-                        <div className="gba-milestone-label">
-                          <span>{ms.reward} pack at {fmtFull(ms.threshold)}</span>
-                          <span>{Math.round(pct)}%</span>
-                        </div>
-                        <div className="gba-milestone-bar">
-                          <div className="gba-milestone-fill" style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Daily Rewards */}
+                {/* Daily Rewards — right below step entry */}
                 <div className="gba-section">
                   <div className="gba-section-title">Daily Rewards</div>
                   <div className="gba-pack-grid">
                     {(['common', 'rare', 'epic', 'legendary']).map(tier => {
                       const cost = PACK_COSTS[tier];
                       const canAfford = (appState.spendableSteps || 0) >= cost;
+                      const pct = Math.min(100, ((appState.spendableSteps || 0) / cost) * 100);
                       return (
                         <div className={`gba-pack-card ${tier}${canAfford ? ' can-afford' : ''}`} key={tier}>
+                          <div className="gba-mystery-wrap">
+                            <img src={pokemonSpriteUrl(mysteryIds[tier])} alt="???" className="gba-mystery-sprite" />
+                            <span className="gba-mystery-q">?</span>
+                          </div>
                           <div className="gba-pack-tier">{tier}</div>
+                          <div className="gba-pack-pb"><div className="gba-pack-pb-fill" style={{ width: `${pct}%` }} /></div>
                           <div className="gba-pack-cost">{fmtNum(cost)}</div>
                           {canAfford ? (
                             <button className="gba-pack-btn" onClick={() => handleUnlockPack(tier)}>Unlock</button>
@@ -1466,52 +1591,6 @@ export default function PokemonWalker({ onStop }) {
                         </div>
                       );
                     })}
-                  </div>
-                </div>
-
-                {/* Pack Inventory */}
-                <div className="gba-section">
-                  <div className="gba-section-title">Pack Inventory</div>
-                  <div className="gba-pack-grid">
-                    {(['common', 'rare', 'epic', 'legendary']).map(tier => (
-                      <div className={`gba-pack-card ${tier}${appState.packInventory[tier] > 0 ? ' has-pack' : ''}`} key={tier}>
-                        <div className="gba-pack-tier">{tier}</div>
-                        <div className="gba-pack-count">×{appState.packInventory[tier]}</div>
-                        {appState.packInventory[tier] > 0 ? (
-                          <button className="gba-pack-btn" onClick={() => handleOpenPack(tier)}>Open</button>
-                        ) : (
-                          <div className="gba-pack-need">Empty</div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Pokédex */}
-                <div className="gba-section">
-                  <div className="gba-section-title">Pokédex · {uniqueDex.size} / 1010</div>
-                  <div className="gba-pokedex-regions">
-                    {pokedexRegions.map(r => {
-                      const count = [...uniqueDex].filter(id => id >= r.min && id <= r.max).length;
-                      const total = r.max - r.min + 1;
-                      return (
-                        <div key={r.name} className="gba-region-row">
-                          <span className="gba-region-name">{r.name}</span>
-                          <div className="gba-region-bar">
-                            <div className="gba-region-fill" style={{ width: `${(count / total) * 100}%` }} />
-                          </div>
-                          <span className="gba-region-count">{count}/{total}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="gba-tier-row">
-                    {(['legendary', 'epic', 'rare', 'common']).map(tier => (
-                      <div key={tier} className={`gba-tier-box ${tier}`}>
-                        <div className="gba-tier-count">{allPokes.filter(p => p.packTier === tier).length}</div>
-                        <div className="gba-tier-name">{tier}</div>
-                      </div>
-                    ))}
                   </div>
                 </div>
 
@@ -1535,331 +1614,404 @@ export default function PokemonWalker({ onStop }) {
                   )}
                 </div>
 
-                {/* Storage */}
-                <div className="gba-section">
-                  <div className="gba-section-title">Storage ({storagePokemon.length})</div>
-                  {storagePokemon.length === 0 ? (
-                    <div className="gba-empty">Storage is empty.</div>
-                  ) : (
-                    (['legendary', 'epic', 'rare', 'common']).map(tier => {
-                      const group = storagePokemon.filter(p => p.packTier === tier);
-                      if (group.length === 0) return null;
-                      return (
-                        <div key={tier} className="gba-tier-section">
-                          <div className={`gba-tier-header ${tier}`}>{tier} <span>{group.length}</span></div>
-                          <div className="gba-storage-grid">
-                            {group.map(p => (
-                              <div key={p.uid} className="gba-storage-card" onClick={() => setDetailPokemon(p)}>
-                                {p.sprite && <img src={p.sprite} alt={p.name} className="gba-storage-sprite" />}
-                                <div className="gba-storage-name">{p.name}</div>
-                                <div className="gba-storage-region">{getRegion(p.dexId)}</div>
-                                <div className="gba-storage-types">{p.types.map(t => <TypeBadge key={t} type={t} />)}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
 
-                {/* Step Loan */}
-                <div className="gba-section">
-                  <button
-                    className="loan-eligible-btn"
-                    onClick={() => setShowLoanPanel(p => !p)}
-                  >
-                    🏦 {showLoanPanel ? 'Hide loan info' : 'Eligible for a loan?'}
-                  </button>
+              </div>{/* end gba-screen-content */}
 
-                  {showLoanPanel && (() => {
-                    const loan = appState.loan;
-                    const totalSteps = appState.totalStepsWalked;
-                    const threshold = loanThreshold(loan.index, loan.prevDefaulted);
-
-                    if (loan.status === 'active') {
-                      const today = todayString();
-                      const paidToday = loan.lastPaidDate === today;
-                      const loanPoke = loan.pokemon;
-                      return (
-                        <div className="loan-panel loan-active">
-                          <div className="loan-header">
-                            <span className="loan-label">Active Loan · #{loan.index + 1}</span>
-                            {loan.graceUsed && !paidToday && (
-                              <span className="loan-grace-warn">⚠ Grace used — pay today!</span>
-                            )}
-                          </div>
-                          <div className="loan-poke-row">
-                            {loanPoke?.sprite && <img src={loanPoke.sprite} alt={loanPoke.name} className="loan-poke-sprite" />}
-                            <div className="loan-poke-info">
-                              <div className="loan-poke-name">{loanPoke?.name}</div>
-                              <div className="loan-poke-tier">Epic · on loan</div>
-                            </div>
-                            <div className={`loan-today-badge ${paidToday ? 'paid' : loan.graceUsed ? 'grace' : 'unpaid'}`}>
-                              {paidToday ? '✓ Paid' : loan.graceUsed ? '⚠ Grace' : '● Unpaid'}
-                            </div>
-                          </div>
-                          <div className="loan-progress-row">
-                            <span className="loan-progress-label">Day {loan.daysCompleted} / {LOAN_REPAY_DAYS}</span>
-                            <div className="loan-bar">
-                              <div className="loan-bar-fill" style={{ width: `${(loan.daysCompleted / LOAN_REPAY_DAYS) * 100}%` }} />
-                            </div>
-                          </div>
-                          <div className="loan-daily-reminder">
-                            Hit {fmtNum(LOAN_DAILY_REQ)} steps/day · {LOAN_REPAY_DAYS - loan.daysCompleted} days left
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    if (loan.status === 'locked' && totalSteps >= threshold) {
-                      return (
-                        <div className="loan-panel loan-offer">
-                          <div className="loan-header">
-                            <span className="loan-label">Loan Offer #{loan.index + 1}</span>
-                            {loan.prevDefaulted && <span className="loan-penalty-note">+50k threshold (default penalty)</span>}
-                          </div>
-                          <div className="loan-offer-details">
-                            <div className="loan-offer-row"><span>🏆 Reward</span><span>Epic Pokémon</span></div>
-                            <div className="loan-offer-row"><span>📅 Duration</span><span>{LOAN_REPAY_DAYS} days</span></div>
-                            <div className="loan-offer-row"><span>👟 Daily req.</span><span>{fmtNum(LOAN_DAILY_REQ)} steps</span></div>
-                            <div className="loan-offer-row"><span>💰 Total cost</span><span>30,000 steps (3k × 10)</span></div>
-                            <div className="loan-offer-row loan-offer-interest"><span>📈 Interest</span><span>50% on 20k base</span></div>
-                          </div>
-                          <button
-                            className="loan-take-btn"
-                            onClick={handleTakeLoan}
-                            disabled={takingLoan}
-                          >
-                            {takingLoan ? 'Fetching Pokémon…' : '🤝 Take This Loan'}
+              {/* ── Vault Panel ── */}
+              {showVaultPanel && (() => {
+                const vaultFrozen = appState.vaultFrozenUntil && Date.now() < appState.vaultFrozenUntil;
+                return (
+                  <div className="pw-icon-panel">
+                    <div className="pw-ip-header">
+                      <span className="pw-ip-title">Vault</span>
+                    </div>
+                    <div className="pw-ip-body">
+                      <div className="pw-panel-hero">
+                        <div className="pw-panel-hero-val">{fmtFull(appState.stepVault)}</div>
+                        <div className="pw-panel-hero-label">steps banked</div>
+                        {appState.spendableSteps > 0 && !vaultFrozen && (
+                          <button className="pw-panel-action-btn" onClick={handleDepositAll}>
+                            Deposit {fmtFull(appState.spendableSteps)} steps
                           </button>
-                        </div>
-                      );
-                    }
-
-                    // Within the 20k preview window — show progress toward threshold
-                    const stepsNeeded = threshold - totalSteps;
-                    if (stepsNeeded <= LOAN_PREVIEW_WINDOW) {
-                      const progress = Math.min(totalSteps / threshold, 1);
-                      return (
-                        <div className="loan-panel loan-locked">
-                          <div className="loan-locked-icon">🔓</div>
-                          <div className="loan-locked-title">Almost there — Loan #{loan.index + 1}</div>
-                          <div className="loan-locked-desc">
-                            <strong>{fmtNum(stepsNeeded)}</strong> more steps to unlock
+                        )}
+                        {vaultFrozen && <div className="pw-panel-frozen">Vault frozen — challenge penalty active</div>}
+                      </div>
+                      <div className="pw-panel-section-title">Milestones</div>
+                      {upcomingMilestones.map(ms => {
+                        const pct = Math.min(100, (appState.stepVault / ms.threshold) * 100);
+                        return (
+                          <div className="pw-panel-milestone" key={ms.threshold}>
+                            <div className="pw-panel-milestone-row">
+                              <span className="pw-panel-milestone-label">{ms.reward} pack</span>
+                              <span className="pw-panel-milestone-pct">{Math.round(pct)}%</span>
+                            </div>
+                            <div className="gba-milestone-bar">
+                              <div className="gba-milestone-fill" style={{ width: `${pct}%` }} />
+                            </div>
+                            <div className="pw-panel-milestone-sub">{fmtFull(appState.stepVault)} / {fmtFull(ms.threshold)}</div>
                           </div>
-                          <div className="loan-bar loan-bar-muted">
-                            <div className="loan-bar-fill" style={{ width: `${progress * 100}%` }} />
-                          </div>
-                          <div className="loan-locked-remaining">Goal: {fmtNum(threshold)} lifetime steps</div>
-                        </div>
-                      );
-                    }
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
 
-                    // Too far from next threshold — show nothing
-                    return null;
-                  })()}
+              {/* ── Pack Inventory Panel ── */}
+              {showPacksPanel && (
+                <div className="pw-icon-panel">
+                  <div className="pw-ip-header">
+                    <span className="pw-ip-title">Pack Inventory</span>
+                  </div>
+                  <div className="pw-ip-body">
+                    <div className="pw-panel-hero">
+                      <div className="pw-panel-hero-val">{totalPacks}</div>
+                      <div className="pw-panel-hero-label">packs ready to open</div>
+                    </div>
+                    <div className="pw-panel-section-title">Your Packs</div>
+                    <div className="gba-pack-grid">
+                      {(['common', 'rare', 'epic', 'legendary']).map(tier => (
+                        <div className={`gba-pack-card ${tier}${appState.packInventory[tier] > 0 ? ' has-pack' : ''}`} key={tier}>
+                          <div className="gba-pack-tier">{tier}</div>
+                          <div className="gba-pack-count">×{appState.packInventory[tier]}</div>
+                          {appState.packInventory[tier] > 0 ? (
+                            <button className="gba-pack-btn" onClick={() => { closeAllPanels(); handleOpenPack(tier); }}>Open</button>
+                          ) : (
+                            <div className="gba-pack-need">Empty</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+              )}
 
-                {/* Egg */}
-                <div className="gba-section">
-                  <button
-                    className="egg-eligible-btn"
-                    onClick={() => setShowEggPanel(p => !p)}
-                  >
-                    🥚 {showEggPanel ? 'Hide egg info' : 'Eligible for an egg?'}
-                  </button>
-
-                  {showEggPanel && (() => {
-                    const egg = appState.egg;
-                    const vaultLifetime = appState.lifetimeVaultDeposits;
-                    const threshold = eggThreshold(egg.index);
-
-                    // Active — show incubation progress
-                    if (egg.status === 'active' || egg.status === 'hatching') {
-                      const today = todayString();
-                      const doneToday = egg.lastHatchDate === today;
-                      return (
-                        <div className="egg-panel egg-active">
-                          <div className="egg-visual">
-                            <span className="egg-icon" style={{ filter: `sepia(${egg.daysCompleted / EGG_HATCH_DAYS})` }}>🥚</span>
-                            <div className="egg-tier-badge">{egg.tier}</div>
-                          </div>
-                          <div className="egg-progress-row">
-                            <span className="egg-progress-label">Day {egg.daysCompleted} / {EGG_HATCH_DAYS}</span>
-                            <div className="loan-bar">
-                              <div className="loan-bar-fill egg-bar-fill" style={{ width: `${(egg.daysCompleted / EGG_HATCH_DAYS) * 100}%` }} />
-                            </div>
-                          </div>
-                          <div className={`egg-today-badge ${doneToday ? 'paid' : 'unpaid'}`}>
-                            {egg.status === 'hatching' ? '✨ Hatching…' : doneToday ? `✓ ${fmtNum(EGG_DAILY_REQ)} steps hit today` : `● Hit ${fmtNum(EGG_DAILY_REQ)} steps to progress`}
-                          </div>
+              {/* ── My Pokémon Panel ── */}
+              {showMyPokemonPanel && (
+                <div className="pw-icon-panel">
+                  <div className="pw-ip-header">
+                    <span className="pw-ip-title">My Pokémon · {allPokes.length}</span>
+                  </div>
+                  <div className="pw-ip-body">
+                    <div className="gba-section-title" style={{ marginBottom: 6 }}>Pokédex · {uniqueDex.size} / 1010</div>
+                    <div className="gba-tier-row">
+                      {(['legendary', 'epic', 'rare', 'common']).map(tier => (
+                        <div key={tier} className={`gba-tier-box ${tier}`}>
+                          <div className="gba-tier-count">{allPokes.filter(p => p.packTier === tier).length}</div>
+                          <div className="gba-tier-name">{tier}</div>
                         </div>
-                      );
-                    }
-
-                    // Available — 24hr claim window
-                    if (egg.status === 'available') {
-                      const msLeft = egg.availableUntil - Date.now();
-                      const hrsLeft = Math.max(0, Math.floor(msLeft / 3_600_000));
-                      const minLeft = Math.max(0, Math.floor((msLeft % 3_600_000) / 60_000));
-                      return (
-                        <div className="egg-panel egg-available">
-                          <div className="egg-visual">
-                            <span className="egg-icon egg-glow">🥚</span>
-                            <div className="egg-tier-badge">{egg.tier}</div>
+                      ))}
+                    </div>
+                    <div className="gba-pokedex-regions" style={{ marginTop: 8 }}>
+                      {pokedexRegions.map(r => {
+                        const count = [...uniqueDex].filter(id => id >= r.min && id <= r.max).length;
+                        const total = r.max - r.min + 1;
+                        return (
+                          <div key={r.name} className="gba-region-row">
+                            <span className="gba-region-name">{r.name}</span>
+                            <div className="gba-region-bar"><div className="gba-region-fill" style={{ width: `${(count / total) * 100}%` }} /></div>
+                            <span className="gba-region-count">{count}/{total}</span>
                           </div>
-                          <div className="egg-avail-title">An egg has appeared!</div>
-                          <div className="egg-avail-sub">Claim within {hrsLeft}h {minLeft}m or it disappears</div>
-                          <div className="egg-avail-terms">Hit {fmtNum(EGG_DAILY_REQ)} steps/day for {EGG_HATCH_DAYS} days to hatch</div>
-                          <button className="egg-claim-btn" onClick={handleClaimEgg}>🤲 Claim Egg</button>
+                        );
+                      })}
+                    </div>
+                    {teamPokemon.length > 0 && (
+                      <>
+                        <div className="gba-section-title" style={{ margin: '12px 0 6px' }}>Team ({teamPokemon.length}/6)</div>
+                        <div className="gba-team-scroll">
+                          {teamPokemon.map(p => (
+                            <div key={p.uid} className={`gba-team-card ${p.packTier || ''}`} onClick={() => setDetailPokemon(p)}>
+                              {p.sprite && <img src={p.sprite} alt={p.name} className="gba-team-sprite" />}
+                                  <div className="gba-team-name">{p.name}</div>
+                              <div className={`gba-team-tier ${p.packTier}`}>{p.packTier}</div>
+                            </div>
+                          ))}
                         </div>
-                      );
-                    }
-
-                    // Within preview window
-                    const vaultNeeded = threshold - vaultLifetime;
-                    if (vaultNeeded <= EGG_PREVIEW_WINDOW) {
-                      const progress = Math.min(vaultLifetime / threshold, 1);
-                      return (
-                        <div className="egg-panel egg-locked">
-                          <div className="egg-visual"><span className="egg-icon egg-dim">🥚</span></div>
-                          <div className="egg-locked-desc">
-                            <strong>{fmtNum(vaultNeeded)}</strong> more vault steps to unlock a {eggTier(egg.index)} egg
-                          </div>
-                          <div className="loan-bar loan-bar-muted">
-                            <div className="loan-bar-fill egg-bar-fill" style={{ width: `${progress * 100}%` }} />
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return null;
-                  })()}
-                </div>
-
-                {/* Debt Trap Challenge */}
-                <div className="gba-section">
-                  <button className="dt-challenge-btn" onClick={() => setShowChallengePanel(p => !p)}>
-                    ⚔️ Challenge
-                    {appState.debtTrap?.status === 'active' && <span className="dt-active-dot" />}
-                  </button>
-
-                  {showChallengePanel && (() => {
-                    const dt = appState.debtTrap;
-                    if (!dt) return null;
-                    const vaultFrozen = appState.vaultFrozenUntil && Date.now() < appState.vaultFrozenUntil;
-
-                    if (dt.status === 'active') {
-                      const today = todayString();
-                      const paidToday = dt.lastPaidDate === today;
-                      const totalRequired = dt.duration + Math.ceil(dt.daysCompounded);
-                      const collateral = appState.pokemon.find(p => p.uid === dt.collateralUid);
-                      const companion = dt.legendaryCompanionUid ? appState.pokemon.find(p => p.uid === dt.legendaryCompanionUid) : null;
-                      return (
-                        <div className="dt-panel dt-active">
-                          <div className="dt-header">
-                            <span className="dt-faction">{dt.faction}</span>
-                            <span className="dt-deal-num">Deal #{dt.index + 1}</span>
-                          </div>
-                          {vaultFrozen && <div className="dt-vault-frozen">❄️ Vault frozen — repay first</div>}
-                          <div className="dt-progress-row">
-                            <span className="dt-progress-label">Day {dt.daysCompleted} / {totalRequired}</span>
-                            {dt.daysCompounded > 0 && <span className="dt-compounded">+{Math.ceil(dt.daysCompounded)}d added</span>}
-                          </div>
-                          <div className="loan-bar">
-                            <div className="loan-bar-fill dt-bar-fill" style={{ width: `${Math.min((dt.daysCompleted / totalRequired) * 100, 100)}%` }} />
-                          </div>
-                          <div className="dt-daily-row">
-                            <span>👟 {fmtNum(dt.dailyTarget)} steps/day</span>
-                            <div className={`dt-today-badge ${paidToday ? 'paid' : 'unpaid'}`}>
-                              {paidToday ? '✓ Paid' : '● Due'}
-                            </div>
-                          </div>
-                          {dt.missedDays > 0 && (
-                            <div className="dt-missed-warn">⚠ {dt.missedDays} missed — {5 - dt.missedDays} left before default</div>
-                          )}
-                          {collateral && (
-                            <div className="dt-poke-row">
-                              <span className="dt-poke-label">🔒 At risk</span>
-                              {collateral.sprite && <img src={collateral.sprite} alt={collateral.name} className="dt-poke-sprite" />}
-                              <span className="dt-poke-name">{collateral.name}</span>
-                            </div>
-                          )}
-                          {companion && (
-                            <div className="dt-poke-row dt-companion-row">
-                              <span className="dt-poke-label">👑 Companion</span>
-                              {companion.sprite && <img src={companion.sprite} alt={companion.name} className="dt-poke-sprite" />}
-                              <span className="dt-poke-name">{companion.name}</span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-
-                    if (dt.status === 'available') {
-                      const myPokemon = appState.pokemon.filter(p => !p.isDTCollateral && !p.isDTLoan && !p.isLoan);
-                      return (
-                        <div className="dt-panel dt-offer">
-                          <div className="dt-header">
-                            <span className="dt-faction">{dt.faction}</span>
-                            <span className="dt-deal-num">Deal #{dt.index + 1}</span>
-                          </div>
-                          <div className="dt-offer-title">Chandan's Debt Trap Diplomacy Challenge</div>
-                          <div className="dt-offer-grid">
-                            <div className="dt-offer-row"><span>👟 Daily target</span><span>{fmtNum(dt.dailyTarget)} steps</span></div>
-                            <div className="dt-offer-row"><span>📅 Duration</span><span>{dt.duration} days</span></div>
-                            <div className="dt-offer-row"><span>📈 Miss penalty</span><span>+{dt.compoundRate}d per miss</span></div>
-                            <div className="dt-offer-row dt-risk-row"><span>⚠ Default risk</span><span>lose collateral{dt.index >= 3 ? ' + vault freeze' : ''}</span></div>
-                          </div>
-                          <div className="dt-reward-section">
-                            <div className="dt-reward-title">Immediate Rewards</div>
-                            <div className="dt-reward-chips">
-                              {dt.reward.common > 0 && <span className="dt-chip common">{dt.reward.common}× Common</span>}
-                              {dt.reward.rare > 0 && <span className="dt-chip rare">{dt.reward.rare}× Rare</span>}
-                              {dt.reward.epic > 0 && <span className="dt-chip epic">{dt.reward.epic}× Epic</span>}
-                              {dt.reward.legendary > 0 && <span className="dt-chip legendary">{dt.reward.legendary}× Legendary</span>}
-                              {dt.reward.vaultBonus > 0 && <span className="dt-chip vault">+{fmtNum(dt.reward.vaultBonus)} vault</span>}
-                              {dt.hasLegendaryCompanion && <span className="dt-chip companion">👑 Legendary companion</span>}
-                            </div>
-                          </div>
-                          <div className="dt-collateral-section">
-                            <div className="dt-collateral-title">🔒 Pick your collateral (lost on default)</div>
-                            {myPokemon.length === 0 ? (
-                              <div className="dt-no-pokemon">Catch Pokémon first to proceed</div>
-                            ) : (
-                              <div className="dt-pokemon-picker">
-                                {myPokemon.map(p => (
-                                  <button
-                                    key={p.uid}
-                                    className={`dt-poke-pick${selectedCollateral === p.uid ? ' dt-poke-pick-sel' : ''}`}
-                                    onClick={() => setSelectedCollateral(selectedCollateral === p.uid ? null : p.uid)}
-                                  >
-                                    {p.sprite && <img src={p.sprite} alt={p.name} className="dt-poke-sprite-sm" />}
-                                    <span className="dt-pick-name">{p.name}</span>
-                                    <span className={`dt-pick-tier ${p.packTier}`}>{p.packTier}</span>
-                                  </button>
+                      </>
+                    )}
+                    {storagePokemon.length === 0 && teamPokemon.length === 0 ? (
+                      <div className="gba-empty">No Pokémon yet. Open packs to catch some!</div>
+                    ) : storagePokemon.length > 0 && (
+                      <>
+                        <div className="gba-section-title" style={{ margin: '12px 0 6px' }}>Storage ({storagePokemon.length})</div>
+                        {(['legendary', 'epic', 'rare', 'common']).map(tier => {
+                          const group = storagePokemon.filter(p => p.packTier === tier);
+                          if (group.length === 0) return null;
+                          return (
+                            <div key={tier} className="gba-tier-section">
+                              <div className={`gba-tier-header ${tier}`}>{tier} <span>{group.length}</span></div>
+                              <div className="gba-storage-grid">
+                                {group.map(p => (
+                                  <div key={p.uid} className="gba-storage-card" onClick={() => setDetailPokemon(p)}>
+                                    {p.sprite && <img src={p.sprite} alt={p.name} className="gba-storage-sprite" />}
+                                              <div className="gba-storage-name">{p.name}</div>
+                                    <div className="gba-storage-region">{getRegion(p.dexId)}</div>
+                                    <div className="gba-storage-types">{p.types.map(t => <TypeBadge key={t} type={t} />)}</div>
+                                  </div>
                                 ))}
                               </div>
-                            )}
-                          </div>
-                          <button
-                            className="dt-accept-btn"
-                            disabled={!selectedCollateral || acceptingDT || myPokemon.length === 0}
-                            onClick={() => handleAcceptDebtTrap(selectedCollateral)}
-                          >
-                            {acceptingDT ? 'Sealing the deal…' : '⚔️ Accept the Challenge'}
-                          </button>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
                 </div>
+              )}
 
-              </div>
-            </div>
-          </div>
+              {/* ── Systems Panel (Loan + Egg + Challenge) ── */}
+              {showSystemsPanel && (
+                <div className="pw-icon-panel">
+                  <div className="pw-ip-header">
+                    <span className="pw-ip-title">Systems</span>
+                  </div>
+                  <div className="pw-ip-body">
+
+                    {/* Step Loan */}
+                    <div className="gba-section">
+                      <button className="loan-eligible-btn" onClick={() => setShowLoanPanel(p => !p)}>
+                        🏦 {showLoanPanel ? 'Hide loan info' : 'Eligible for a loan?'}
+                      </button>
+                      {showLoanPanel && (() => {
+                        const loan = appState.loan;
+                        const totalSteps = appState.totalStepsWalked;
+                        const threshold = loanThreshold(loan.index, loan.prevDefaulted);
+                        if (loan.status === 'active') {
+                          const today = todayString();
+                          const paidToday = loan.lastPaidDate === today;
+                          const loanPoke = loan.pokemon;
+                          return (
+                            <div className="loan-panel loan-active">
+                              <div className="loan-header">
+                                <span className="loan-label">Active Loan · #{loan.index + 1}</span>
+                                {loan.graceUsed && !paidToday && <span className="loan-grace-warn">⚠ Grace used — pay today!</span>}
+                              </div>
+                              <div className="loan-poke-row">
+                                {loanPoke?.sprite && <img src={loanPoke.sprite} alt={loanPoke.name} className="loan-poke-sprite" />}
+                                <div className="loan-poke-info">
+                                  <div className="loan-poke-name">{loanPoke?.name}</div>
+                                  <div className="loan-poke-tier">Epic · on loan</div>
+                                </div>
+                                <div className={`loan-today-badge ${paidToday ? 'paid' : loan.graceUsed ? 'grace' : 'unpaid'}`}>
+                                  {paidToday ? '✓ Paid' : loan.graceUsed ? '⚠ Grace' : '● Unpaid'}
+                                </div>
+                              </div>
+                              <div className="loan-progress-row">
+                                <span className="loan-progress-label">Day {loan.daysCompleted} / {LOAN_REPAY_DAYS}</span>
+                                <div className="loan-bar"><div className="loan-bar-fill" style={{ width: `${(loan.daysCompleted / LOAN_REPAY_DAYS) * 100}%` }} /></div>
+                              </div>
+                              <div className="loan-daily-reminder">Hit {fmtNum(LOAN_DAILY_REQ)} steps/day · {LOAN_REPAY_DAYS - loan.daysCompleted} days left</div>
+                            </div>
+                          );
+                        }
+                        if (loan.status === 'locked' && totalSteps >= threshold) {
+                          return (
+                            <div className="loan-panel loan-offer">
+                              <div className="loan-header">
+                                <span className="loan-label">Loan Offer #{loan.index + 1}</span>
+                                {loan.prevDefaulted && <span className="loan-penalty-note">+50k threshold (default penalty)</span>}
+                              </div>
+                              <div className="loan-offer-details">
+                                <div className="loan-offer-row"><span>🏆 Reward</span><span>Epic Pokémon</span></div>
+                                <div className="loan-offer-row"><span>📅 Duration</span><span>{LOAN_REPAY_DAYS} days</span></div>
+                                <div className="loan-offer-row"><span>👟 Daily req.</span><span>{fmtNum(LOAN_DAILY_REQ)} steps</span></div>
+                                <div className="loan-offer-row"><span>💰 Total cost</span><span>30,000 steps (3k × 10)</span></div>
+                                <div className="loan-offer-row loan-offer-interest"><span>📈 Interest</span><span>50% on 20k base</span></div>
+                              </div>
+                              <button className="loan-take-btn" onClick={handleTakeLoan} disabled={takingLoan}>
+                                {takingLoan ? 'Fetching Pokémon…' : '🤝 Take This Loan'}
+                              </button>
+                            </div>
+                          );
+                        }
+                        const stepsNeeded = threshold - totalSteps;
+                        if (stepsNeeded <= LOAN_PREVIEW_WINDOW) {
+                          return (
+                            <div className="loan-panel loan-locked">
+                              <div className="loan-locked-icon">🔓</div>
+                              <div className="loan-locked-title">Almost there — Loan #{loan.index + 1}</div>
+                              <div className="loan-locked-desc"><strong>{fmtNum(stepsNeeded)}</strong> more steps to unlock</div>
+                              <div className="loan-bar loan-bar-muted"><div className="loan-bar-fill" style={{ width: `${Math.min(totalSteps / threshold, 1) * 100}%` }} /></div>
+                              <div className="loan-locked-remaining">Goal: {fmtNum(threshold)} lifetime steps</div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+
+                    {/* Egg */}
+                    <div className="gba-section">
+                      <button className="egg-eligible-btn" onClick={() => setShowEggPanel(p => !p)}>
+                        🥚 {showEggPanel ? 'Hide egg info' : 'Eligible for an egg?'}
+                      </button>
+                      {showEggPanel && (() => {
+                        const egg = appState.egg;
+                        const vaultLifetime = appState.lifetimeVaultDeposits;
+                        const threshold = eggThreshold(egg.index);
+                        if (egg.status === 'active' || egg.status === 'hatching') {
+                          const today = todayString();
+                          const doneToday = egg.lastHatchDate === today;
+                          return (
+                            <div className="egg-panel egg-active">
+                              <div className="egg-visual">
+                                <span className="egg-icon" style={{ filter: `sepia(${egg.daysCompleted / EGG_HATCH_DAYS})` }}>🥚</span>
+                                <div className="egg-tier-badge">{egg.tier}</div>
+                              </div>
+                              <div className="egg-progress-row">
+                                <span className="egg-progress-label">Day {egg.daysCompleted} / {EGG_HATCH_DAYS}</span>
+                                <div className="loan-bar"><div className="loan-bar-fill egg-bar-fill" style={{ width: `${(egg.daysCompleted / EGG_HATCH_DAYS) * 100}%` }} /></div>
+                              </div>
+                              <div className={`egg-today-badge ${doneToday ? 'paid' : 'unpaid'}`}>
+                                {egg.status === 'hatching' ? '✨ Hatching…' : doneToday ? `✓ ${fmtNum(EGG_DAILY_REQ)} steps hit today` : `● Hit ${fmtNum(EGG_DAILY_REQ)} steps to progress`}
+                              </div>
+                            </div>
+                          );
+                        }
+                        if (egg.status === 'available') {
+                          const msLeft = egg.availableUntil - Date.now();
+                          const hrsLeft = Math.max(0, Math.floor(msLeft / 3_600_000));
+                          const minLeft = Math.max(0, Math.floor((msLeft % 3_600_000) / 60_000));
+                          return (
+                            <div className="egg-panel egg-available">
+                              <div className="egg-visual"><span className="egg-icon egg-glow">🥚</span><div className="egg-tier-badge">{egg.tier}</div></div>
+                              <div className="egg-avail-title">An egg has appeared!</div>
+                              <div className="egg-avail-sub">Claim within {hrsLeft}h {minLeft}m or it disappears</div>
+                              <div className="egg-avail-terms">Hit {fmtNum(EGG_DAILY_REQ)} steps/day for {EGG_HATCH_DAYS} days to hatch</div>
+                              <button className="egg-claim-btn" onClick={handleClaimEgg}>🤲 Claim Egg</button>
+                            </div>
+                          );
+                        }
+                        const vaultNeeded = threshold - vaultLifetime;
+                        if (vaultNeeded <= EGG_PREVIEW_WINDOW) {
+                          return (
+                            <div className="egg-panel egg-locked">
+                              <div className="egg-visual"><span className="egg-icon egg-dim">🥚</span></div>
+                              <div className="egg-locked-desc"><strong>{fmtNum(vaultNeeded)}</strong> more vault steps to unlock a {eggTier(egg.index)} egg</div>
+                              <div className="loan-bar loan-bar-muted"><div className="loan-bar-fill egg-bar-fill" style={{ width: `${Math.min(vaultLifetime / threshold, 1) * 100}%` }} /></div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+
+                    {/* Debt Trap Challenge */}
+                    <div className="gba-section">
+                      <button className="dt-challenge-btn" onClick={() => setShowChallengePanel(p => !p)}>
+                        ⚔️ Challenge
+                        {appState.debtTrap?.status === 'active' && <span className="dt-active-dot" />}
+                      </button>
+                      {showChallengePanel && (() => {
+                        const dt = appState.debtTrap;
+                        if (!dt) return null;
+                        const vaultFrozen = appState.vaultFrozenUntil && Date.now() < appState.vaultFrozenUntil;
+                        if (dt.status === 'active') {
+                          const today = todayString();
+                          const paidToday = dt.lastPaidDate === today;
+                          const totalRequired = dt.duration + Math.ceil(dt.daysCompounded);
+                          const collateral = appState.pokemon.find(p => p.uid === dt.collateralUid);
+                          const companion = dt.legendaryCompanionUid ? appState.pokemon.find(p => p.uid === dt.legendaryCompanionUid) : null;
+                          return (
+                            <div className="dt-panel dt-active">
+                              <div className="dt-header">
+                                <span className="dt-faction">{dt.faction}</span>
+                                <span className="dt-deal-num">Deal #{dt.index + 1}</span>
+                              </div>
+                              {vaultFrozen && <div className="dt-vault-frozen">❄️ Vault frozen — repay first</div>}
+                              <div className="dt-progress-row">
+                                <span className="dt-progress-label">Day {dt.daysCompleted} / {totalRequired}</span>
+                                {dt.daysCompounded > 0 && <span className="dt-compounded">+{Math.ceil(dt.daysCompounded)}d added</span>}
+                              </div>
+                              <div className="loan-bar"><div className="loan-bar-fill dt-bar-fill" style={{ width: `${Math.min((dt.daysCompleted / totalRequired) * 100, 100)}%` }} /></div>
+                              <div className="dt-daily-row">
+                                <span>👟 {fmtNum(dt.dailyTarget)} steps/day</span>
+                                <div className={`dt-today-badge ${paidToday ? 'paid' : 'unpaid'}`}>{paidToday ? '✓ Paid' : '● Due'}</div>
+                              </div>
+                              {dt.missedDays > 0 && <div className="dt-missed-warn">⚠ {dt.missedDays} missed — {5 - dt.missedDays} left before default</div>}
+                              {collateral && (
+                                <div className="dt-poke-row">
+                                  <span className="dt-poke-label">🔒 At risk</span>
+                                  {collateral.sprite && <img src={collateral.sprite} alt={collateral.name} className="dt-poke-sprite" />}
+                                  <span className="dt-poke-name">{collateral.name}</span>
+                                </div>
+                              )}
+                              {companion && (
+                                <div className="dt-poke-row dt-companion-row">
+                                  <span className="dt-poke-label">👑 Companion</span>
+                                  {companion.sprite && <img src={companion.sprite} alt={companion.name} className="dt-poke-sprite" />}
+                                  <span className="dt-poke-name">{companion.name}</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        if (dt.status === 'available') {
+                          const myPokemon = appState.pokemon.filter(p => !p.isDTCollateral && !p.isDTLoan && !p.isLoan);
+                          return (
+                            <div className="dt-panel dt-offer">
+                              <div className="dt-header">
+                                <span className="dt-faction">{dt.faction}</span>
+                                <span className="dt-deal-num">Deal #{dt.index + 1}</span>
+                              </div>
+                              <div className="dt-offer-title">Chandan's Debt Trap Diplomacy Challenge</div>
+                              <div className="dt-offer-grid">
+                                <div className="dt-offer-row"><span>👟 Daily target</span><span>{fmtNum(dt.dailyTarget)} steps</span></div>
+                                <div className="dt-offer-row"><span>📅 Duration</span><span>{dt.duration} days</span></div>
+                                <div className="dt-offer-row"><span>📈 Miss penalty</span><span>+{dt.compoundRate}d per miss</span></div>
+                                <div className="dt-offer-row dt-risk-row"><span>⚠ Default risk</span><span>lose collateral{dt.index >= 3 ? ' + vault freeze' : ''}</span></div>
+                              </div>
+                              <div className="dt-reward-section">
+                                <div className="dt-reward-title">Immediate Rewards</div>
+                                <div className="dt-reward-chips">
+                                  {dt.reward.common > 0 && <span className="dt-chip common">{dt.reward.common}× Common</span>}
+                                  {dt.reward.rare > 0 && <span className="dt-chip rare">{dt.reward.rare}× Rare</span>}
+                                  {dt.reward.epic > 0 && <span className="dt-chip epic">{dt.reward.epic}× Epic</span>}
+                                  {dt.reward.legendary > 0 && <span className="dt-chip legendary">{dt.reward.legendary}× Legendary</span>}
+                                  {dt.reward.vaultBonus > 0 && <span className="dt-chip vault">+{fmtNum(dt.reward.vaultBonus)} vault</span>}
+                                  {dt.hasLegendaryCompanion && <span className="dt-chip companion">👑 Legendary companion</span>}
+                                </div>
+                              </div>
+                              <div className="dt-collateral-section">
+                                <div className="dt-collateral-title">🔒 Pick your collateral (lost on default)</div>
+                                {myPokemon.length === 0 ? (
+                                  <div className="dt-no-pokemon">Catch Pokémon first to proceed</div>
+                                ) : (
+                                  <div className="dt-pokemon-picker">
+                                    {myPokemon.map(p => (
+                                      <button
+                                        key={p.uid}
+                                        className={`dt-poke-pick${selectedCollateral === p.uid ? ' dt-poke-pick-sel' : ''}`}
+                                        onClick={() => setSelectedCollateral(selectedCollateral === p.uid ? null : p.uid)}
+                                      >
+                                        {p.sprite && <img src={p.sprite} alt={p.name} className="dt-poke-sprite-sm" />}
+                                        <span className="dt-pick-name">{p.name}</span>
+                                        <span className={`dt-pick-tier ${p.packTier}`}>{p.packTier}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                className="dt-accept-btn"
+                                disabled={!selectedCollateral || acceptingDT || myPokemon.length === 0}
+                                onClick={() => handleAcceptDebtTrap(selectedCollateral)}
+                              >
+                                {acceptingDT ? 'Sealing the deal…' : '⚔️ Accept the Challenge'}
+                              </button>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+
+                  </div>
+                </div>
+              )}
+              </div>{/* end gba-screen-main */}
+            </div>{/* end gba-screen */}
+          </div>{/* end gba-bezel */}
           <div className="gba-brand-bar">
             <span className="gba-brand-text">GAME BOY ADVANCE</span>
             <span className="gba-brand-sub">POKÉMON WALKER</span>

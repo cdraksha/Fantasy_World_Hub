@@ -1730,6 +1730,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
 .gba-screen-header {
@@ -1751,6 +1752,7 @@
   font-weight: 700;
   color: #1a1a2e;
 }
+
 
 .gba-screen-datetime {
   font-family: 'JetBrains Mono', monospace;
@@ -2769,4 +2771,624 @@
 
 .dt-poke-label { font-size: 9px; font-weight: 700; color: #888; width: 52px; flex-shrink: 0; }
 .dt-poke-name  { font-size: 10px; font-weight: 600; color: #1a1a2e; }
+
+/* ── Screen main flex row ── */
+.gba-screen-main {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.gba-screen-main .gba-screen-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Icon Sidebar ── */
+.pw-icon-sidebar {
+  width: 38px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background: #1a1a2e;
+  padding: 8px 0;
+  gap: 1px;
+}
+
+.pw-icon-btn {
+  position: relative;
+  width: 100%;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.12s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.pw-icon-btn:hover {
+  background: rgba(255,203,5,0.14);
+}
+
+.pw-icon-btn.active {
+  background: rgba(255,203,5,0.18);
+  box-shadow: inset 3px 0 0 #FFCB05;
+}
+
+.pw-icon-emoji { font-size: 15px; line-height: 1; }
+
+.pw-icon-tip {
+  position: absolute;
+  left: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1a1a2e;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 3px 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 60;
+}
+.pw-icon-tip::after {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 4px solid transparent;
+  border-right-color: #1a1a2e;
+}
+.pw-icon-btn:hover .pw-icon-tip { opacity: 1; }
+
+/* ── Sidebar separator ── */
+.pw-sidebar-sep {
+  width: 65%;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 4px auto;
+}
+
+/* ── Home header (matches panel headers) ── */
+.pw-home-header {
+  display: flex;
+  align-items: center;
+  padding: 7px 10px;
+  background: #1a1a2e;
+  border-bottom: 2px solid rgba(255,203,5,0.4);
+  flex-shrink: 0;
+  margin: -10px -10px 0 -10px;
+}
+
+/* ── Icon Panels (cover only the content area, not the sidebar) ── */
+.pw-icon-panel {
+  position: absolute;
+  top: 0; bottom: 0; right: 0;
+  left: 38px;
+  background: #f5f3ed;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pw-ip-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: #1a1a2e;
+  border-bottom: 2px solid rgba(255,203,5,0.4);
+  flex-shrink: 0;
+}
+
+.pw-ip-home {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 5px;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 7px;
+  line-height: 1.4;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.pw-ip-home:hover { background: rgba(255,203,5,0.25); }
+
+.pw-ip-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: #FFCB05;
+  letter-spacing: 0.04em;
+}
+
+/* ── Panel Hero ── */
+.pw-panel-hero {
+  text-align: center;
+  padding: 18px 10px 14px;
+  background: #1a1a2e;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.pw-panel-hero-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px;
+  font-weight: 800;
+  color: #FFCB05;
+  letter-spacing: -0.02em;
+  margin-bottom: 2px;
+}
+
+.pw-panel-hero-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  margin-bottom: 12px;
+}
+
+.pw-panel-action-btn {
+  background: #FFCB05;
+  border: none;
+  color: #1a1a2e;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.pw-panel-action-btn:hover { opacity: 0.85; }
+
+.pw-panel-frozen {
+  font-size: 10px;
+  color: #93c5fd;
+  margin-top: 4px;
+}
+
+.pw-panel-section-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7a7a8a;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.pw-panel-milestone {
+  margin-bottom: 10px;
+}
+
+.pw-panel-milestone-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 3px;
+}
+
+.pw-panel-milestone-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a1a2e;
+  text-transform: capitalize;
+}
+
+.pw-panel-milestone-pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.pw-panel-milestone-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: #7a7a8a;
+  margin-top: 2px;
+}
+
+.pw-ip-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+}
+
+.pw-ip-body::-webkit-scrollbar { width: 3px; }
+.pw-ip-body::-webkit-scrollbar-track { background: transparent; }
+.pw-ip-body::-webkit-scrollbar-thumb { background: #d0cbc0; border-radius: 2px; }
+
+/* ── Buddy Pokémon ── */
+.pw-buddy-section { padding-bottom: 4px; }
+
+.pw-buddy-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,203,5,0.12);
+  border: 1.5px solid rgba(255,203,5,0.5);
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.pw-buddy-sprite-wrap { flex-shrink: 0; }
+
+.pw-buddy-sprite {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  display: block;
+}
+
+.pw-buddy-info { flex: 1; min-width: 0; }
+
+.pw-buddy-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: #1a1a2e;
+  text-transform: capitalize;
+  margin-bottom: 1px;
+}
+
+.pw-buddy-label {
+  font-size: 9px;
+  color: #7a7a8a;
+  margin-bottom: 5px;
+}
+
+.pw-buddy-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.pw-buddy-bar {
+  flex: 1;
+  height: 5px;
+  background: rgba(0,0,0,0.10);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.pw-buddy-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FFCB05, #f59e0b);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.pw-buddy-steps {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: #7a7a8a;
+  white-space: nowrap;
+}
+
+.pw-buddy-evolve-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: none;
+  color: #fff;
+  padding: 5px 8px;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: opacity 0.2s;
+}
+.pw-buddy-evolve-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pw-buddy-evolve-btn:not(:disabled):hover { opacity: 0.85; }
+
+.pw-buddy-unset-btn {
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.15);
+  color: #7a7a8a;
+  font-size: 9px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.pw-buddy-empty {
+  font-size: 10px;
+  color: #7a7a8a;
+  text-align: center;
+  padding: 10px 0;
+  background: rgba(0,0,0,0.03);
+  border-radius: 8px;
+  border: 1px dashed rgba(0,0,0,0.12);
+}
+
+.pw-buddy-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 9px;
+  line-height: 1;
+}
+
+/* ── Mystery Shadow Pack Cards ── */
+.gba-mystery-wrap {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 4px;
+}
+
+.gba-mystery-sprite {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: brightness(0);
+  opacity: 0.55;
+  display: block;
+}
+
+.gba-mystery-q {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 900;
+  color: rgba(26,26,46,0.45);
+  pointer-events: none;
+}
+
+/* Pack step progress bar */
+.gba-pack-pb {
+  height: 3px;
+  background: rgba(0,0,0,0.10);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 2px 0 4px;
+}
+
+.gba-pack-pb-fill {
+  height: 100%;
+  background: #16a34a;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* "Set as Buddy" button in popup */
+.pw-popup-buddy-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(255,203,5,0.15);
+  border: 2px solid rgba(255,203,5,0.6);
+  color: #92400e;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s;
+  width: 100%;
+}
+.pw-popup-buddy-btn:hover { background: rgba(255,203,5,0.28); }
+.pw-popup-buddy-btn.active {
+  background: rgba(255,203,5,0.30);
+  border-color: #d97706;
+  color: #78350f;
+}
+
+/* ─── Top Area: Stat Boxes + Buddy Ring ─────────────────────────────────── */
+.pw-top-area {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -10px 10px -10px;
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.09);
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+/* 2×2 stat grid */
+.pw-stats-boxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  flex: 1;
+}
+
+.pw-stat-box-sm {
+  background: rgba(26,26,46,0.06);
+  border: 1px solid rgba(26,26,46,0.10);
+  border-radius: 6px;
+  padding: 5px 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pw-stat-box-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1a1a2e;
+  line-height: 1.1;
+}
+
+.pw-stat-box-label {
+  font-size: 7px;
+  color: rgba(26,26,46,0.42);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.pw-stat-box-sub {
+  font-size: 7px;
+  color: rgba(26,26,46,0.58);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+/* Buddy ring */
+.pw-buddy-ring-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.pw-buddy-ring-wrap.has-buddy { cursor: pointer; }
+
+.pw-buddy-ring {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s;
+}
+.pw-buddy-ring-wrap.has-buddy:hover .pw-buddy-ring { transform: scale(1.07); }
+
+.pw-buddy-ring-inner {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #f0ede6;
+  border: 1.5px solid rgba(26,26,46,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.pw-buddy-ring-sprite {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.pw-buddy-ring-label {
+  font-size: 7px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(26,26,46,0.45);
+}
+
+/* Click popup */
+.pw-buddy-popup {
+  position: absolute;
+  right: 0;
+  top: 62px;
+  background: #edeae4;
+  border: 1px solid rgba(26,26,46,0.12);
+  border-radius: 9px;
+  padding: 10px 12px;
+  min-width: 152px;
+  z-index: 55;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+}
+.pw-buddy-popup::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 15px;
+  border: 6px solid transparent;
+  border-bottom-color: rgba(26,26,46,0.12);
+}
+.pw-buddy-popup::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 16px;
+  border: 5px solid transparent;
+  border-bottom-color: #edeae4;
+}
+
+.pw-buddy-popup-name {
+  font-size: 8px;
+  font-weight: 700;
+  color: rgba(26,26,46,0.50);
+  margin-bottom: 5px;
+  text-transform: capitalize;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pw-buddy-popup-progress-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 5px;
+}
+
+.pw-buddy-popup-done {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a1a2e;
+  line-height: 1;
+}
+
+.pw-buddy-popup-max {
+  font-size: 9px;
+  color: rgba(26,26,46,0.42);
+}
+
+.pw-buddy-popup-bar {
+  height: 4px;
+  background: rgba(26,26,46,0.10);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.pw-buddy-popup-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease, background 0.4s ease;
+}
+
+.pw-buddy-popup-left {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(26,26,46,0.65);
+}
+
+.pw-buddy-popup-evolve {
+  font-size: 9px;
+  font-weight: 700;
+  background: rgba(22,163,74,0.12);
+  border: 1px solid rgba(22,163,74,0.40);
+  color: #15803d;
+  border-radius: 5px;
+  padding: 4px 8px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 2px;
+}
+.pw-buddy-popup-evolve:disabled { opacity: 0.5; cursor: not-allowed; }
 
