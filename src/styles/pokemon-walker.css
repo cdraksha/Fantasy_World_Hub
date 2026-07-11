@@ -2824,7 +2824,28 @@
   box-shadow: inset 3px 0 0 #FFCB05;
 }
 
-.pw-icon-emoji { font-size: 15px; line-height: 1; }
+.pw-icon-bubble {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.10);
+  border: 1.5px solid rgba(255,255,255,0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, border-color 0.12s;
+  flex-shrink: 0;
+}
+.pw-icon-btn:hover .pw-icon-bubble {
+  background: rgba(255,203,5,0.22);
+  border-color: rgba(255,203,5,0.50);
+}
+.pw-icon-btn.active .pw-icon-bubble {
+  background: rgba(255,203,5,0.28);
+  border-color: rgba(255,203,5,0.70);
+}
+
+.pw-icon-emoji { font-size: 14px; line-height: 1; }
 
 .pw-icon-tip {
   position: absolute;

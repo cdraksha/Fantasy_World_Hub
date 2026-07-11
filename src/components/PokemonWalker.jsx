@@ -1428,7 +1428,7 @@ export default function PokemonWalker({ onStop }) {
                   className={`pw-icon-btn pw-icon-home${!showVaultPanel && !showPacksPanel && !showMyPokemonPanel && !showSystemsPanel ? ' active' : ''}`}
                   onClick={closeAllPanels}
                 >
-                  <span className="pw-icon-emoji">⌂</span>
+                  <span className="pw-icon-bubble"><span className="pw-icon-emoji">🏠</span></span>
                   <span className="pw-icon-tip">Home</span>
                 </button>
                 <div className="pw-sidebar-sep" />
@@ -1439,7 +1439,7 @@ export default function PokemonWalker({ onStop }) {
                   { key: 'systems', icon: '⚔️', label: 'Systems',  active: showSystemsPanel,   toggle: () => { setShowSystemsPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); } },
                 ].map(({ key, icon, label, active, toggle }) => (
                   <button key={key} className={`pw-icon-btn${active ? ' active' : ''}`} onClick={toggle}>
-                    <span className="pw-icon-emoji">{icon}</span>
+                    <span className="pw-icon-bubble"><span className="pw-icon-emoji">{icon}</span></span>
                     <span className="pw-icon-tip">{label}</span>
                   </button>
                 ))}
