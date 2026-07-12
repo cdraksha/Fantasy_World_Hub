@@ -3417,20 +3417,24 @@
 
 .fast-toggle-btn {
   width: 100%;
-  background: linear-gradient(135deg, rgba(255,203,5,0.10), rgba(26,26,46,0.04));
-  border: 1px solid rgba(255,203,5,0.25);
-  border-radius: 8px;
-  padding: 8px 12px;
-  color: var(--pw-text);
-  font-size: 12px;
-  font-weight: 700;
+  background: linear-gradient(135deg, rgba(255,203,5,0.10), rgba(245,158,11,0.08));
+  border: 1.5px solid rgba(255,203,5,0.40);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #b45309;
+  font-size: 13px;
+  font-weight: 800;
   cursor: pointer;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  text-align: center;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 8px rgba(255,203,5,0.18);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
-.fast-toggle-btn:hover { background: rgba(255,203,5,0.14); }
+.fast-toggle-btn:hover {
+  background: linear-gradient(135deg, rgba(255,203,5,0.18), rgba(245,158,11,0.14));
+  border-color: rgba(255,203,5,0.70);
+  box-shadow: 0 0 12px rgba(255,203,5,0.30);
+}
 
 .fast-panel {
   margin-top: 8px;
