@@ -3413,3 +3413,202 @@
 }
 .pw-buddy-popup-evolve:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ─── Fasting Challenge ──────────────────────────────────────────────────── */
+
+.fast-toggle-btn {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(255,203,5,0.10), rgba(26,26,46,0.04));
+  border: 1px solid rgba(255,203,5,0.25);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--pw-text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fast-toggle-btn:hover { background: rgba(255,203,5,0.14); }
+
+.fast-panel {
+  margin-top: 8px;
+  background: rgba(26,26,46,0.04);
+  border: 1px solid rgba(26,26,46,0.09);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 11px;
+  color: var(--pw-text);
+}
+
+/* tier badge */
+.fast-tier-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.fast-tier-badge-easy   { background: rgba(34,197,94,0.15);  color: #15803d; border: 1px solid rgba(34,197,94,0.35); }
+.fast-tier-badge-medium { background: rgba(245,158,11,0.15); color: #b45309; border: 1px solid rgba(245,158,11,0.35); }
+.fast-tier-badge-hard   { background: rgba(239,68,68,0.15);  color: #b91c1c; border: 1px solid rgba(239,68,68,0.35); }
+
+/* preview */
+.fast-preview-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.fast-preview-challenge { font-size: 13px; font-weight: 800; color: var(--pw-text); }
+.fast-preview-sub { font-size: 10px; color: var(--pw-muted); margin-bottom: 8px; }
+
+.fast-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 5px 7px;
+  border-radius: 5px;
+  margin-bottom: 4px;
+}
+.fast-reward-row  { background: rgba(34,197,94,0.07);  border: 1px solid rgba(34,197,94,0.18); }
+.fast-penalty-row { background: rgba(239,68,68,0.07);  border: 1px solid rgba(239,68,68,0.18); }
+.fast-info-label  { font-size: 10px; font-weight: 700; min-width: 14px; }
+.fast-info-val    { font-size: 10px; color: var(--pw-text); line-height: 1.4; }
+
+.fast-preview-actions { display: flex; gap: 6px; margin-top: 8px; }
+.fast-accept-btn {
+  flex: 2;
+  padding: 7px 10px;
+  background: var(--pw-yellow);
+  color: #1a1a2e;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.fast-accept-btn:hover { background: #ffd93d; }
+.fast-decline-btn {
+  flex: 1;
+  padding: 7px 10px;
+  background: rgba(26,26,46,0.08);
+  color: var(--pw-muted);
+  border: 1px solid rgba(26,26,46,0.14);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.fast-decline-btn:hover { background: rgba(26,26,46,0.14); }
+
+/* active */
+.fast-active-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.fast-active-count  { font-size: 12px; font-weight: 800; color: var(--pw-text); }
+.fast-bar           { margin-bottom: 6px; }
+.fast-bar-fill      { background: linear-gradient(90deg, var(--pw-yellow), #fbbf24); }
+.fast-active-detail { font-size: 10px; color: var(--pw-muted); margin-bottom: 3px; }
+
+.fast-log-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--pw-yellow);
+  color: #1a1a2e;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.fast-log-btn:hover { background: #ffd93d; }
+.fast-log-btn.logged {
+  background: rgba(34,197,94,0.12);
+  color: #15803d;
+  border: 1px solid rgba(34,197,94,0.30);
+  cursor: default;
+}
+.fast-log-btn:disabled { cursor: not-allowed; opacity: 0.8; }
+
+/* tier select (idle) */
+.fast-idle-title { font-size: 11px; font-weight: 700; margin-bottom: 8px; color: var(--pw-text); }
+.fast-tier-btns  { display: flex; gap: 6px; margin-bottom: 8px; }
+.fast-tier-btn {
+  flex: 1;
+  padding: 8px 6px;
+  border-radius: 7px;
+  border: 1.5px solid rgba(26,26,46,0.15);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: rgba(26,26,46,0.04);
+  color: var(--pw-text);
+  text-transform: capitalize;
+  transition: all 0.15s;
+}
+.fast-tier-btn-easy:not(.fast-locked):hover   { background: rgba(34,197,94,0.12);  border-color: rgba(34,197,94,0.40); }
+.fast-tier-btn-medium:not(.fast-locked):hover { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.40); }
+.fast-tier-btn-hard:not(.fast-locked):hover   { background: rgba(239,68,68,0.12);  border-color: rgba(239,68,68,0.40); }
+.fast-tier-btn.fast-locked { opacity: 0.45; cursor: not-allowed; }
+.fast-tier-btn-label { font-size: 11px; font-weight: 800; }
+.fast-tier-lock  { font-size: 11px; }
+.fast-tier-done  { font-size: 10px; color: #15803d; }
+.fast-idle-hint  { font-size: 9px; color: var(--pw-muted); line-height: 1.4; }
+
+/* rewarding / done / failed */
+.fast-result-title   { font-size: 13px; font-weight: 800; margin-bottom: 6px; color: var(--pw-text); }
+.fast-result-reward  { font-size: 11px; color: var(--pw-text); background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25); border-radius: 5px; padding: 5px 8px; margin-bottom: 8px; }
+.fast-result-penalty { font-size: 11px; color: #b91c1c; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 5px; padding: 5px 8px; margin-bottom: 8px; }
+.fast-result-sub     { font-size: 10px; color: var(--pw-muted); margin-bottom: 8px; }
+
+.fast-poke-picker  { margin-bottom: 8px; }
+.fast-picker-label { font-size: 10px; color: var(--pw-muted); margin-bottom: 6px; font-weight: 600; }
+.fast-poke-grid    { display: flex; flex-wrap: wrap; gap: 5px; }
+.fast-no-team      { font-size: 10px; color: var(--pw-muted); }
+
+.fast-poke-pick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 7px;
+  border-radius: 7px;
+  border: 1.5px solid rgba(26,26,46,0.14);
+  background: rgba(26,26,46,0.04);
+  cursor: pointer;
+  min-width: 52px;
+}
+.fast-poke-pick-btn:hover { border-color: var(--pw-yellow); background: rgba(255,203,5,0.08); }
+.fast-poke-pick-sprite { width: 32px; height: 32px; object-fit: contain; }
+.fast-poke-pick-name   { font-size: 8px; font-weight: 700; color: var(--pw-text); text-transform: capitalize; text-align: center; max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.fast-claim-btn {
+  width: 100%;
+  padding: 8px;
+  background: var(--pw-yellow);
+  color: #1a1a2e;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.fast-claim-btn:hover { background: #ffd93d; }
+.fast-claim-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.fast-dismiss-btn {
+  width: 100%;
+  padding: 8px;
+  background: rgba(26,26,46,0.08);
+  color: var(--pw-text);
+  border: 1px solid rgba(26,26,46,0.15);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.fast-dismiss-btn:hover { background: rgba(26,26,46,0.14); }
+

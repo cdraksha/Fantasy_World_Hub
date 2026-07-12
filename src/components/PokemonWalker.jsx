@@ -98,6 +98,108 @@ function generateDebtTrap(index, defaultCount) {
 
 function initDebtTrap() { return generateDebtTrap(0, 0); }
 
+// ─── Fasting Challenge Algorithms ─────────────────────────────────────────
+
+function generateFastingChallenge(tier) {
+  const hoursOptions = [8, 10, 12, 14, 16];
+  const hours = hoursOptions[Math.floor(Math.random() * hoursOptions.length)];
+  let effortMin, effortMax;
+  if (tier === 'easy')   { effortMin = 24;  effortMax = 80;  }
+  if (tier === 'medium') { effortMin = 100; effortMax = 200; }
+  if (tier === 'hard')   { effortMin = 240; effortMax = 500; }
+  const effort = effortMin + Math.floor(Math.random() * (effortMax - effortMin + 1));
+  const days = Math.max(1, Math.min(60, Math.round(effort / hours)));
+  const window = days + Math.ceil(days * 0.25);
+  return { hours, days, window };
+}
+
+function generateFastingReward(tier) {
+  const roll = Math.random();
+  if (tier === 'easy') {
+    const steps = Math.round((2500 + Math.random() * 5000) / 500) * 500;
+    if (roll < 0.40) return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps (choose Pokémon)` };
+    if (roll < 0.65) return { type: 'pack', packTier: 'common', count: 1, label: '1× Common Pack' };
+    if (roll < 0.85) return { type: 'pack', packTier: 'rare', count: 1, label: '1× Rare Pack' };
+    return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps (choose Pokémon)` };
+  }
+  if (tier === 'medium') {
+    if (roll < 0.35) return { type: 'pack', packTier: 'epic', count: 1, label: '1× Epic Pack' };
+    if (roll < 0.60) {
+      const steps = Math.round((8000 + Math.random() * 12000) / 1000) * 1000;
+      return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps (choose Pokémon)` };
+    }
+    if (roll < 0.80) return { type: 'freeEvolution', label: 'Free Evolution (any team Pokémon)' };
+    return { type: 'pack', packTier: 'rare', count: 2, label: '2× Rare Packs' };
+  }
+  if (tier === 'hard') {
+    if (roll < 0.30) return { type: 'pack', packTier: 'legendary', count: 1, label: '1× Legendary Pack' };
+    if (roll < 0.55) return { type: 'freeEvolution', label: 'Free Evolution (any team Pokémon)' };
+    if (roll < 0.75) return { type: 'combo', parts: ['legendary', 'freeEvolution'], label: '1× Legendary Pack + Free Evolution' };
+    return { type: 'pack', packTier: 'epic', count: 2, label: '2× Epic Packs' };
+  }
+  return { type: 'pack', packTier: 'common', count: 1, label: '1× Common Pack' };
+}
+
+function generateFastingPenalty(tier) {
+  const roll = Math.random();
+  if (tier === 'easy') {
+    const amount = Math.round((1000 + Math.random() * 2000) / 500) * 500;
+    if (roll < 0.55) return { type: 'loseBuddySteps', amount, label: `Buddy loses ${amount.toLocaleString()} steps` };
+    const days = 1 + Math.floor(Math.random() * 2);
+    return { type: 'buddyFreeze', days, label: `Buddy steps frozen for ${days} day${days > 1 ? 's' : ''}` };
+  }
+  if (tier === 'medium') {
+    if (roll < 0.40) {
+      const amount = Math.round((3000 + Math.random() * 5000) / 500) * 500;
+      return { type: 'loseBuddySteps', amount, label: `Buddy loses ${amount.toLocaleString()} steps` };
+    }
+    if (roll < 0.70) {
+      const days = 2 + Math.floor(Math.random() * 3);
+      return { type: 'buddyFreeze', days, label: `Buddy steps frozen for ${days} days` };
+    }
+    return { type: 'buddyReset', label: 'Buddy steps reset to 0' };
+  }
+  if (tier === 'hard') {
+    const freezeDays = 5 + Math.floor(Math.random() * 6);
+    if (roll < 0.35) return { type: 'buddyReset', label: 'Buddy steps reset to 0' };
+    if (roll < 0.65) return { type: 'buddyFreeze', days: freezeDays, label: `Buddy steps frozen for ${freezeDays} days` };
+    return { type: 'combo', parts: ['buddyReset', 'buddyFreeze'], days: freezeDays, label: `Buddy steps reset to 0 + frozen for ${freezeDays} days` };
+  }
+  return { type: 'buddyReset', label: 'Buddy steps reset to 0' };
+}
+
+function applyFastingPenalty(state, penalty) {
+  function applyOne(s, type, p) {
+    if (type === 'loseBuddySteps' && s.buddy) {
+      return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: Math.max(0, (pk.buddySteps || 0) - p.amount) } : pk) };
+    }
+    if (type === 'buddyReset' && s.buddy) {
+      return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: 0 } : pk) };
+    }
+    if (type === 'buddyFreeze') {
+      const until = addDays(todayString(), p.days);
+      return { ...s, fasting: { ...s.fasting, frozenPokemon: { until, reason: 'buddy' } } };
+    }
+    return s;
+  }
+
+  if (penalty.type === 'combo') {
+    let s = state;
+    for (const partType of penalty.parts) s = applyOne(s, partType, penalty);
+    return s;
+  }
+  return applyOne(state, penalty.type, penalty);
+}
+
+function initFasting() {
+  return {
+    unlockedTiers: ['easy'],
+    completedTiers: [],
+    active: null,
+    frozenPokemon: null,
+  };
+}
+
 function loanThreshold(index, prevDefaulted) {
   return LOAN_BASE * (index + 1) + (prevDefaulted ? LOAN_PENALTY : 0);
 }
@@ -264,6 +366,18 @@ function todayString() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function daysBetween(a, b) {
+  const da = new Date(a + 'T00:00:00');
+  const db = new Date(b + 'T00:00:00');
+  return Math.floor((db - da) / 86400000);
+}
+
 function getCollectorLevel(totalSteps) {
   return Math.floor(totalSteps / 50000) + 1;
 }
@@ -325,7 +439,7 @@ function defaultState(steps) {
     debtTrap: initDebtTrap(),
     vaultFrozenUntil: null,
     buddy: null,
-    buddySteps: 0,
+    fasting: initFasting(),
   };
 }
 
@@ -333,7 +447,7 @@ function loadState() {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
-    const saved = JSON.parse(raw);
+    let saved = JSON.parse(raw);
     if (!saved.initialized) return null;
     // Migrate older saves
     if (!saved.loan) saved.loan = initLoan();
@@ -341,7 +455,7 @@ function loadState() {
     if (!saved.debtTrap) saved.debtTrap = initDebtTrap();
     if (saved.vaultFrozenUntil === undefined) saved.vaultFrozenUntil = null;
     if (saved.buddy === undefined) saved.buddy = null;
-    if (saved.buddySteps === undefined) saved.buddySteps = 0;
+    if (!saved.fasting) saved.fasting = initFasting();
     // Add 10k streak fields if missing (new, never existed before)
     if (saved.streak10k === undefined) {
       saved.streak10k = 0;
@@ -350,13 +464,20 @@ function loadState() {
     }
 
     // Fix broken GitHub raw sprite URLs → official Pokémon CDN
+    // Also ensure per-Pokémon buddySteps and migrate global buddySteps
     if (Array.isArray(saved.pokemon)) {
-      saved.pokemon = saved.pokemon.map(p =>
-        p.sprite && p.sprite.includes('raw.githubusercontent.com')
-          ? { ...p, sprite: pokemonSpriteUrl(p.dexId) }
-          : p
-      );
+      saved.pokemon = saved.pokemon.map(p => ({
+        ...(p.sprite && p.sprite.includes('raw.githubusercontent.com') ? { ...p, sprite: pokemonSpriteUrl(p.dexId) } : p),
+        buddySteps: p.buddySteps !== undefined ? p.buddySteps : 0,
+      }));
+      // One-time migration: move global buddySteps to the buddy Pokémon
+      if (saved.buddy && saved.buddySteps > 0) {
+        saved.pokemon = saved.pokemon.map(p =>
+          p.uid === saved.buddy ? { ...p, buddySteps: (p.buddySteps || 0) + saved.buddySteps } : p
+        );
+      }
     }
+    saved.buddySteps = undefined;
     if (saved.loan?.pokemon?.sprite?.includes('raw.githubusercontent.com')) {
       saved.loan.pokemon.sprite = pokemonSpriteUrl(saved.loan.pokemon.dexId);
     }
@@ -412,6 +533,19 @@ function loadState() {
       if (saved.todaySteps < 10000) {
         saved.streak10k = 0;
         saved.lastStreak10kDate = null;
+      }
+      // Check fasting challenge window expiry
+      if (saved.fasting?.active?.status === 'running') {
+        const fa = saved.fasting.active;
+        const windowEnd = addDays(fa.startDate, fa.window);
+        if (today > windowEnd) {
+          saved = applyFastingPenalty(saved, fa.penalty);
+          saved.fasting = { ...saved.fasting, active: { ...fa, status: 'failed' } };
+        }
+      }
+      // Expire frozen Pokémon
+      if (saved.fasting?.frozenPokemon && today > saved.fasting.frozenPokemon.until) {
+        saved.fasting = { ...saved.fasting, frozenPokemon: null };
       }
       saved.todayDate = today;
       saved.todaySteps = 0;
@@ -685,6 +819,10 @@ export default function PokemonWalker({ onStop }) {
   const [showPacksPanel, setShowPacksPanel] = useState(false);
   const [showMyPokemonPanel, setShowMyPokemonPanel] = useState(false);
   const [showSystemsPanel, setShowSystemsPanel] = useState(false);
+  const [showFastingPanel, setShowFastingPanel] = useState(false);
+  const [fastingPending, setFastingPending] = useState(null);
+  const [fastingPickedPoke, setFastingPickedPoke] = useState(null);
+  const [freeEvolving, setFreeEvolving] = useState(false);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
@@ -870,7 +1008,6 @@ export default function PokemonWalker({ onStop }) {
       const d = new Date();
       d.setDate(d.getDate() - 1);
       const yesterdayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const newBuddySteps = (prev.buddy && delta > 0) ? (prev.buddySteps || 0) + delta : (prev.buddySteps || 0);
 
       // ── Daily streak (any steps logged) ──────────────────────────────
       let newStreakDays = prev.streakDays || 0;
@@ -892,9 +1029,13 @@ export default function PokemonWalker({ onStop }) {
         newLastStreak10kDate = todayStr;
       }
 
+      // ── Buddy steps (per-Pokémon) ─────────────────────────────────────
+      let newPokemon = prev.buddy && delta > 0
+        ? prev.pokemon.map(p => p.uid === prev.buddy ? { ...p, buddySteps: (p.buddySteps || 0) + delta } : p)
+        : [...prev.pokemon];
+
       // ── Loan daily payment check ──────────────────────────────────────
       let newLoan = prev.loan;
-      let newPokemon = [...prev.pokemon];
       if (newLoan.status === 'active' && newTodaySteps >= LOAN_DAILY_REQ) {
         const today = todayString();
         if (newLoan.lastPaidDate !== today) {
@@ -967,7 +1108,6 @@ export default function PokemonWalker({ onStop }) {
         streak10k: newStreak10k,
         bestStreak10k: newBestStreak10k,
         lastStreak10kDate: newLastStreak10kDate,
-        buddySteps: newBuddySteps,
       };
       if (delta > 0) {
         setDeltaFlash(`+${fmtFull(delta)} new steps`);
@@ -1164,6 +1304,7 @@ export default function PokemonWalker({ onStop }) {
         packTier: packOpening || 'common',
         caughtDate: todayString(),
         onTeam: isTeam,
+        buddySteps: 0,
       };
       const newPokemon = [...prev.pokemon, newPoke];
       const newAch = checkAchievements({ ...prev, pokemon: newPokemon });
@@ -1246,9 +1387,9 @@ export default function PokemonWalker({ onStop }) {
 
   // ─── Evolve buddy via 50k buddy steps ────────────────────────────────
   const handleBuddyEvolve = async () => {
-    if (!appState?.buddy || (appState.buddySteps || 0) < 50000 || evolving) return;
+    if (!appState?.buddy || evolving) return;
     const poke = appState.pokemon.find(p => p.uid === appState.buddy);
-    if (!poke) return;
+    if (!poke || (poke.buddySteps || 0) < 50000) return;
     setEvolving(appState.buddy);
     try {
       const nextId = await fetchEvolution(poke.dexId);
@@ -1261,10 +1402,9 @@ export default function PokemonWalker({ onStop }) {
       const evolved = await fetchPokemonById(nextId);
       setAppState(prev => ({
         ...prev,
-        buddySteps: (prev.buddySteps || 0) - 50000,
         pokemon: prev.pokemon.map(p =>
           p.uid === prev.buddy
-            ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1 }
+            ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1, buddySteps: (p.buddySteps || 0) - 50000 }
             : p
         ),
       }));
@@ -1272,6 +1412,153 @@ export default function PokemonWalker({ onStop }) {
       setTimeout(() => setDeltaFlash(null), 4000);
     } catch {}
     setEvolving(null);
+  };
+
+  // ─── Fasting Challenge handlers ──────────────────────────────────────
+  const handleGenerateFasting = (tier) => {
+    const challenge = generateFastingChallenge(tier);
+    const reward = generateFastingReward(tier);
+    const penalty = generateFastingPenalty(tier);
+    setFastingPending({ tier, ...challenge, reward, penalty });
+    setFastingPickedPoke(null);
+  };
+
+  const handleAcceptFasting = () => {
+    if (!fastingPending) return;
+    setAppState(prev => ({
+      ...prev,
+      fasting: {
+        ...prev.fasting,
+        active: {
+          ...fastingPending,
+          startDate: todayString(),
+          fastsCompleted: 0,
+          lastLogDate: null,
+          status: 'running',
+        },
+      },
+    }));
+    setFastingPending(null);
+  };
+
+  const handleLogFast = () => {
+    setAppState(prev => {
+      const fa = prev.fasting?.active;
+      if (!fa || fa.status !== 'running') return prev;
+      const today = todayString();
+      if (fa.lastLogDate === today) return prev;
+      const newCompleted = fa.fastsCompleted + 1;
+      const done = newCompleted >= fa.days;
+      return {
+        ...prev,
+        fasting: {
+          ...prev.fasting,
+          active: {
+            ...fa,
+            fastsCompleted: newCompleted,
+            lastLogDate: today,
+            status: done ? 'rewarding' : 'running',
+          },
+        },
+      };
+    });
+  };
+
+  const handleClaimFastingReward = (pickedUid) => {
+    setAppState(prev => {
+      const fa = prev.fasting?.active;
+      if (!fa || fa.status !== 'rewarding') return prev;
+      const reward = fa.reward;
+      let next = { ...prev };
+
+      const applyPack = (s, tier, count) => ({
+        ...s,
+        packInventory: { ...s.packInventory, [tier]: (s.packInventory[tier] || 0) + count },
+      });
+
+      if (reward.type === 'pack') {
+        next = applyPack(next, reward.packTier, reward.count);
+      } else if (reward.type === 'buddySteps' && pickedUid) {
+        next = {
+          ...next,
+          buddy: pickedUid,
+          pokemon: next.pokemon.map(p =>
+            p.uid === pickedUid ? { ...p, buddySteps: (p.buddySteps || 0) + reward.amount } : p
+          ),
+        };
+      } else if (reward.type === 'combo') {
+        if (reward.parts.includes('legendary')) next = applyPack(next, 'legendary', 1);
+      }
+
+      const tier = fa.tier;
+      const completedTiers = prev.fasting.completedTiers.includes(tier)
+        ? prev.fasting.completedTiers
+        : [...prev.fasting.completedTiers, tier];
+      const tierOrder = ['easy', 'medium', 'hard'];
+      const nextTierIdx = tierOrder.indexOf(tier) + 1;
+      const unlockedTiers = nextTierIdx < tierOrder.length && !prev.fasting.unlockedTiers.includes(tierOrder[nextTierIdx])
+        ? [...prev.fasting.unlockedTiers, tierOrder[nextTierIdx]]
+        : prev.fasting.unlockedTiers;
+
+      return {
+        ...next,
+        fasting: {
+          ...next.fasting,
+          active: { ...fa, status: 'done' },
+          completedTiers,
+          unlockedTiers,
+        },
+      };
+    });
+    setFastingPickedPoke(null);
+  };
+
+  const handleFreeEvolve = async (uid) => {
+    if (freeEvolving || !uid) return;
+    const poke = appState.pokemon.find(p => p.uid === uid);
+    if (!poke) return;
+    setFreeEvolving(true);
+    try {
+      const nextId = await fetchEvolution(poke.dexId);
+      if (!nextId) { setFreeEvolving(false); return; }
+      const evolved = await fetchPokemonById(nextId);
+      setAppState(prev => {
+        const fa = prev.fasting?.active;
+        return {
+          ...prev,
+          pokemon: prev.pokemon.map(p =>
+            p.uid === uid
+              ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1 }
+              : p
+          ),
+          fasting: {
+            ...prev.fasting,
+            active: fa ? { ...fa, status: 'done' } : fa,
+            completedTiers: fa && !prev.fasting.completedTiers.includes(fa.tier) ? [...prev.fasting.completedTiers, fa.tier] : prev.fasting.completedTiers,
+            unlockedTiers: (() => {
+              if (!fa) return prev.fasting.unlockedTiers;
+              const tierOrder = ['easy', 'medium', 'hard'];
+              const nextTierIdx = tierOrder.indexOf(fa.tier) + 1;
+              return nextTierIdx < tierOrder.length && !prev.fasting.unlockedTiers.includes(tierOrder[nextTierIdx])
+                ? [...prev.fasting.unlockedTiers, tierOrder[nextTierIdx]]
+                : prev.fasting.unlockedTiers;
+            })(),
+          },
+        };
+      });
+      setDeltaFlash(`✨ ${poke.name} evolved into ${evolved.name}! (Fasting reward)`);
+      setTimeout(() => setDeltaFlash(null), 4000);
+    } catch {}
+    setFreeEvolving(false);
+    setFastingPickedPoke(null);
+  };
+
+  const handleDismissFastingResult = () => {
+    setAppState(prev => ({
+      ...prev,
+      fasting: { ...prev.fasting, active: null },
+    }));
+    setFastingPickedPoke(null);
   };
 
   // ─── Midnight handlers ────────────────────────────────────────────────
@@ -1436,7 +1723,7 @@ export default function PokemonWalker({ onStop }) {
                   { key: 'vault',   icon: '🏦', label: 'Vault',    active: showVaultPanel,     toggle: () => { setShowVaultPanel(p => !p); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); } },
                   { key: 'packs',   icon: '📦', label: 'Packs',    active: showPacksPanel,     toggle: () => { setShowPacksPanel(p => !p); setShowVaultPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); } },
                   { key: 'pokemon', icon: '🎒', label: 'Pokémon',  active: showMyPokemonPanel, toggle: () => { setShowMyPokemonPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowSystemsPanel(false); } },
-                  { key: 'systems', icon: '⚔️', label: 'Systems',  active: showSystemsPanel,   toggle: () => { setShowSystemsPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); } },
+                  { key: 'systems', icon: '⚔️', label: 'Objectives',  active: showSystemsPanel,   toggle: () => { setShowSystemsPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); } },
                 ].map(({ key, icon, label, active, toggle }) => (
                   <button key={key} className={`pw-icon-btn${active ? ' active' : ''}`} onClick={toggle}>
                     <span className="pw-icon-bubble"><span className="pw-icon-emoji">{icon}</span></span>
@@ -1454,7 +1741,7 @@ export default function PokemonWalker({ onStop }) {
                 {/* ── Top Area: Stat Boxes + Buddy Ring ── */}
                 {(() => {
                   const buddyPoke = appState.buddy ? appState.pokemon.find(p => p.uid === appState.buddy) : null;
-                  const buddySteps = appState.buddySteps || 0;
+                  const buddySteps = buddyPoke?.buddySteps || 0;
                   const buddyPct = Math.min(100, (buddySteps / 50000) * 100);
                   const ringColor = buddyPct >= 100 ? '#16a34a' : buddyPct >= 50 ? '#FFCB05' : '#9ca3af';
                   const ringGradient = buddyPoke
@@ -1763,7 +2050,7 @@ export default function PokemonWalker({ onStop }) {
               {showSystemsPanel && (
                 <div className="pw-icon-panel">
                   <div className="pw-ip-header">
-                    <span className="pw-ip-title">Systems</span>
+                    <span className="pw-ip-title">Objectives</span>
                   </div>
                   <div className="pw-ip-body">
 
@@ -2003,6 +2290,183 @@ export default function PokemonWalker({ onStop }) {
                           );
                         }
                         return null;
+                      })()}
+                    </div>
+
+                    {/* Fasting Challenge */}
+                    <div className="gba-section">
+                      <button className="fast-toggle-btn" onClick={() => setShowFastingPanel(p => !p)}>
+                        🍽️ Fasting Challenge
+                        {appState.fasting?.active?.status === 'running' && <span className="dt-active-dot" />}
+                      </button>
+                      {showFastingPanel && (() => {
+                        const fasting = appState.fasting;
+                        const fa = fasting?.active;
+                        const today = todayString();
+
+                        // Pending preview (generated, not yet accepted)
+                        if (fastingPending) {
+                          const needsPicker = fastingPending.reward.type === 'buddySteps' || fastingPending.reward.type === 'freeEvolution' || (fastingPending.reward.type === 'combo' && fastingPending.reward.parts.includes('freeEvolution'));
+                          return (
+                            <div className="fast-panel fast-preview">
+                              <div className="fast-preview-row">
+                                <span className="fast-preview-tier fast-tier-badge fast-tier-badge-{fastingPending.tier}">{fastingPending.tier.toUpperCase()}</span>
+                                <span className="fast-preview-challenge">{fastingPending.hours}hr fasts × {fastingPending.days} days</span>
+                              </div>
+                              <div className="fast-preview-sub">Complete within {fastingPending.window} days of starting</div>
+                              <div className="fast-info-row fast-reward-row">
+                                <span className="fast-info-label">🎁 Reward</span>
+                                <span className="fast-info-val">{fastingPending.reward.label}</span>
+                              </div>
+                              <div className="fast-info-row fast-penalty-row">
+                                <span className="fast-info-label">⚠ Penalty</span>
+                                <span className="fast-info-val">{fastingPending.penalty.label}</span>
+                              </div>
+                              <div className="fast-preview-actions">
+                                <button className="fast-accept-btn" onClick={handleAcceptFasting}>Accept Challenge</button>
+                                <button className="fast-decline-btn" onClick={() => setFastingPending(null)}>Decline</button>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // Active running challenge
+                        if (fa?.status === 'running') {
+                          const windowEnd = addDays(fa.startDate, fa.window);
+                          const daysLeft = Math.max(0, daysBetween(today, windowEnd));
+                          const pct = Math.min(100, (fa.fastsCompleted / fa.days) * 100);
+                          const loggedToday = fa.lastLogDate === today;
+                          return (
+                            <div className="fast-panel fast-active">
+                              <div className="fast-active-header">
+                                <span className={`fast-tier-badge fast-tier-badge-${fa.tier}`}>{fa.tier.toUpperCase()}</span>
+                                <span className="fast-active-count">{fa.fastsCompleted} / {fa.days} fasts</span>
+                              </div>
+                              <div className="loan-bar fast-bar">
+                                <div className="loan-bar-fill fast-bar-fill" style={{ width: `${pct}%` }} />
+                              </div>
+                              <div className="fast-active-detail">⏱ {fa.hours}hr fasts required</div>
+                              <div className="fast-active-detail">📅 {daysLeft} days left in window</div>
+                              <div className="fast-info-row fast-reward-row">
+                                <span className="fast-info-label">🎁</span>
+                                <span className="fast-info-val">{fa.reward.label}</span>
+                              </div>
+                              <div className="fast-info-row fast-penalty-row">
+                                <span className="fast-info-label">⚠</span>
+                                <span className="fast-info-val">{fa.penalty.label}</span>
+                              </div>
+                              <button
+                                className={`fast-log-btn${loggedToday ? ' logged' : ''}`}
+                                onClick={handleLogFast}
+                                disabled={loggedToday}
+                              >
+                                {loggedToday ? '✓ Logged today' : '+ Log Fast'}
+                              </button>
+                            </div>
+                          );
+                        }
+
+                        // Rewarding state (all fasts done)
+                        if (fa?.status === 'rewarding') {
+                          const reward = fa.reward;
+                          const needsEvoPicker = reward.type === 'freeEvolution' || (reward.type === 'combo' && reward.parts.includes('freeEvolution'));
+                          const needsBuddyPicker = reward.type === 'buddySteps';
+                          const needsPicker = needsEvoPicker || needsBuddyPicker;
+                          const teamPoke = appState.pokemon.filter(p => p.onTeam);
+                          return (
+                            <div className="fast-panel fast-rewarding">
+                              <div className="fast-result-title">🎉 Challenge Complete!</div>
+                              <div className="fast-result-reward">{reward.label}</div>
+                              {needsPicker && !fastingPickedPoke && (
+                                <div className="fast-poke-picker">
+                                  <div className="fast-picker-label">
+                                    {needsBuddyPicker ? 'Choose which Pokémon gets the buddy steps:' : 'Choose which Pokémon to evolve:'}
+                                  </div>
+                                  {teamPoke.length === 0 ? (
+                                    <div className="fast-no-team">No Pokémon on team</div>
+                                  ) : (
+                                    <div className="fast-poke-grid">
+                                      {teamPoke.map(p => (
+                                        <button key={p.uid} className="fast-poke-pick-btn" onClick={() => setFastingPickedPoke(p.uid)}>
+                                          {p.sprite && <img src={p.sprite} alt={p.name} className="fast-poke-pick-sprite" />}
+                                          <span className="fast-poke-pick-name">{p.name}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              {(!needsPicker || fastingPickedPoke) && (
+                                <button
+                                  className="fast-claim-btn"
+                                  disabled={freeEvolving}
+                                  onClick={() => {
+                                    if (needsEvoPicker && fastingPickedPoke) {
+                                      handleFreeEvolve(fastingPickedPoke);
+                                      if (reward.type === 'combo' && reward.parts.includes('legendary')) {
+                                        handleClaimFastingReward(fastingPickedPoke);
+                                      }
+                                    } else {
+                                      handleClaimFastingReward(fastingPickedPoke);
+                                    }
+                                  }}
+                                >
+                                  {freeEvolving ? 'Evolving…' : '✨ Claim Reward'}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        // Done state
+                        if (fa?.status === 'done') {
+                          return (
+                            <div className="fast-panel fast-done">
+                              <div className="fast-result-title">✅ Reward claimed!</div>
+                              <div className="fast-result-sub">
+                                {fa.tier !== 'hard' ? `${fa.tier === 'easy' ? 'Medium' : 'Hard'} tier unlocked!` : 'All tiers completed!'}
+                              </div>
+                              <button className="fast-dismiss-btn" onClick={handleDismissFastingResult}>Start new challenge</button>
+                            </div>
+                          );
+                        }
+
+                        // Failed state
+                        if (fa?.status === 'failed') {
+                          return (
+                            <div className="fast-panel fast-failed">
+                              <div className="fast-result-title">❌ Challenge Failed</div>
+                              <div className="fast-result-penalty">{fa.penalty.label}</div>
+                              <button className="fast-dismiss-btn" onClick={handleDismissFastingResult}>Try Again</button>
+                            </div>
+                          );
+                        }
+
+                        // Idle — pick a tier
+                        return (
+                          <div className="fast-panel fast-idle">
+                            <div className="fast-idle-title">Choose a difficulty</div>
+                            <div className="fast-tier-btns">
+                              {['easy', 'medium', 'hard'].map(tier => {
+                                const unlocked = fasting?.unlockedTiers?.includes(tier);
+                                const completed = fasting?.completedTiers?.includes(tier);
+                                return (
+                                  <button
+                                    key={tier}
+                                    className={`fast-tier-btn fast-tier-btn-${tier}${!unlocked ? ' fast-locked' : ''}`}
+                                    onClick={() => unlocked && handleGenerateFasting(tier)}
+                                    disabled={!unlocked}
+                                  >
+                                    <span className="fast-tier-btn-label">{tier}</span>
+                                    {!unlocked && <span className="fast-tier-lock">🔒</span>}
+                                    {completed && <span className="fast-tier-done">✓</span>}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <div className="fast-idle-hint">A challenge, reward, and penalty are generated on pick — you decide whether to accept.</div>
+                          </div>
+                        );
                       })()}
                     </div>
 
