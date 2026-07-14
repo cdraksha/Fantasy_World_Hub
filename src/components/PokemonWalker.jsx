@@ -1782,6 +1782,8 @@ export default function PokemonWalker({ onStop }) {
                         </div>
                         <div className="pw-buddy-ring-label">Buddy</div>
                         {showBuddyDetail && buddyPoke && (
+                          <>
+                            <div className="pw-buddy-popup-backdrop" onClick={() => setShowBuddyDetail(false)} />
                           <div className="pw-buddy-popup" onClick={e => e.stopPropagation()}>
                             <div className="pw-buddy-popup-name">{buddyPoke.name}</div>
                             <div className="pw-buddy-popup-progress-row">
@@ -1803,6 +1805,7 @@ export default function PokemonWalker({ onStop }) {
                               <div className="pw-buddy-popup-left">{fmtFull(50000 - buddySteps)} steps left to evolve</div>
                             )}
                           </div>
+                          </>
                         )}
                       </div>
                     </div>
