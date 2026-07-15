@@ -466,6 +466,7 @@ function defaultState(steps) {
     buddy: null,
     fasting: initFasting(),
     daycare: initDaycare(),
+    stepHistory: [],
   };
 }
 
@@ -483,6 +484,7 @@ function loadState() {
     if (saved.buddy === undefined) saved.buddy = null;
     if (!saved.fasting) saved.fasting = initFasting();
     if (!saved.daycare) saved.daycare = initDaycare();
+    if (!saved.stepHistory) saved.stepHistory = [];
     // Add 10k streak fields if missing (new, never existed before)
     if (saved.streak10k === undefined) {
       saved.streak10k = 0;
@@ -577,6 +579,13 @@ function loadState() {
       // Day Care cooldown expiry
       if (saved.daycare?.status === 'cooldown' && saved.daycare.cooldownUntil && today >= saved.daycare.cooldownUntil) {
         saved.daycare = initDaycare();
+      }
+      // Log completed day before resetting
+      if (saved.todaySteps > 0) {
+        saved.stepHistory = [
+          { date: saved.todayDate, steps: saved.todaySteps },
+          ...(saved.stepHistory || []),
+        ].slice(0, 365);
       }
       saved.todayDate = today;
       saved.todaySteps = 0;
@@ -869,6 +878,7 @@ export default function PokemonWalker({ onStop }) {
   const [freeEvolving, setFreeEvolving] = useState(false);
   const [startingDaycare, setStartingDaycare] = useState(false);
   const [showDaycarePanel, setShowDaycarePanel] = useState(false);
+  const [showStepsHistoryPanel, setShowStepsHistoryPanel] = useState(false);
   const [showDaycareDetail, setShowDaycareDetail] = useState(false);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
@@ -1475,6 +1485,7 @@ export default function PokemonWalker({ onStop }) {
     setShowPacksPanel(false);
     setShowMyPokemonPanel(false);
     setShowSystemsPanel(false);
+    setShowStepsHistoryPanel(false);
   };
 
   // ─── Set / unset buddy ────────────────────────────────────────────────
@@ -1809,7 +1820,7 @@ export default function PokemonWalker({ onStop }) {
               {/* ── Icon Sidebar ── */}
               <div className="pw-icon-sidebar">
                 <button
-                  className={`pw-icon-btn pw-icon-home${!showVaultPanel && !showPacksPanel && !showMyPokemonPanel && !showSystemsPanel ? ' active' : ''}`}
+                  className={`pw-icon-btn pw-icon-home${!showVaultPanel && !showPacksPanel && !showMyPokemonPanel && !showSystemsPanel && !showStepsHistoryPanel ? ' active' : ''}`}
                   onClick={closeAllPanels}
                 >
                   <span className="pw-icon-bubble"><span className="pw-icon-emoji">🏠</span></span>
@@ -1817,10 +1828,11 @@ export default function PokemonWalker({ onStop }) {
                 </button>
                 <div className="pw-sidebar-sep" />
                 {[
-                  { key: 'vault',   icon: '🏦', label: 'Vault',    active: showVaultPanel,     toggle: () => { setShowVaultPanel(p => !p); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); } },
-                  { key: 'packs',   icon: '📦', label: 'Packs',    active: showPacksPanel,     toggle: () => { setShowPacksPanel(p => !p); setShowVaultPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); } },
-                  { key: 'pokemon', icon: '🎒', label: 'Pokémon',  active: showMyPokemonPanel, toggle: () => { setShowMyPokemonPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowSystemsPanel(false); } },
-                  { key: 'systems', icon: '⚔️', label: 'Objectives',  active: showSystemsPanel,   toggle: () => { setShowSystemsPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); } },
+                  { key: 'vault',   icon: '🏦', label: 'Vault',        active: showVaultPanel,          toggle: () => { setShowVaultPanel(p => !p); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
+                  { key: 'packs',   icon: '📦', label: 'Packs',        active: showPacksPanel,          toggle: () => { setShowPacksPanel(p => !p); setShowVaultPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
+                  { key: 'pokemon', icon: '🎒', label: 'Pokémon',      active: showMyPokemonPanel,      toggle: () => { setShowMyPokemonPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
+                  { key: 'systems', icon: '⚔️', label: 'Objectives',   active: showSystemsPanel,        toggle: () => { setShowSystemsPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowStepsHistoryPanel(false); } },
+                  { key: 'history', icon: '📅', label: 'Daily Steps',  active: showStepsHistoryPanel,   toggle: () => { setShowStepsHistoryPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); } },
                 ].map(({ key, icon, label, active, toggle }) => (
                   <button key={key} className={`pw-icon-btn${active ? ' active' : ''}`} onClick={toggle}>
                     <span className="pw-icon-bubble"><span className="pw-icon-emoji">{icon}</span></span>
@@ -2702,6 +2714,36 @@ export default function PokemonWalker({ onStop }) {
                       })()}
                     </div>
 
+                  </div>
+                </div>
+              )}
+              {/* ── Daily Steps History Panel ── */}
+              {showStepsHistoryPanel && (
+                <div className="pw-icon-panel">
+                  <div className="pw-ip-header">
+                    <span className="pw-ip-title">Daily Steps</span>
+                  </div>
+                  <div className="pw-ip-body">
+                    {(appState.stepHistory || []).length === 0 ? (
+                      <div className="sh-empty">No history yet — steps are logged at the end of each day.</div>
+                    ) : (
+                      <table className="sh-table">
+                        <thead>
+                          <tr>
+                            <th className="sh-th">Date</th>
+                            <th className="sh-th sh-th-right">Steps</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(appState.stepHistory || []).map((entry, i) => (
+                            <tr key={i} className={`sh-row${entry.steps >= 10000 ? ' sh-row-10k' : ''}`}>
+                              <td className="sh-td">{entry.date}</td>
+                              <td className="sh-td sh-td-right">{entry.steps.toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
                   </div>
                 </div>
               )}

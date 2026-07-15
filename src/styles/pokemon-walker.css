@@ -3867,3 +3867,44 @@
   color: var(--pw-muted);
 }
 
+/* ─── Daily Steps History ─────────────────────────────────────────────────── */
+.sh-empty {
+  font-size: 11px;
+  color: var(--pw-muted);
+  text-align: center;
+  padding: 20px 0;
+  line-height: 1.5;
+}
+
+.sh-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.sh-th {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pw-muted);
+  padding: 4px 6px 6px;
+  border-bottom: 1.5px solid var(--pw-border);
+  text-align: left;
+}
+.sh-th-right { text-align: right; }
+
+.sh-row {
+  border-bottom: 1px solid rgba(26,26,46,0.06);
+}
+.sh-row:last-child { border-bottom: none; }
+.sh-row-10k .sh-td { color: #16a34a; font-weight: 700; }
+
+.sh-td {
+  padding: 5px 6px;
+  color: var(--pw-text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+}
+.sh-td-right { text-align: right; }
+
