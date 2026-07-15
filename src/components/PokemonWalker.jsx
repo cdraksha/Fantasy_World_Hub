@@ -583,6 +583,19 @@ function loadState() {
       saved.spendableSteps = 0;
       saved.packInventory = { common: 0, rare: 0, epic: 0, legendary: 0 };
     }
+
+    // Credit loan if today's steps already meet the daily requirement
+    // (covers: took loan then reloaded same day, or already had enough steps before taking loan)
+    if (saved.loan?.status === 'active' && saved.todaySteps >= LOAN_DAILY_REQ && saved.loan.lastPaidDate !== saved.todayDate) {
+      const newDays = (saved.loan.daysCompleted || 0) + 1;
+      if (newDays >= LOAN_REPAY_DAYS) {
+        saved.pokemon = (saved.pokemon || []).map(p => p.uid === saved.loan.pokemonUid ? { ...p, isLoan: false } : p);
+        saved.loan = { index: saved.loan.index + 1, status: 'locked', pokemon: null, pokemonUid: null, startDate: null, daysCompleted: 0, graceUsed: false, lastPaidDate: null, prevDefaulted: false };
+      } else {
+        saved.loan = { ...saved.loan, daysCompleted: newDays, lastPaidDate: saved.todayDate };
+      }
+    }
+
     return saved;
   } catch {
     return null;
