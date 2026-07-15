@@ -3623,3 +3623,247 @@
 }
 .fast-dismiss-btn:hover { background: rgba(26,26,46,0.14); }
 
+/* ─── Day Care Ring ─────────────────────────────────────────────────────── */
+.pw-daycare-ring-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.pw-daycare-clickable { cursor: pointer; }
+.pw-daycare-clickable:hover .pw-daycare-ring { transform: scale(1.07); }
+
+.pw-daycare-ring {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s;
+}
+
+.pw-daycare-ring-inner {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #f0ede6;
+  border: 1.5px solid rgba(168,85,247,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.pw-daycare-cooldown .pw-daycare-ring-inner { opacity: 0.5; }
+
+.pw-daycare-ring-sprite {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  opacity: 0.65;
+  filter: grayscale(20%);
+}
+
+.pw-daycare-ring-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.pw-daycare-ring-label {
+  font-size: 7px;
+  font-weight: 800;
+  color: rgba(168,85,247,0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Popup — same positioning as buddy popup */
+.pw-daycare-popup {
+  position: absolute;
+  right: 0;
+  top: 62px;
+  background: #edeae4;
+  z-index: 55;
+  border: 1px solid rgba(26,26,46,0.12);
+  border-radius: 9px;
+  padding: 10px 12px;
+  min-width: 152px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.10);
+}
+.pw-daycare-popup::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 15px;
+  border: 6px solid transparent;
+  border-bottom-color: rgba(26,26,46,0.12);
+}
+.pw-daycare-popup::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 16px;
+  border: 5px solid transparent;
+  border-bottom-color: #edeae4;
+}
+
+.dc-toggle-btn {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(168,85,247,0.10), rgba(124,58,237,0.08));
+  border: 1.5px solid rgba(168,85,247,0.35);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #7c3aed;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 8px rgba(168,85,247,0.12);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.dc-toggle-btn:hover {
+  background: linear-gradient(135deg, rgba(168,85,247,0.18), rgba(124,58,237,0.14));
+  border-color: rgba(168,85,247,0.60);
+  box-shadow: 0 0 12px rgba(168,85,247,0.24);
+}
+
+.pw-daycare-ready-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #a855f7;
+  box-shadow: 0 0 5px rgba(168,85,247,0.6);
+  animation: dc-pulse 1.8s ease-in-out infinite;
+}
+@keyframes dc-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.75); }
+}
+
+/* ─── Day Care Objectives Panel ─────────────────────────────────────────── */
+.dc-panel {
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  border: 1px solid rgba(168,85,247,0.2);
+  background: rgba(168,85,247,0.04);
+}
+
+.dc-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dc-icon { font-size: 20px; line-height: 1; }
+
+.dc-title {
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--pw-text);
+  flex: 1;
+}
+
+.dc-poke-sprite {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  opacity: 0.65;
+  filter: grayscale(20%);
+}
+
+.dc-poke-info { flex: 1; }
+.dc-poke-name {
+  font-weight: 800;
+  font-size: 11px;
+  color: var(--pw-text);
+  text-transform: capitalize;
+}
+.dc-poke-sub {
+  font-size: 9px;
+  color: var(--pw-muted);
+}
+
+.dc-status-badge {
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 10px;
+  padding: 2px 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.dc-status-ready   { background: rgba(168,85,247,0.15); color: #7c3aed; }
+.dc-status-active  { background: rgba(16,163,74,0.12);  color: #16a34a; }
+.dc-status-cooldown{ background: rgba(239,68,68,0.12);  color: #dc2626; }
+
+.dc-available-desc {
+  font-size: 11px;
+  color: var(--pw-muted);
+  line-height: 1.4;
+}
+
+.dc-rules {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px 8px;
+  font-size: 10px;
+  color: var(--pw-text);
+}
+
+.dc-start-btn {
+  width: 100%;
+  padding: 8px;
+  background: #a855f7;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.dc-start-btn:hover { background: #9333ea; }
+.dc-start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.dc-progress-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--pw-text);
+}
+.dc-days-label { color: var(--pw-muted); }
+
+.dc-bar {
+  height: 6px;
+  background: rgba(168,85,247,0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.dc-bar-fill {
+  height: 100%;
+  background: #a855f7;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.dc-reward-row {
+  font-size: 10px;
+  color: var(--pw-muted);
+}
+
+.dc-cooldown-msg {
+  font-size: 11px;
+  color: var(--pw-muted);
+}
+

@@ -305,6 +305,31 @@ const POOLS = {
   legendary: [...LEGENDARY_IDS],
 };
 
+// Stage-1 Pokémon that can evolve — used as Day Care guest
+const DAYCARE_POOL = [
+  1,4,7,10,13,16,19,21,23,25,27,29,32,35,37,39,41,43,46,48,50,52,54,56,58,
+  60,63,66,69,72,74,77,79,81,84,86,88,90,92,96,98,100,102,104,109,111,116,
+  118,120,129,133,138,140,152,155,158,161,163,165,167,170,172,173,174,175,
+  177,179,183,187,190,193,194,204,209,216,218,220,223,228,231,236,238,239,
+  240,246,252,255,258,261,263,270,273,276,278,280,285,287,290,293,296,303,
+  304,311,312,315,316,318,322,325,328,331,333,339,341,343,345,347,353,360,
+  361,363,371,374,387,390,393,396,399,401,403,406,408,410,412,418,420,425,
+  427,431,433,436,438,440,443,446,447,449,451,453,456,458,495,498,501,504,
+  507,509,511,513,515,519,522,524,529,532,535,543,546,551,554,559,564,566,
+  568,570,572,574,577,580,582,585,588,590,592,595,599,602,605,607,610,613,
+  616,618,621,622,624,627,629,631,633,
+];
+
+function initDaycare() {
+  return {
+    status: 'available',  // 'available' | 'active' | 'cooldown'
+    pokemon: null,        // { dexId, name, sprite, types }
+    startDate: null,
+    stepsAccumulated: 0,
+    cooldownUntil: null,
+  };
+}
+
 function pickFromPool(tier, ownedDexIds) {
   const pool = POOLS[tier];
   if (tier === 'legendary') {
@@ -440,6 +465,7 @@ function defaultState(steps) {
     vaultFrozenUntil: null,
     buddy: null,
     fasting: initFasting(),
+    daycare: initDaycare(),
   };
 }
 
@@ -456,6 +482,7 @@ function loadState() {
     if (saved.vaultFrozenUntil === undefined) saved.vaultFrozenUntil = null;
     if (saved.buddy === undefined) saved.buddy = null;
     if (!saved.fasting) saved.fasting = initFasting();
+    if (!saved.daycare) saved.daycare = initDaycare();
     // Add 10k streak fields if missing (new, never existed before)
     if (saved.streak10k === undefined) {
       saved.streak10k = 0;
@@ -546,6 +573,10 @@ function loadState() {
       // Expire frozen Pokémon
       if (saved.fasting?.frozenPokemon && today > saved.fasting.frozenPokemon.until) {
         saved.fasting = { ...saved.fasting, frozenPokemon: null };
+      }
+      // Day Care cooldown expiry
+      if (saved.daycare?.status === 'cooldown' && saved.daycare.cooldownUntil && today >= saved.daycare.cooldownUntil) {
+        saved.daycare = initDaycare();
       }
       saved.todayDate = today;
       saved.todaySteps = 0;
@@ -823,6 +854,9 @@ export default function PokemonWalker({ onStop }) {
   const [fastingPending, setFastingPending] = useState(null);
   const [fastingPickedPoke, setFastingPickedPoke] = useState(null);
   const [freeEvolving, setFreeEvolving] = useState(false);
+  const [startingDaycare, setStartingDaycare] = useState(false);
+  const [showDaycarePanel, setShowDaycarePanel] = useState(false);
+  const [showDaycareDetail, setShowDaycareDetail] = useState(false);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
@@ -1066,6 +1100,24 @@ export default function PokemonWalker({ onStop }) {
         }
       }
 
+      // ── Day Care step accumulation ────────────────────────────────────
+      let newDaycare = prev.daycare || initDaycare();
+      let newPackInventory = { ...prev.packInventory };
+      if (newDaycare.status === 'active' && delta > 0) {
+        const newAccum = (newDaycare.stepsAccumulated || 0) + delta;
+        const daysElapsed = daysBetween(newDaycare.startDate, todayString());
+        if (newAccum >= 50000) {
+          newPackInventory = { ...newPackInventory, rare: newPackInventory.rare + 1 };
+          newDaycare = initDaycare();
+          setDeltaFlash('🎉 Day Care complete! Got a Rare Pack!');
+          setTimeout(() => setDeltaFlash(null), 4000);
+        } else if (daysElapsed >= 10) {
+          newDaycare = { ...newDaycare, status: 'cooldown', cooldownUntil: addDays(todayString(), 3) };
+        } else {
+          newDaycare = { ...newDaycare, stepsAccumulated: newAccum };
+        }
+      }
+
       // ── Debt Trap daily payment ────────────────────────────────────────
       let newDT = prev.debtTrap;
       if (newDT?.status === 'active' && newTodaySteps >= newDT.dailyTarget) {
@@ -1101,6 +1153,8 @@ export default function PokemonWalker({ onStop }) {
         loan: newLoan,
         egg: newEgg,
         debtTrap: newDT,
+        daycare: newDaycare,
+        packInventory: newPackInventory,
         pokemon: newPokemon,
         streakDays: newStreakDays,
         bestStreak: newBestStreak,
@@ -1117,6 +1171,33 @@ export default function PokemonWalker({ onStop }) {
     });
     setStepInput('');
   };
+
+  // ─── Start Day Care ──────────────────────────────────────────────────
+  const handleStartDaycare = useCallback(async () => {
+    if (startingDaycare) return;
+    setStartingDaycare(true);
+    try {
+      const dexId = DAYCARE_POOL[Math.floor(Math.random() * DAYCARE_POOL.length)];
+      const poke = await fetchPokemonById(dexId);
+      setAppState(prev => {
+        if (prev.daycare?.status !== 'available') return prev;
+        return {
+          ...prev,
+          daycare: {
+            status: 'active',
+            pokemon: poke,
+            startDate: todayString(),
+            stepsAccumulated: 0,
+            cooldownUntil: null,
+          },
+        };
+      });
+    } catch {
+      // silently ignore — user can retry
+    } finally {
+      setStartingDaycare(false);
+    }
+  }, [startingDaycare]);
 
   // ─── Edit spendable directly ─────────────────────────────────────────
   const handleSpendableEdit = () => {
@@ -1141,28 +1222,31 @@ export default function PokemonWalker({ onStop }) {
       const id = pickFromPool('epic', ownedDexIds);
       const poke = await fetchPokemonById(id);
       const uid = makeUID();
-      setAppState(prev => ({
-        ...prev,
-        pokemon: [...prev.pokemon, {
-          uid,
-          ...poke,
-          packTier: 'epic',
-          slot: 'storage',
-          xp: 0,
-          level: 1,
-          isLoan: true,
-        }],
-        loan: {
-          ...prev.loan,
-          status: 'active',
-          pokemon: poke,
-          pokemonUid: uid,
-          startDate: todayString(),
-          daysCompleted: 0,
-          graceUsed: false,
-          lastPaidDate: null,
-        },
-      }));
+      setAppState(prev => {
+        const alreadyPaid = prev.todaySteps >= LOAN_DAILY_REQ;
+        return {
+          ...prev,
+          pokemon: [...prev.pokemon, {
+            uid,
+            ...poke,
+            packTier: 'epic',
+            slot: 'storage',
+            xp: 0,
+            level: 1,
+            isLoan: true,
+          }],
+          loan: {
+            ...prev.loan,
+            status: 'active',
+            pokemon: poke,
+            pokemonUid: uid,
+            startDate: todayString(),
+            daysCompleted: alreadyPaid ? 1 : 0,
+            graceUsed: false,
+            lastPaidDate: alreadyPaid ? todayString() : null,
+          },
+        };
+      });
     } catch {
       // fetchPokemonById failed — silently ignore, user can retry
     }
@@ -1808,6 +1892,64 @@ export default function PokemonWalker({ onStop }) {
                           </>
                         )}
                       </div>
+
+                      {/* Day Care Ring */}
+                      {(() => {
+                        const dc = appState.daycare || initDaycare();
+                        const dcPct = dc.status === 'active' ? Math.min(100, ((dc.stepsAccumulated || 0) / 50000) * 100) : 0;
+                        const dcColor = dcPct >= 100 ? '#16a34a' : '#a855f7';
+                        const dcGradient = dc.status === 'active'
+                          ? `conic-gradient(from -90deg, ${dcColor} ${dcPct.toFixed(1)}%, rgba(168,85,247,0.15) ${dcPct.toFixed(1)}%)`
+                          : 'conic-gradient(rgba(168,85,247,0.12) 0%, rgba(168,85,247,0.12) 100%)';
+                        const isClickable = dc.status !== 'available';
+                        const daysLeft = dc.status === 'active' ? Math.max(0, 10 - daysBetween(dc.startDate, todayString())) : null;
+                        const cooldownDays = dc.status === 'cooldown' && dc.cooldownUntil ? Math.max(0, daysBetween(todayString(), dc.cooldownUntil)) : 0;
+
+                        return (
+                          <div
+                            className={`pw-daycare-ring-wrap${isClickable ? ' pw-daycare-clickable' : ''}${dc.status === 'cooldown' ? ' pw-daycare-cooldown' : ''}`}
+                            onClick={() => isClickable && setShowDaycareDetail(p => !p)}
+                            title={isClickable ? 'Click for details' : 'Start from Objectives'}
+                          >
+                            <div className="pw-daycare-ring" style={{ background: dcGradient }}>
+                              <div className="pw-daycare-ring-inner">
+                                {dc.status === 'active' && dc.pokemon?.sprite
+                                  ? <img src={dc.pokemon.sprite} alt={dc.pokemon.name} className="pw-daycare-ring-sprite" />
+                                  : <span className="pw-daycare-ring-icon">{dc.status === 'cooldown' ? '😴' : '🥚'}</span>
+                                }
+                              </div>
+                            </div>
+                            <div className="pw-daycare-ring-label">Day Care</div>
+                            {dc.status === 'available' && <div className="pw-daycare-ready-dot" />}
+
+                            {showDaycareDetail && isClickable && (
+                              <>
+                                <div className="pw-buddy-popup-backdrop" onClick={e => { e.stopPropagation(); setShowDaycareDetail(false); }} />
+                                <div className="pw-daycare-popup" onClick={e => e.stopPropagation()}>
+                                  {dc.status === 'active' ? (
+                                    <>
+                                      <div className="pw-buddy-popup-name">{dc.pokemon?.name}</div>
+                                      <div className="pw-buddy-popup-progress-row">
+                                        <span className="pw-buddy-popup-done">{fmtFull(dc.stepsAccumulated || 0)}</span>
+                                        <span className="pw-buddy-popup-max">/ 50,000</span>
+                                      </div>
+                                      <div className="pw-buddy-popup-bar">
+                                        <div className="pw-buddy-popup-bar-fill" style={{ width: `${dcPct.toFixed(1)}%`, background: dcColor }} />
+                                      </div>
+                                      <div className="pw-buddy-popup-left">{daysLeft}d left · {fmtFull(50000 - (dc.stepsAccumulated || 0))} steps to go</div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="pw-buddy-popup-name">On Cooldown</div>
+                                      <div className="pw-buddy-popup-left">New Pokémon in {cooldownDays} day{cooldownDays !== 1 ? 's' : ''}</div>
+                                    </>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })()}
@@ -2468,6 +2610,80 @@ export default function PokemonWalker({ onStop }) {
                               })}
                             </div>
                             <div className="fast-idle-hint">A challenge, reward, and penalty are generated on pick — you decide whether to accept.</div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Day Care */}
+                    <div className="gba-section">
+                      <button className="dc-toggle-btn" onClick={() => setShowDaycarePanel(p => !p)}>
+                        🥚 Day Care
+                        {appState.daycare?.status === 'active' && <span className="dt-active-dot" />}
+                      </button>
+                      {showDaycarePanel && (() => {
+                        const dc = appState.daycare || initDaycare();
+                        if (dc.status === 'cooldown') {
+                          const daysLeft = dc.cooldownUntil ? Math.max(0, daysBetween(todayString(), dc.cooldownUntil)) : 0;
+                          return (
+                            <div className="dc-panel dc-cooldown">
+                              <div className="dc-header">
+                                <span className="dc-icon">😴</span>
+                                <span className="dc-title">Day Care</span>
+                                <span className="dc-status-badge dc-status-cooldown">Cooldown</span>
+                              </div>
+                              <div className="dc-cooldown-msg">Next Pokémon available in <strong>{daysLeft} day{daysLeft !== 1 ? 's' : ''}</strong></div>
+                            </div>
+                          );
+                        }
+                        if (dc.status === 'active') {
+                          const accum = dc.stepsAccumulated || 0;
+                          const pct = Math.min(100, (accum / 50000) * 100);
+                          const daysElapsed = daysBetween(dc.startDate, todayString());
+                          const daysLeft = Math.max(0, 10 - daysElapsed);
+                          return (
+                            <div className="dc-panel dc-active">
+                              <div className="dc-header">
+                                {dc.pokemon?.sprite && <img src={dc.pokemon.sprite} alt={dc.pokemon.name} className="dc-poke-sprite" />}
+                                <div className="dc-poke-info">
+                                  <div className="dc-poke-name">{dc.pokemon?.name}</div>
+                                  <div className="dc-poke-sub">friend's Pokémon · not yours</div>
+                                </div>
+                                <span className="dc-status-badge dc-status-active">Active</span>
+                              </div>
+                              <div className="dc-progress-row">
+                                <span className="dc-progress-label">{accum.toLocaleString()} / 50,000 steps</span>
+                                <span className="dc-days-label">{daysLeft}d left</span>
+                              </div>
+                              <div className="dc-bar"><div className="dc-bar-fill" style={{ width: `${pct.toFixed(1)}%` }} /></div>
+                              <div className="dc-reward-row">🎁 Reward: <strong>1× Rare Pack</strong> on success</div>
+                            </div>
+                          );
+                        }
+                        // available
+                        return (
+                          <div className="dc-panel dc-available">
+                            <div className="dc-header">
+                              <span className="dc-icon">🥚</span>
+                              <span className="dc-title">Day Care</span>
+                              <span className="dc-status-badge dc-status-ready">Ready</span>
+                            </div>
+                            <div className="dc-available-desc">
+                              A friend's Pokémon needs training. Walk 50,000 steps in 10 days — earn a Rare Pack.
+                            </div>
+                            <div className="dc-rules">
+                              <div>📅 10 days max</div>
+                              <div>👟 50,000 total steps</div>
+                              <div>🎁 Rare Pack on success</div>
+                              <div>😴 3-day cooldown on failure</div>
+                            </div>
+                            <button
+                              className="dc-start-btn"
+                              onClick={handleStartDaycare}
+                              disabled={startingDaycare}
+                            >
+                              {startingDaycare ? 'Loading Pokémon…' : '🤝 Start Day Care'}
+                            </button>
                           </div>
                         );
                       })()}
