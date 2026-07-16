@@ -2385,20 +2385,28 @@ export default function PokemonWalker({ onStop }) {
                         );
                       })}
                     </div>
-                    {teamPokemon.length > 0 && (
-                      <>
-                        <div className="gba-section-title" style={{ margin: '12px 0 6px' }}>Team ({teamPokemon.length}/6)</div>
-                        <div className="gba-team-scroll">
-                          {teamPokemon.map(p => (
-                            <div key={p.uid} className={`gba-team-card ${p.packTier || ''}`} onClick={() => setDetailPokemon(p)}>
-                              {p.sprite && <img src={p.sprite} alt={p.name} className="gba-team-sprite" />}
-                                  <div className="gba-team-name">{p.name}</div>
-                              <div className={`gba-team-tier ${p.packTier}`}>{p.packTier}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
+                    {teamPokemon.length > 0 && (() => {
+                      const filteredTeam = regionFilter
+                        ? teamPokemon.filter(p => getRegion(p.dexId) === regionFilter)
+                        : teamPokemon;
+                      if (filteredTeam.length === 0) return null;
+                      return (
+                        <>
+                          <div className="gba-section-title" style={{ margin: '12px 0 6px' }}>
+                            Team ({filteredTeam.length}{regionFilter ? ` · ${regionFilter}` : ''}/6)
+                          </div>
+                          <div className="gba-team-scroll">
+                            {filteredTeam.map(p => (
+                              <div key={p.uid} className={`gba-team-card ${p.packTier || ''}`} onClick={() => setDetailPokemon(p)}>
+                                {p.sprite && <img src={p.sprite} alt={p.name} className="gba-team-sprite" />}
+                                <div className="gba-team-name">{p.name}</div>
+                                <div className={`gba-team-tier ${p.packTier}`}>{p.packTier}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      );
+                    })()}
                     {storagePokemon.length === 0 && teamPokemon.length === 0 ? (
                       <div className="gba-empty">No Pokémon yet. Open packs to catch some!</div>
                     ) : storagePokemon.length > 0 && (() => {
