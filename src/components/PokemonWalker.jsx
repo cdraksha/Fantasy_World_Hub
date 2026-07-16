@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import * as XLSX from 'xlsx';
 import '../styles/pokemon-walker.css';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -2722,6 +2723,20 @@ export default function PokemonWalker({ onStop }) {
                 <div className="pw-icon-panel">
                   <div className="pw-ip-header">
                     <span className="pw-ip-title">Daily Steps</span>
+                    {(appState.stepHistory || []).length > 0 && (
+                      <button
+                        className="sh-download-btn"
+                        onClick={() => {
+                          const rows = (appState.stepHistory || []).map(e => ({ Date: e.date, Steps: e.steps }));
+                          const ws = XLSX.utils.json_to_sheet(rows);
+                          const wb = XLSX.utils.book_new();
+                          XLSX.utils.book_append_sheet(wb, ws, 'Daily Steps');
+                          XLSX.writeFile(wb, 'pokemon-walker-steps.xlsx');
+                        }}
+                      >
+                        ⬇ Excel
+                      </button>
+                    )}
                   </div>
                   <div className="pw-ip-body">
                     {(appState.stepHistory || []).length === 0 ? (
