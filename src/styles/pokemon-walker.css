@@ -3735,6 +3735,31 @@
   box-shadow: 0 0 12px rgba(168,85,247,0.24);
 }
 
+.sugar-toggle-btn {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(236,72,153,0.10), rgba(219,39,119,0.08));
+  border: 1.5px solid rgba(236,72,153,0.35);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #db2777;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 8px rgba(236,72,153,0.12);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.sugar-toggle-btn:hover {
+  background: linear-gradient(135deg, rgba(236,72,153,0.18), rgba(219,39,119,0.14));
+  border-color: rgba(236,72,153,0.60);
+  box-shadow: 0 0 12px rgba(236,72,153,0.24);
+}
+
 .pw-daycare-ready-dot {
   width: 7px;
   height: 7px;

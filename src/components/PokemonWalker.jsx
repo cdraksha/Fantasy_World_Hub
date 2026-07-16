@@ -201,6 +201,74 @@ function initFasting() {
   };
 }
 
+// ─── Sugar Control ────────────────────────────────────────────────────────
+
+function generateSugarChallenge(tier) {
+  let daysMin, daysMax, limitGrams;
+  if (tier === 'easy')   { daysMin = 3; daysMax = 7; limitGrams = 50; }
+  if (tier === 'medium') { daysMin = 3; daysMax = 6; limitGrams = 25; }
+  if (tier === 'hard')   { daysMin = 2; daysMax = 5; limitGrams = 10; }
+  const days = daysMin + Math.floor(Math.random() * (daysMax - daysMin + 1));
+  const buffer = tier === 'hard' ? (2 + Math.floor(Math.random() * 3)) : (1 + Math.floor(Math.random() * 2));
+  const window = days + buffer;
+  return { days, window, limitGrams };
+}
+
+function generateSugarReward(tier) {
+  const roll = Math.random();
+  if (tier === 'easy') {
+    const steps = Math.round((2500 + Math.random() * 5000) / 500) * 500;
+    if (roll < 0.40) return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps (choose Pokémon)` };
+    if (roll < 0.65) return { type: 'pack', packTier: 'common', count: 1, label: '1× Common Pack' };
+    if (roll < 0.85) return { type: 'pack', packTier: 'rare', count: 1, label: '1× Rare Pack' };
+    return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps (choose Pokémon)` };
+  }
+  if (tier === 'medium') {
+    if (roll < 0.35) return { type: 'pack', packTier: 'epic', count: 1, label: '1× Epic Pack' };
+    if (roll < 0.60) {
+      const steps = Math.round((8000 + Math.random() * 12000) / 1000) * 1000;
+      return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps (choose Pokémon)` };
+    }
+    if (roll < 0.80) return { type: 'freeEvolution', label: 'Free Evolution (any Pokémon)' };
+    return { type: 'pack', packTier: 'rare', count: 2, label: '2× Rare Packs' };
+  }
+  if (tier === 'hard') {
+    if (roll < 0.30) return { type: 'pack', packTier: 'legendary', count: 1, label: '1× Legendary Pack' };
+    if (roll < 0.55) return { type: 'freeEvolution', label: 'Free Evolution (any Pokémon)' };
+    if (roll < 0.75) return { type: 'combo', parts: ['legendary', 'freeEvolution'], label: '1× Legendary Pack + Free Evolution' };
+    return { type: 'pack', packTier: 'epic', count: 2, label: '2× Epic Packs' };
+  }
+  return { type: 'pack', packTier: 'common', count: 1, label: '1× Common Pack' };
+}
+
+function generateSugarPenalty(tier) { return generateFastingPenalty(tier); }
+
+function applySugarPenalty(state, penalty) {
+  function applyOne(s, type, p) {
+    if (type === 'loseBuddySteps' && s.buddy) {
+      return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: Math.max(0, (pk.buddySteps || 0) - p.amount) } : pk) };
+    }
+    if (type === 'buddyReset' && s.buddy) {
+      return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: 0 } : pk) };
+    }
+    if (type === 'buddyFreeze') {
+      const until = addDays(todayString(), p.days);
+      return { ...s, sugar: { ...s.sugar, frozenPokemon: { until, reason: 'buddy' } } };
+    }
+    return s;
+  }
+  if (penalty.type === 'combo') {
+    let s = state;
+    for (const partType of penalty.parts) s = applyOne(s, partType, penalty);
+    return s;
+  }
+  return applyOne(state, penalty.type, penalty);
+}
+
+function initSugar() {
+  return { unlockedTiers: ['easy'], completedTiers: [], active: null, frozenPokemon: null };
+}
+
 function loanThreshold(index, prevDefaulted) {
   return LOAN_BASE * (index + 1) + (prevDefaulted ? LOAN_PENALTY : 0);
 }
@@ -466,6 +534,7 @@ function defaultState(steps) {
     vaultFrozenUntil: null,
     buddy: null,
     fasting: initFasting(),
+    sugar: initSugar(),
     daycare: initDaycare(),
     stepHistory: [],
   };
@@ -484,6 +553,7 @@ function loadState() {
     if (saved.vaultFrozenUntil === undefined) saved.vaultFrozenUntil = null;
     if (saved.buddy === undefined) saved.buddy = null;
     if (!saved.fasting) saved.fasting = initFasting();
+    if (!saved.sugar) saved.sugar = initSugar();
     if (!saved.daycare) saved.daycare = initDaycare();
     if (!saved.stepHistory) saved.stepHistory = [];
     // Add 10k streak fields if missing (new, never existed before)
@@ -576,6 +646,18 @@ function loadState() {
       // Expire frozen Pokémon
       if (saved.fasting?.frozenPokemon && today > saved.fasting.frozenPokemon.until) {
         saved.fasting = { ...saved.fasting, frozenPokemon: null };
+      }
+      // Sugar Control window expiry
+      if (saved.sugar?.active?.status === 'running') {
+        const sa = saved.sugar.active;
+        const windowEnd = addDays(sa.startDate, sa.window);
+        if (today > windowEnd) {
+          saved = applySugarPenalty(saved, sa.penalty);
+          saved.sugar = { ...saved.sugar, active: { ...sa, status: 'failed' } };
+        }
+      }
+      if (saved.sugar?.frozenPokemon && today > saved.sugar.frozenPokemon.until) {
+        saved.sugar = { ...saved.sugar, frozenPokemon: null };
       }
       // Day Care cooldown expiry
       if (saved.daycare?.status === 'cooldown' && saved.daycare.cooldownUntil && today >= saved.daycare.cooldownUntil) {
@@ -877,6 +959,10 @@ export default function PokemonWalker({ onStop }) {
   const [fastingPending, setFastingPending] = useState(null);
   const [fastingPickedPoke, setFastingPickedPoke] = useState(null);
   const [freeEvolving, setFreeEvolving] = useState(false);
+  const [showSugarPanel, setShowSugarPanel] = useState(false);
+  const [sugarPending, setSugarPending] = useState(null);
+  const [sugarPickedPoke, setSugarPickedPoke] = useState(null);
+  const [freeEvolvingSugar, setFreeEvolvingSugar] = useState(false);
   const [startingDaycare, setStartingDaycare] = useState(false);
   const [showDaycarePanel, setShowDaycarePanel] = useState(false);
   const [showStepsHistoryPanel, setShowStepsHistoryPanel] = useState(false);
@@ -1674,6 +1760,116 @@ export default function PokemonWalker({ onStop }) {
       fasting: { ...prev.fasting, active: null },
     }));
     setFastingPickedPoke(null);
+  };
+
+  // ─── Sugar Control handlers ───────────────────────────────────────────
+  const handleGenerateSugar = (tier) => {
+    const challenge = generateSugarChallenge(tier);
+    const reward = generateSugarReward(tier);
+    const penalty = generateSugarPenalty(tier);
+    setSugarPending({ tier, ...challenge, reward, penalty });
+    setSugarPickedPoke(null);
+  };
+
+  const handleAcceptSugar = () => {
+    if (!sugarPending) return;
+    setAppState(prev => ({
+      ...prev,
+      sugar: {
+        ...prev.sugar,
+        active: { ...sugarPending, startDate: todayString(), daysCompleted: 0, lastLogDate: null, status: 'running' },
+      },
+    }));
+    setSugarPending(null);
+  };
+
+  const handleLogSugar = () => {
+    setAppState(prev => {
+      const sa = prev.sugar?.active;
+      if (!sa || sa.status !== 'running') return prev;
+      const today = todayString();
+      if (sa.lastLogDate === today) return prev;
+      const newCompleted = sa.daysCompleted + 1;
+      const done = newCompleted >= sa.days;
+      return {
+        ...prev,
+        sugar: {
+          ...prev.sugar,
+          active: { ...sa, daysCompleted: newCompleted, lastLogDate: today, status: done ? 'rewarding' : 'running' },
+        },
+      };
+    });
+  };
+
+  const handleClaimSugarReward = (pickedUid) => {
+    setAppState(prev => {
+      const sa = prev.sugar?.active;
+      if (!sa || sa.status !== 'rewarding') return prev;
+      const reward = sa.reward;
+      let next = { ...prev };
+      const applyPack = (s, tier, count) => ({
+        ...s,
+        packInventory: { ...s.packInventory, [tier]: (s.packInventory[tier] || 0) + count },
+      });
+      if (reward.type === 'pack') {
+        next = applyPack(next, reward.packTier, reward.count);
+      } else if (reward.type === 'buddySteps' && pickedUid) {
+        next = { ...next, buddy: pickedUid, pokemon: next.pokemon.map(p => p.uid === pickedUid ? { ...p, buddySteps: (p.buddySteps || 0) + reward.amount } : p) };
+      } else if (reward.type === 'combo') {
+        if (reward.parts.includes('legendary')) next = applyPack(next, 'legendary', 1);
+      }
+      const tier = sa.tier;
+      const completedTiers = prev.sugar.completedTiers.includes(tier) ? prev.sugar.completedTiers : [...prev.sugar.completedTiers, tier];
+      const tierOrder = ['easy', 'medium', 'hard'];
+      const nextTierIdx = tierOrder.indexOf(tier) + 1;
+      const unlockedTiers = nextTierIdx < tierOrder.length && !prev.sugar.unlockedTiers.includes(tierOrder[nextTierIdx])
+        ? [...prev.sugar.unlockedTiers, tierOrder[nextTierIdx]] : prev.sugar.unlockedTiers;
+      return { ...next, sugar: { ...next.sugar, active: { ...sa, status: 'done' }, completedTiers, unlockedTiers } };
+    });
+    setSugarPickedPoke(null);
+  };
+
+  const handleFreeEvolveSugar = async (uid) => {
+    if (freeEvolvingSugar || !uid) return;
+    const poke = appState.pokemon.find(p => p.uid === uid);
+    if (!poke) return;
+    setFreeEvolvingSugar(true);
+    try {
+      const nextId = await fetchEvolution(poke.dexId);
+      if (!nextId) {
+        setFreeEvolvingSugar(false);
+        setSugarPickedPoke(null);
+        setDeltaFlash("⚠ That Pokémon can't evolve further — pick another!");
+        setTimeout(() => setDeltaFlash(null), 3000);
+        return;
+      }
+      const evolved = await fetchPokemonById(nextId);
+      setAppState(prev => {
+        const sa = prev.sugar?.active;
+        const tierOrder = ['easy', 'medium', 'hard'];
+        const nextTierIdx = sa ? tierOrder.indexOf(sa.tier) + 1 : -1;
+        return {
+          ...prev,
+          pokemon: prev.pokemon.map(p => p.uid === uid ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1 } : p),
+          sugar: {
+            ...prev.sugar,
+            active: sa ? { ...sa, status: 'done' } : sa,
+            completedTiers: sa && !prev.sugar.completedTiers.includes(sa.tier) ? [...prev.sugar.completedTiers, sa.tier] : prev.sugar.completedTiers,
+            unlockedTiers: sa && nextTierIdx < tierOrder.length && !prev.sugar.unlockedTiers.includes(tierOrder[nextTierIdx])
+              ? [...prev.sugar.unlockedTiers, tierOrder[nextTierIdx]] : prev.sugar.unlockedTiers,
+          },
+        };
+      });
+      setDeltaFlash(`✨ ${poke.name} evolved into ${evolved.name}! (Sugar Control reward)`);
+      setTimeout(() => setDeltaFlash(null), 4000);
+    } catch {}
+    setFreeEvolvingSugar(false);
+    setSugarPickedPoke(null);
+  };
+
+  const handleDismissSugarResult = () => {
+    setAppState(prev => ({ ...prev, sugar: { ...prev.sugar, active: null } }));
+    setSugarPickedPoke(null);
   };
 
   // ─── Midnight handlers ────────────────────────────────────────────────
@@ -2642,6 +2838,171 @@ export default function PokemonWalker({ onStop }) {
                               })}
                             </div>
                             <div className="fast-idle-hint">A challenge, reward, and penalty are generated on pick — you decide whether to accept.</div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Sugar Control */}
+                    <div className="gba-section">
+                      <button className="sugar-toggle-btn" onClick={() => setShowSugarPanel(p => !p)}>
+                        🍬 Sugar Control
+                        {appState.sugar?.active?.status === 'running' && <span className="dt-active-dot" />}
+                      </button>
+                      {showSugarPanel && (() => {
+                        const sugar = appState.sugar;
+                        const sa = sugar?.active;
+                        const today = todayString();
+
+                        if (sugarPending) {
+                          return (
+                            <div className="fast-panel fast-preview">
+                              <div className="fast-preview-row">
+                                <span className={`fast-tier-badge fast-tier-badge-${sugarPending.tier}`}>{sugarPending.tier.toUpperCase()}</span>
+                                <span className="fast-preview-challenge">Under {sugarPending.limitGrams}g × {sugarPending.days} days</span>
+                              </div>
+                              <div className="fast-preview-sub">Complete within {sugarPending.window} days of starting</div>
+                              <div className="fast-info-row fast-reward-row">
+                                <span className="fast-info-label">🎁 Reward</span>
+                                <span className="fast-info-val">{sugarPending.reward.label}</span>
+                              </div>
+                              <div className="fast-info-row fast-penalty-row">
+                                <span className="fast-info-label">⚠ Penalty</span>
+                                <span className="fast-info-val">{sugarPending.penalty.label}</span>
+                              </div>
+                              <div className="fast-preview-actions">
+                                <button className="fast-accept-btn" onClick={handleAcceptSugar}>Accept Challenge</button>
+                                <button className="fast-decline-btn" onClick={() => setSugarPending(null)}>Decline</button>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        if (sa?.status === 'running') {
+                          const windowEnd = addDays(sa.startDate, sa.window);
+                          const daysLeft = Math.max(0, daysBetween(today, windowEnd));
+                          const pct = Math.min(100, (sa.daysCompleted / sa.days) * 100);
+                          const loggedToday = sa.lastLogDate === today;
+                          return (
+                            <div className="fast-panel fast-active">
+                              <div className="fast-active-header">
+                                <span className={`fast-tier-badge fast-tier-badge-${sa.tier}`}>{sa.tier.toUpperCase()}</span>
+                                <span className="fast-active-count">{sa.daysCompleted} / {sa.days} days</span>
+                              </div>
+                              <div className="loan-bar fast-bar">
+                                <div className="loan-bar-fill fast-bar-fill" style={{ width: `${pct}%` }} />
+                              </div>
+                              <div className="fast-active-detail">🍬 Under {sa.limitGrams}g sugar required</div>
+                              <div className="fast-active-detail">📅 {daysLeft} days left in window</div>
+                              <div className="fast-info-row fast-reward-row">
+                                <span className="fast-info-label">🎁</span>
+                                <span className="fast-info-val">{sa.reward.label}</span>
+                              </div>
+                              <div className="fast-info-row fast-penalty-row">
+                                <span className="fast-info-label">⚠</span>
+                                <span className="fast-info-val">{sa.penalty.label}</span>
+                              </div>
+                              <button className={`fast-log-btn${loggedToday ? ' logged' : ''}`} onClick={handleLogSugar} disabled={loggedToday}>
+                                {loggedToday ? '✓ Logged today' : '+ Log Clean Day'}
+                              </button>
+                            </div>
+                          );
+                        }
+
+                        if (sa?.status === 'rewarding') {
+                          const reward = sa.reward;
+                          const needsEvoPicker = reward.type === 'freeEvolution' || (reward.type === 'combo' && reward.parts.includes('freeEvolution'));
+                          const needsBuddyPicker = reward.type === 'buddySteps';
+                          const needsPicker = needsEvoPicker || needsBuddyPicker;
+                          return (
+                            <div className="fast-panel fast-rewarding">
+                              <div className="fast-result-title">🎉 Challenge Complete!</div>
+                              <div className="fast-result-reward">{reward.label}</div>
+                              {needsPicker && !sugarPickedPoke && (
+                                <div className="fast-poke-picker">
+                                  <div className="fast-picker-label">
+                                    {needsBuddyPicker ? 'Choose which Pokémon gets the buddy steps:' : 'Choose which Pokémon to evolve:'}
+                                  </div>
+                                  {appState.pokemon.length === 0 ? (
+                                    <div className="fast-no-team">No Pokémon caught yet</div>
+                                  ) : (
+                                    <div className="fast-poke-grid">
+                                      {appState.pokemon.map(p => (
+                                        <button key={p.uid} className="fast-poke-pick-btn" onClick={() => setSugarPickedPoke(p.uid)}>
+                                          {p.sprite && <img src={p.sprite} alt={p.name} className="fast-poke-pick-sprite" />}
+                                          <span className="fast-poke-pick-name">{p.name}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              {(!needsPicker || sugarPickedPoke) && (
+                                <button
+                                  className="fast-claim-btn"
+                                  disabled={freeEvolvingSugar}
+                                  onClick={() => {
+                                    if (needsEvoPicker && sugarPickedPoke) {
+                                      handleFreeEvolveSugar(sugarPickedPoke);
+                                      if (reward.type === 'combo' && reward.parts.includes('legendary')) {
+                                        handleClaimSugarReward(sugarPickedPoke);
+                                      }
+                                    } else {
+                                      handleClaimSugarReward(sugarPickedPoke);
+                                    }
+                                  }}
+                                >
+                                  {freeEvolvingSugar ? 'Evolving…' : '✨ Claim Reward'}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        if (sa?.status === 'done') {
+                          return (
+                            <div className="fast-panel fast-done">
+                              <div className="fast-result-title">✅ Reward claimed!</div>
+                              <div className="fast-result-sub">
+                                {sa.tier !== 'hard' ? `${sa.tier === 'easy' ? 'Medium' : 'Hard'} tier unlocked!` : 'All tiers completed!'}
+                              </div>
+                              <button className="fast-dismiss-btn" onClick={handleDismissSugarResult}>Start new challenge</button>
+                            </div>
+                          );
+                        }
+
+                        if (sa?.status === 'failed') {
+                          return (
+                            <div className="fast-panel fast-failed">
+                              <div className="fast-result-title">❌ Challenge Failed</div>
+                              <div className="fast-result-penalty">{sa.penalty.label}</div>
+                              <button className="fast-dismiss-btn" onClick={handleDismissSugarResult}>Try Again</button>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="fast-panel fast-idle">
+                            <div className="fast-idle-title">Choose a difficulty</div>
+                            <div className="fast-tier-btns">
+                              {['easy', 'medium', 'hard'].map(tier => {
+                                const unlocked = sugar?.unlockedTiers?.includes(tier);
+                                const completed = sugar?.completedTiers?.includes(tier);
+                                return (
+                                  <button
+                                    key={tier}
+                                    className={`fast-tier-btn fast-tier-btn-${tier}${!unlocked ? ' fast-locked' : ''}`}
+                                    onClick={() => unlocked && handleGenerateSugar(tier)}
+                                    disabled={!unlocked}
+                                  >
+                                    <span className="fast-tier-btn-label">{tier}</span>
+                                    {!unlocked && <span className="fast-tier-lock">🔒</span>}
+                                    {completed && <span className="fast-tier-done">✓</span>}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <div className="fast-idle-hint">Stay under the daily sugar limit for the required days within the window.</div>
                           </div>
                         );
                       })()}
