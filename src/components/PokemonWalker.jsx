@@ -1629,7 +1629,13 @@ export default function PokemonWalker({ onStop }) {
     setFreeEvolving(true);
     try {
       const nextId = await fetchEvolution(poke.dexId);
-      if (!nextId) { setFreeEvolving(false); return; }
+      if (!nextId) {
+        setFreeEvolving(false);
+        setFastingPickedPoke(null);
+        setDeltaFlash("⚠ That Pokémon can't evolve further — pick another!");
+        setTimeout(() => setDeltaFlash(null), 3000);
+        return;
+      }
       const evolved = await fetchPokemonById(nextId);
       setAppState(prev => {
         const fa = prev.fasting?.active;
@@ -2543,7 +2549,7 @@ export default function PokemonWalker({ onStop }) {
                           const needsEvoPicker = reward.type === 'freeEvolution' || (reward.type === 'combo' && reward.parts.includes('freeEvolution'));
                           const needsBuddyPicker = reward.type === 'buddySteps';
                           const needsPicker = needsEvoPicker || needsBuddyPicker;
-                          const teamPoke = appState.pokemon.filter(p => p.onTeam);
+                          const pickerPoke = appState.pokemon;
                           return (
                             <div className="fast-panel fast-rewarding">
                               <div className="fast-result-title">🎉 Challenge Complete!</div>
@@ -2553,11 +2559,11 @@ export default function PokemonWalker({ onStop }) {
                                   <div className="fast-picker-label">
                                     {needsBuddyPicker ? 'Choose which Pokémon gets the buddy steps:' : 'Choose which Pokémon to evolve:'}
                                   </div>
-                                  {teamPoke.length === 0 ? (
-                                    <div className="fast-no-team">No Pokémon on team</div>
+                                  {pickerPoke.length === 0 ? (
+                                    <div className="fast-no-team">No Pokémon caught yet</div>
                                   ) : (
                                     <div className="fast-poke-grid">
-                                      {teamPoke.map(p => (
+                                      {pickerPoke.map(p => (
                                         <button key={p.uid} className="fast-poke-pick-btn" onClick={() => setFastingPickedPoke(p.uid)}>
                                           {p.sprite && <img src={p.sprite} alt={p.name} className="fast-poke-pick-sprite" />}
                                           <span className="fast-poke-pick-name">{p.name}</span>
