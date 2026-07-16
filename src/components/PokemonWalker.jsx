@@ -967,6 +967,7 @@ export default function PokemonWalker({ onStop }) {
   const [showDaycarePanel, setShowDaycarePanel] = useState(false);
   const [showStepsHistoryPanel, setShowStepsHistoryPanel] = useState(false);
   const [showDaycareDetail, setShowDaycareDetail] = useState(false);
+  const [regionFilter, setRegionFilter] = useState(null);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
@@ -2363,12 +2364,21 @@ export default function PokemonWalker({ onStop }) {
                       ))}
                     </div>
                     <div className="gba-pokedex-regions" style={{ marginTop: 8 }}>
+                      {regionFilter && (
+                        <div className="gba-region-filter-bar">
+                          <span>Showing: <strong>{regionFilter}</strong></span>
+                          <button className="gba-region-clear-btn" onClick={() => setRegionFilter(null)}>✕ Clear</button>
+                        </div>
+                      )}
                       {pokedexRegions.map(r => {
                         const count = [...uniqueDex].filter(id => id >= r.min && id <= r.max).length;
                         const total = r.max - r.min + 1;
                         return (
-                          <div key={r.name} className="gba-region-row">
-                            <span className="gba-region-name">{r.name}</span>
+                          <div key={r.name} className={`gba-region-row${regionFilter === r.name ? ' gba-region-row-active' : ''}`}>
+                            <span
+                              className="gba-region-name gba-region-link"
+                              onClick={() => setRegionFilter(prev => prev === r.name ? null : r.name)}
+                            >{r.name}</span>
                             <div className="gba-region-bar"><div className="gba-region-fill" style={{ width: `${(count / total) * 100}%` }} /></div>
                             <span className="gba-region-count">{count}/{total}</span>
                           </div>
@@ -2391,30 +2401,39 @@ export default function PokemonWalker({ onStop }) {
                     )}
                     {storagePokemon.length === 0 && teamPokemon.length === 0 ? (
                       <div className="gba-empty">No Pokémon yet. Open packs to catch some!</div>
-                    ) : storagePokemon.length > 0 && (
-                      <>
-                        <div className="gba-section-title" style={{ margin: '12px 0 6px' }}>Storage ({storagePokemon.length})</div>
-                        {(['legendary', 'epic', 'rare', 'common']).map(tier => {
-                          const group = storagePokemon.filter(p => p.packTier === tier);
-                          if (group.length === 0) return null;
-                          return (
-                            <div key={tier} className="gba-tier-section">
-                              <div className={`gba-tier-header ${tier}`}>{tier} <span>{group.length}</span></div>
-                              <div className="gba-storage-grid">
-                                {group.map(p => (
-                                  <div key={p.uid} className="gba-storage-card" onClick={() => setDetailPokemon(p)}>
-                                    {p.sprite && <img src={p.sprite} alt={p.name} className="gba-storage-sprite" />}
-                                              <div className="gba-storage-name">{p.name}</div>
-                                    <div className="gba-storage-region">{getRegion(p.dexId)}</div>
-                                    <div className="gba-storage-types">{p.types.map(t => <TypeBadge key={t} type={t} />)}</div>
-                                  </div>
-                                ))}
+                    ) : storagePokemon.length > 0 && (() => {
+                      const filteredStorage = regionFilter
+                        ? storagePokemon.filter(p => getRegion(p.dexId) === regionFilter)
+                        : storagePokemon;
+                      return (
+                        <>
+                          <div className="gba-section-title" style={{ margin: '12px 0 6px' }}>
+                            Storage ({filteredStorage.length}{regionFilter ? ` · ${regionFilter}` : ''})
+                          </div>
+                          {filteredStorage.length === 0 ? (
+                            <div className="gba-empty">No {regionFilter} Pokémon in storage.</div>
+                          ) : (['legendary', 'epic', 'rare', 'common']).map(tier => {
+                            const group = filteredStorage.filter(p => p.packTier === tier);
+                            if (group.length === 0) return null;
+                            return (
+                              <div key={tier} className="gba-tier-section">
+                                <div className={`gba-tier-header ${tier}`}>{tier} <span>{group.length}</span></div>
+                                <div className="gba-storage-grid">
+                                  {group.map(p => (
+                                    <div key={p.uid} className="gba-storage-card" onClick={() => setDetailPokemon(p)}>
+                                      {p.sprite && <img src={p.sprite} alt={p.name} className="gba-storage-sprite" />}
+                                      <div className="gba-storage-name">{p.name}</div>
+                                      <div className="gba-storage-region">{getRegion(p.dexId)}</div>
+                                      <div className="gba-storage-types">{p.types.map(t => <TypeBadge key={t} type={t} />)}</div>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </>
-                    )}
+                            );
+                          })}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
