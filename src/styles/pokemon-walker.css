@@ -3980,17 +3980,17 @@
 .sh-download-btn:hover { background: #15803d; }
 
 /* Pokémon list view */
-.pklist-section { margin-bottom: 6px; }
+.pklist-section { margin-bottom: 8px; }
 
 .pklist-toggle {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 5px 8px;
+  padding: 6px 10px;
   background: #f0ece2;
   border: none;
-  border-left: 2px solid #c0bdb0;
+  border-left: 3px solid #c0bdb0;
   border-radius: 4px;
   color: #5a5a6a;
   font-size: 8px;
@@ -4005,55 +4005,54 @@
 .pklist-toggle-epic      { border-left-color: #7c3aed; color: #7c3aed; background: rgba(124,58,237,0.08); }
 .pklist-toggle-rare      { border-left-color: #2B50A1; color: #2B50A1; background: rgba(43,80,161,0.08); }
 .pklist-toggle-common    { border-left-color: #3d9e42; color: #3d9e42; background: rgba(61,158,66,0.08); }
-
 .pklist-toggle-legendary:hover { background: rgba(217,119,6,0.14); }
 .pklist-toggle-epic:hover      { background: rgba(124,58,237,0.14); }
 .pklist-toggle-rare:hover      { background: rgba(43,80,161,0.14); }
 .pklist-toggle-common:hover    { background: rgba(61,158,66,0.14); }
 
-.pklist-chevron { font-size: 7px; opacity: 0.6; }
+.pklist-chevron { font-size: 8px; opacity: 0.5; }
 
 .pklist-list {
-  border: 1px solid #e0dbd0;
+  background: #fff;
+  border: 1px solid #e4e0d6;
   border-top: none;
   border-radius: 0 0 6px 6px;
-  background: #fff;
-  overflow: hidden;
 }
 
 .pklist-header-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 38px 1fr 46px 64px;
   align-items: center;
-  padding: 3px 8px;
-  background: #f5f2ec;
-  border-bottom: 1px solid #e8e4da;
+  padding: 4px 10px;
+  background: #f7f4ef;
+  border-bottom: 1px solid #e4e0d6;
 }
+.pklist-header-row span {
+  font-size: 7px;
+  font-weight: 700;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
 .pklist-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 38px 1fr 46px 64px;
   align-items: center;
-  padding: 3px 8px;
+  padding: 5px 10px;
   border-bottom: 1px solid #f0ece4;
   cursor: pointer;
   transition: background 0.12s;
 }
 .pklist-row:last-child { border-bottom: none; }
-.pklist-row:hover { background: rgba(255,203,5,0.10); }
+.pklist-row:hover { background: #fffbea; }
 
-.pklist-col-img    { width: 30px; flex-shrink: 0; }
-.pklist-col-name   { flex: 1; font-size: 9px; font-weight: 700; color: #1a1a2e; padding-left: 4px; text-transform: capitalize; }
-.pklist-col-region { width: 40px; font-size: 7.5px; color: #8a8a9a; flex-shrink: 0; font-family: 'JetBrains Mono', monospace; }
-.pklist-col-type   { width: 58px; display: flex; gap: 2px; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
+.pklist-col-img    { display: flex; align-items: center; }
+.pklist-col-name   { font-size: 10px; font-weight: 700; color: #1a1a2e; text-transform: capitalize; padding-left: 2px; }
+.pklist-col-region { font-size: 8px; color: #999; font-family: 'JetBrains Mono', monospace; }
+.pklist-col-type   { display: flex; gap: 3px; flex-wrap: wrap; align-items: center; }
 
-.pklist-header-row .pklist-col-name,
-.pklist-header-row .pklist-col-region {
-  font-size: 7px;
-  font-weight: 700;
-  color: #9a9aaa;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.pklist-sprite { width: 28px; height: 28px; object-fit: contain; image-rendering: pixelated; display: block; }
+.pklist-sprite { width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; display: block; }
 
 /* Evolution Log */
 .evo-log-list {

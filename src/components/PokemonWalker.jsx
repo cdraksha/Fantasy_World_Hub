@@ -2415,30 +2415,20 @@ export default function PokemonWalker({ onStop }) {
                           const filteredTeam = regionFilter ? teamPokemon.filter(p => getRegion(p.dexId) === regionFilter) : teamPokemon;
                           if (filteredTeam.length === 0) return null;
                           return (
-                            <div className="pklist-section" style={{ marginTop: 10 }}>
-                              <button className="pklist-toggle" onClick={() => setShowTeamList(p => !p)}>
-                                <span>Team · {filteredTeam.length}/6{regionFilter ? ` · ${regionFilter}` : ''}</span>
-                                <span className="pklist-chevron">{showTeamList ? '▲' : '▼'}</span>
-                              </button>
-                              {showTeamList && (
-                                <div className="pklist-list">
-                                  <div className="pklist-header-row">
-                                    <span className="pklist-col-img" />
-                                    <span className="pklist-col-name">Pokémon</span>
-                                    <span className="pklist-col-region">Region</span>
-                                    <span className="pklist-col-type">Type</span>
+                            <>
+                              <div className="gba-section-title" style={{ margin: '12px 0 6px' }}>
+                                Team ({filteredTeam.length}{regionFilter ? ` · ${regionFilter}` : ''}/6)
+                              </div>
+                              <div className="gba-team-scroll">
+                                {filteredTeam.map(p => (
+                                  <div key={p.uid} className={`gba-team-card ${p.packTier || ''}`} onClick={() => setDetailPokemon(p)}>
+                                    {p.sprite && <img src={p.sprite} alt={p.name} className="gba-team-sprite" />}
+                                    <div className="gba-team-name">{p.name}</div>
+                                    <div className={`gba-team-tier ${p.packTier}`}>{p.packTier}</div>
                                   </div>
-                                  {filteredTeam.map(p => (
-                                    <div key={p.uid} className="pklist-row" onClick={() => setDetailPokemon(p)}>
-                                      <span className="pklist-col-img">{p.sprite && <img src={p.sprite} alt={p.name} className="pklist-sprite" />}</span>
-                                      <span className="pklist-col-name">{p.name}</span>
-                                      <span className="pklist-col-region">{getRegion(p.dexId)}</span>
-                                      <span className="pklist-col-type">{p.types.map(t => <TypeBadge key={t} type={t} />)}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
+                                ))}
+                              </div>
+                            </>
                           );
                         })()}
 
