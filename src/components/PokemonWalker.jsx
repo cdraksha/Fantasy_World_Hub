@@ -538,6 +538,7 @@ function defaultState(steps) {
     daycare: initDaycare(),
     stepHistory: [],
     evolutionLog: [],
+    caughtDex: [],
   };
 }
 
@@ -558,6 +559,10 @@ function loadState() {
     if (!saved.daycare) saved.daycare = initDaycare();
     if (!saved.stepHistory) saved.stepHistory = [];
     if (!saved.evolutionLog) saved.evolutionLog = [];
+    // Seed caughtDex from existing pokemon on first migration
+    if (!saved.caughtDex || saved.caughtDex.length === 0) {
+      saved.caughtDex = [...new Set((saved.pokemon || []).map(p => p.dexId))];
+    }
     // Add 10k streak fields if missing (new, never existed before)
     if (saved.streak10k === undefined) {
       saved.streak10k = 0;
@@ -1505,11 +1510,15 @@ export default function PokemonWalker({ onStop }) {
       };
       const newPokemon = [...prev.pokemon, newPoke];
       const newAch = checkAchievements({ ...prev, pokemon: newPokemon });
+      const newCaughtDex = prev.caughtDex?.includes(fetched.dexId)
+        ? prev.caughtDex
+        : [...(prev.caughtDex || []), fetched.dexId];
       return {
         ...prev,
         pokemon: newPokemon,
         achievements: newAch,
         packInventory: { ...prev.packInventory, [newPoke.packTier]: prev.packInventory[newPoke.packTier] - 1 },
+        caughtDex: newCaughtDex,
       };
     });
   };
@@ -1560,6 +1569,7 @@ export default function PokemonWalker({ onStop }) {
               : p
           ),
           evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'vault' }, ...(prev.evolutionLog || [])],
+          caughtDex: prev.caughtDex?.includes(evolved.dexId) ? prev.caughtDex : [...(prev.caughtDex || []), evolved.dexId],
         };
       });
       setDetailPokemon(prev => prev?.uid === uid
@@ -1607,6 +1617,7 @@ export default function PokemonWalker({ onStop }) {
             : p
         ),
         evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'buddy' }, ...(prev.evolutionLog || [])],
+        caughtDex: prev.caughtDex?.includes(evolved.dexId) ? prev.caughtDex : [...(prev.caughtDex || []), evolved.dexId],
       }));
       setDeltaFlash(`✨ ${poke.name} evolved into ${evolved.name}!`);
       setTimeout(() => setDeltaFlash(null), 4000);
@@ -1738,6 +1749,7 @@ export default function PokemonWalker({ onStop }) {
               : p
           ),
           evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'fasting' }, ...(prev.evolutionLog || [])],
+          caughtDex: prev.caughtDex?.includes(evolved.dexId) ? prev.caughtDex : [...(prev.caughtDex || []), evolved.dexId],
           fasting: {
             ...prev.fasting,
             active: fa ? { ...fa, status: 'done' } : fa,
@@ -1858,6 +1870,7 @@ export default function PokemonWalker({ onStop }) {
           ...prev,
           pokemon: prev.pokemon.map(p => p.uid === uid ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1 } : p),
           evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'sugar' }, ...(prev.evolutionLog || [])],
+          caughtDex: prev.caughtDex?.includes(evolved.dexId) ? prev.caughtDex : [...(prev.caughtDex || []), evolved.dexId],
           sugar: {
             ...prev.sugar,
             active: sa ? { ...sa, status: 'done' } : sa,
@@ -1940,7 +1953,7 @@ export default function PokemonWalker({ onStop }) {
   const totalPacks = Object.values(appState.packInventory).reduce((a, b) => a + b, 0);
 
   const allPokes = appState.pokemon;
-  const uniqueDex = new Set(allPokes.map(p => p.dexId));
+  const uniqueDex = new Set(appState.caughtDex || allPokes.map(p => p.dexId));
   const pokedexRegions = [
     { name: 'Kanto', min: 1, max: 151 },
     { name: 'Johto', min: 152, max: 251 },
