@@ -4021,7 +4021,7 @@
 
 .pklist-header-row {
   display: grid;
-  grid-template-columns: 38px 1fr 46px 64px;
+  grid-template-columns: 38px 1fr 46px 80px;
   align-items: center;
   padding: 4px 10px;
   background: #f7f4ef;
@@ -4037,7 +4037,7 @@
 
 .pklist-row {
   display: grid;
-  grid-template-columns: 38px 1fr 46px 64px;
+  grid-template-columns: 38px 1fr 46px 80px;
   align-items: center;
   padding: 5px 10px;
   border-bottom: 1px solid #f0ece4;
@@ -4050,7 +4050,7 @@
 .pklist-col-img    { display: flex; align-items: center; }
 .pklist-col-name   { font-size: 10px; font-weight: 700; color: #1a1a2e; text-transform: capitalize; padding-left: 2px; }
 .pklist-col-region { font-size: 8px; color: #999; font-family: 'JetBrains Mono', monospace; }
-.pklist-col-type   { display: flex; gap: 3px; flex-wrap: wrap; align-items: center; }
+.pklist-col-type   { display: flex; gap: 3px; align-items: center; }
 
 .pklist-sprite { width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; display: block; }
 
