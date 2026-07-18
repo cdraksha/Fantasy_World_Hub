@@ -2463,19 +2463,19 @@ export default function PokemonWalker({ onStop }) {
                     })()}
 
                     {/* Evolution Log */}
-                    {(appState.evolutionLog || []).length > 0 && (
-                      <>
-                        <div className="gba-section-title" style={{ margin: '14px 0 6px' }}>Evolution Log</div>
-                        <div className="evo-log-list">
-                          {(appState.evolutionLog || []).map((entry, i) => (
-                            <div key={i} className="evo-log-row">
-                              <span className="evo-log-date">{entry.date}</span>
-                              <span className="evo-log-names">{entry.from} → {entry.to}</span>
-                              <span className={`evo-log-method evo-log-method-${entry.method}`}>{entry.method}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </>
+                    <div className="gba-section-title" style={{ margin: '14px 0 6px' }}>Evolution Log</div>
+                    {(appState.evolutionLog || []).length === 0 ? (
+                      <div className="gba-empty">No evolutions recorded yet.</div>
+                    ) : (
+                      <div className="evo-log-list">
+                        {(appState.evolutionLog || []).map((entry, i) => (
+                          <div key={i} className="evo-log-row">
+                            <span className="evo-log-date">{entry.date}</span>
+                            <span className="evo-log-names">{entry.from} → {entry.to}</span>
+                            <span className={`evo-log-method evo-log-method-${entry.method}`}>{entry.method}</span>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
