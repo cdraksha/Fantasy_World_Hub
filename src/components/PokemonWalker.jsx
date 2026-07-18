@@ -975,6 +975,8 @@ export default function PokemonWalker({ onStop }) {
   const [showStepsHistoryPanel, setShowStepsHistoryPanel] = useState(false);
   const [showDaycareDetail, setShowDaycareDetail] = useState(false);
   const [regionFilter, setRegionFilter] = useState(null);
+  const [showTeamList, setShowTeamList] = useState(false);
+  const [openTiers, setOpenTiers] = useState({});
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
@@ -2404,63 +2406,80 @@ export default function PokemonWalker({ onStop }) {
                         );
                       })}
                     </div>
-                    {teamPokemon.length > 0 && (() => {
-                      const filteredTeam = regionFilter
-                        ? teamPokemon.filter(p => getRegion(p.dexId) === regionFilter)
-                        : teamPokemon;
-                      if (filteredTeam.length === 0) return null;
-                      return (
-                        <>
-                          <div className="gba-section-title" style={{ margin: '12px 0 6px' }}>
-                            Team ({filteredTeam.length}{regionFilter ? ` · ${regionFilter}` : ''}/6)
-                          </div>
-                          <div className="gba-team-scroll">
-                            {filteredTeam.map(p => (
-                              <div key={p.uid} className={`gba-team-card ${p.packTier || ''}`} onClick={() => setDetailPokemon(p)}>
-                                {p.sprite && <img src={p.sprite} alt={p.name} className="gba-team-sprite" />}
-                                <div className="gba-team-name">{p.name}</div>
-                                <div className={`gba-team-tier ${p.packTier}`}>{p.packTier}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      );
-                    })()}
                     {storagePokemon.length === 0 && teamPokemon.length === 0 ? (
                       <div className="gba-empty">No Pokémon yet. Open packs to catch some!</div>
-                    ) : storagePokemon.length > 0 && (() => {
-                      const filteredStorage = regionFilter
-                        ? storagePokemon.filter(p => getRegion(p.dexId) === regionFilter)
-                        : storagePokemon;
-                      return (
-                        <>
-                          <div className="gba-section-title" style={{ margin: '12px 0 6px' }}>
-                            Storage ({filteredStorage.length}{regionFilter ? ` · ${regionFilter}` : ''})
-                          </div>
-                          {filteredStorage.length === 0 ? (
-                            <div className="gba-empty">No {regionFilter} Pokémon in storage.</div>
-                          ) : (['legendary', 'epic', 'rare', 'common']).map(tier => {
-                            const group = filteredStorage.filter(p => p.packTier === tier);
-                            if (group.length === 0) return null;
-                            return (
-                              <div key={tier} className="gba-tier-section">
-                                <div className={`gba-tier-header ${tier}`}>{tier} <span>{group.length}</span></div>
-                                <div className="gba-storage-grid">
-                                  {group.map(p => (
-                                    <div key={p.uid} className="gba-storage-card" onClick={() => setDetailPokemon(p)}>
-                                      {p.sprite && <img src={p.sprite} alt={p.name} className="gba-storage-sprite" />}
-                                      <div className="gba-storage-name">{p.name}</div>
-                                      <div className="gba-storage-region">{getRegion(p.dexId)}</div>
-                                      <div className="gba-storage-types">{p.types.map(t => <TypeBadge key={t} type={t} />)}</div>
+                    ) : (
+                      <>
+                        {/* Team */}
+                        {teamPokemon.length > 0 && (() => {
+                          const filteredTeam = regionFilter ? teamPokemon.filter(p => getRegion(p.dexId) === regionFilter) : teamPokemon;
+                          if (filteredTeam.length === 0) return null;
+                          return (
+                            <div className="pklist-section" style={{ marginTop: 10 }}>
+                              <button className="pklist-toggle" onClick={() => setShowTeamList(p => !p)}>
+                                <span>Team · {filteredTeam.length}/6{regionFilter ? ` · ${regionFilter}` : ''}</span>
+                                <span className="pklist-chevron">{showTeamList ? '▲' : '▼'}</span>
+                              </button>
+                              {showTeamList && (
+                                <div className="pklist-list">
+                                  <div className="pklist-header-row">
+                                    <span className="pklist-col-img" />
+                                    <span className="pklist-col-name">Pokémon</span>
+                                    <span className="pklist-col-region">Region</span>
+                                    <span className="pklist-col-type">Type</span>
+                                  </div>
+                                  {filteredTeam.map(p => (
+                                    <div key={p.uid} className="pklist-row" onClick={() => setDetailPokemon(p)}>
+                                      <span className="pklist-col-img">{p.sprite && <img src={p.sprite} alt={p.name} className="pklist-sprite" />}</span>
+                                      <span className="pklist-col-name">{p.name}</span>
+                                      <span className="pklist-col-region">{getRegion(p.dexId)}</span>
+                                      <span className="pklist-col-type">{p.types.map(t => <TypeBadge key={t} type={t} />)}</span>
                                     </div>
                                   ))}
                                 </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+
+                        {/* Storage by tier */}
+                        {storagePokemon.length > 0 && (() => {
+                          const filteredStorage = regionFilter ? storagePokemon.filter(p => getRegion(p.dexId) === regionFilter) : storagePokemon;
+                          if (filteredStorage.length === 0) return <div className="gba-empty" style={{ marginTop: 8 }}>No {regionFilter} Pokémon in storage.</div>;
+                          return (['legendary', 'epic', 'rare', 'common']).map(tier => {
+                            const group = filteredStorage.filter(p => p.packTier === tier);
+                            if (group.length === 0) return null;
+                            const isOpen = !!openTiers[tier];
+                            return (
+                              <div key={tier} className="pklist-section" style={{ marginTop: 6 }}>
+                                <button className={`pklist-toggle pklist-toggle-${tier}`} onClick={() => setOpenTiers(p => ({ ...p, [tier]: !p[tier] }))}>
+                                  <span>{tier} · {group.length}</span>
+                                  <span className="pklist-chevron">{isOpen ? '▲' : '▼'}</span>
+                                </button>
+                                {isOpen && (
+                                  <div className="pklist-list">
+                                    <div className="pklist-header-row">
+                                      <span className="pklist-col-img" />
+                                      <span className="pklist-col-name">Pokémon</span>
+                                      <span className="pklist-col-region">Region</span>
+                                      <span className="pklist-col-type">Type</span>
+                                    </div>
+                                    {group.map(p => (
+                                      <div key={p.uid} className="pklist-row" onClick={() => setDetailPokemon(p)}>
+                                        <span className="pklist-col-img">{p.sprite && <img src={p.sprite} alt={p.name} className="pklist-sprite" />}</span>
+                                        <span className="pklist-col-name">{p.name}</span>
+                                        <span className="pklist-col-region">{getRegion(p.dexId)}</span>
+                                        <span className="pklist-col-type">{p.types.map(t => <TypeBadge key={t} type={t} />)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             );
-                          })}
-                        </>
-                      );
-                    })()}
+                          });
+                        })()}
+                      </>
+                    )}
 
                     {/* Evolution Log */}
                     <div className="gba-section-title" style={{ margin: '14px 0 6px' }}>Evolution Log</div>

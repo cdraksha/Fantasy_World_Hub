@@ -3979,6 +3979,62 @@
 }
 .sh-download-btn:hover { background: #15803d; }
 
+/* Pokémon list view */
+.pklist-section { border-radius: 8px; overflow: hidden; }
+
+.pklist-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background: #2a2a3e;
+  border: none;
+  border-radius: 8px;
+  color: #e8e0d0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.pklist-toggle-legendary { background: linear-gradient(90deg, #4a1a1a, #2a1a3e); color: #ffcc00; }
+.pklist-toggle-epic       { background: linear-gradient(90deg, #1e1a3e, #2a1a4e); color: #c084fc; }
+.pklist-toggle-rare       { background: linear-gradient(90deg, #1a2a3e, #1a3a4e); color: #60a5fa; }
+.pklist-toggle-common     { background: linear-gradient(90deg, #2a2a2e, #3a3a3e); color: #a0a0b0; }
+
+.pklist-chevron { font-size: 8px; opacity: 0.7; }
+
+.pklist-list { border: 1px solid rgba(255,255,255,0.08); border-top: none; border-radius: 0 0 8px 8px; overflow: hidden; }
+
+.pklist-header-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: rgba(0,0,0,0.15);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.pklist-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pklist-row:last-child { border-bottom: none; }
+.pklist-row:hover { background: rgba(255,203,5,0.07); }
+
+.pklist-col-img    { width: 32px; flex-shrink: 0; }
+.pklist-col-name   { flex: 1; font-size: 9px; font-weight: 600; color: #e8e0d0; padding-left: 4px; }
+.pklist-col-region { width: 44px; font-size: 8px; color: #8a8a9a; flex-shrink: 0; }
+.pklist-col-type   { width: 56px; display: flex; gap: 2px; flex-shrink: 0; flex-wrap: wrap; }
+
+.pklist-header-row .pklist-col-name,
+.pklist-header-row .pklist-col-region { font-size: 7px; font-weight: 700; color: #6a6a7a; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.pklist-sprite { width: 28px; height: 28px; object-fit: contain; image-rendering: pixelated; }
+
 /* Evolution Log */
 .evo-log-list {
   display: flex;
