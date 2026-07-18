@@ -537,6 +537,7 @@ function defaultState(steps) {
     sugar: initSugar(),
     daycare: initDaycare(),
     stepHistory: [],
+    evolutionLog: [],
   };
 }
 
@@ -556,6 +557,7 @@ function loadState() {
     if (!saved.sugar) saved.sugar = initSugar();
     if (!saved.daycare) saved.daycare = initDaycare();
     if (!saved.stepHistory) saved.stepHistory = [];
+    if (!saved.evolutionLog) saved.evolutionLog = [];
     // Add 10k streak fields if missing (new, never existed before)
     if (saved.streak10k === undefined) {
       saved.streak10k = 0;
@@ -1557,6 +1559,7 @@ export default function PokemonWalker({ onStop }) {
               ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: timesEvolved + 1 }
               : p
           ),
+          evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'vault' }, ...(prev.evolutionLog || [])],
         };
       });
       setDetailPokemon(prev => prev?.uid === uid
@@ -1603,6 +1606,7 @@ export default function PokemonWalker({ onStop }) {
             ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1, buddySteps: (p.buddySteps || 0) - 50000 }
             : p
         ),
+        evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'buddy' }, ...(prev.evolutionLog || [])],
       }));
       setDeltaFlash(`✨ ${poke.name} evolved into ${evolved.name}!`);
       setTimeout(() => setDeltaFlash(null), 4000);
@@ -1733,6 +1737,7 @@ export default function PokemonWalker({ onStop }) {
               ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1 }
               : p
           ),
+          evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'fasting' }, ...(prev.evolutionLog || [])],
           fasting: {
             ...prev.fasting,
             active: fa ? { ...fa, status: 'done' } : fa,
@@ -1852,6 +1857,7 @@ export default function PokemonWalker({ onStop }) {
         return {
           ...prev,
           pokemon: prev.pokemon.map(p => p.uid === uid ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1 } : p),
+          evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'sugar' }, ...(prev.evolutionLog || [])],
           sugar: {
             ...prev.sugar,
             active: sa ? { ...sa, status: 'done' } : sa,
@@ -2442,6 +2448,22 @@ export default function PokemonWalker({ onStop }) {
                         </>
                       );
                     })()}
+
+                    {/* Evolution Log */}
+                    {(appState.evolutionLog || []).length > 0 && (
+                      <>
+                        <div className="gba-section-title" style={{ margin: '14px 0 6px' }}>Evolution Log</div>
+                        <div className="evo-log-list">
+                          {(appState.evolutionLog || []).map((entry, i) => (
+                            <div key={i} className="evo-log-row">
+                              <span className="evo-log-date">{entry.date}</span>
+                              <span className="evo-log-names">{entry.from} → {entry.to}</span>
+                              <span className={`evo-log-method evo-log-method-${entry.method}`}>{entry.method}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
