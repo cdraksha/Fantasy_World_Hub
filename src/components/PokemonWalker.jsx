@@ -429,6 +429,24 @@ async function fetchPokemonById(id) {
 
 // ─── PokeAPI — evolution chain ────────────────────────────────────────────
 
+async function isBaseForm(dexId) {
+  const res = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${dexId}`);
+  if (!res.ok) return true; // assume base if API fails
+  const data = await res.json();
+  return data.evolves_from_species === null;
+}
+
+async function fetchBaseFormPokemon(tier, ownedDexIds, maxTries = 10) {
+  for (let i = 0; i < maxTries; i++) {
+    const id = pickFromPool(tier, ownedDexIds);
+    if (await isBaseForm(id)) {
+      return await fetchPokemonById(id);
+    }
+  }
+  // fallback: return whatever we get on the last try
+  return await fetchPokemonById(pickFromPool(tier, ownedDexIds));
+}
+
 async function fetchEvolution(dexId) {
   const specRes = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${dexId}`);
   if (!specRes.ok) return null;
@@ -1076,14 +1094,15 @@ export default function PokemonWalker({ onStop }) {
     (async () => {
       try {
         const ownedDexIds = new Set((appState?.pokemon || []).map(p => p.dexId));
-        const id = pickFromPool(hatchingTier, ownedDexIds);
-        const poke = await fetchPokemonById(id);
+        const poke = await fetchBaseFormPokemon(hatchingTier, ownedDexIds);
         if (cancelled) return;
         const uid = makeUID();
         setAppState(prev => ({
           ...prev,
           pokemon: [...prev.pokemon, { uid, ...poke, packTier: hatchingTier, onTeam: false, xp: 0, level: 1 }],
           egg: { ...initEgg(), index: prev.egg.index + 1 },
+          evolutionLog: [{ date: todayString(), from: '🥚 Egg', to: poke.name, method: 'egg' }, ...(prev.evolutionLog || [])],
+          caughtDex: prev.caughtDex?.includes(poke.dexId) ? prev.caughtDex : [...(prev.caughtDex || []), poke.dexId],
         }));
         setDeltaFlash(`🥚 Egg hatched! ${poke.name} is yours!`);
         setTimeout(() => setDeltaFlash(null), 4000);
@@ -2471,10 +2490,10 @@ export default function PokemonWalker({ onStop }) {
                       </>
                     )}
 
-                    {/* Evolution Log */}
-                    <div className="gba-section-title" style={{ margin: '14px 0 6px' }}>Evolution Log</div>
+                    {/* Evolution & Hatch Log */}
+                    <div className="gba-section-title" style={{ margin: '14px 0 6px' }}>Records</div>
                     {(appState.evolutionLog || []).length === 0 ? (
-                      <div className="gba-empty">No evolutions recorded yet.</div>
+                      <div className="gba-empty">No evolutions or hatches recorded yet.</div>
                     ) : (
                       <div className="evo-log-list">
                         {(appState.evolutionLog || []).map((entry, i) => (
