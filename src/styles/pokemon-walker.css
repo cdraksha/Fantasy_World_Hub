@@ -4055,46 +4055,84 @@
 .pklist-sprite { width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; display: block; }
 
 /* Evolution Log */
-.evo-log-list {
+/* Records section */
+.records-container {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
+  margin-top: 12px;
 }
-.evo-log-row {
+
+.records-block {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e4e0d6;
+}
+
+.records-block-title {
+  padding: 6px 10px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+.records-block-title-evo {
+  background: rgba(59,76,202,0.07);
+  color: #3b4cca;
+  border-bottom: 1px solid rgba(59,76,202,0.15);
+}
+.records-block-title-egg {
+  background: rgba(34,197,94,0.07);
+  color: #15803d;
+  border-bottom: 1px solid rgba(34,197,94,0.15);
+}
+
+.records-empty {
+  padding: 8px 10px;
+  font-size: 9px;
+  color: #aaa;
+  background: #fafaf8;
+}
+
+.records-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255,203,5,0.06);
-  border: 1px solid rgba(255,203,5,0.18);
-  border-radius: 6px;
-  padding: 5px 8px;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #fff;
+  border-bottom: 1px solid #f0ece4;
   font-size: 9px;
 }
-.evo-log-date {
-  color: #7a7a8a;
+.records-row:last-child { border-bottom: none; }
+.records-row:nth-child(even) { background: #faf8f4; }
+
+.records-date {
   font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: #aaa;
   flex-shrink: 0;
-  width: 70px;
+  width: 68px;
 }
-.evo-log-names {
+.records-names {
   flex: 1;
   font-weight: 700;
   color: #1a1a2e;
+  text-transform: capitalize;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.evo-log-method {
+.records-badge {
   flex-shrink: 0;
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 2px 5px;
-  border-radius: 4px;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 10px;
 }
-.evo-log-method-vault   { background: rgba(59,76,202,0.12); color: #3b4cca; }
-.evo-log-method-buddy   { background: rgba(255,203,5,0.18); color: #b8860b; }
-.evo-log-method-fasting { background: rgba(251,146,60,0.15); color: #c2410c; }
-.evo-log-method-sugar   { background: rgba(236,72,153,0.12); color: #db2777; }
-.evo-log-method-egg     { background: rgba(34,197,94,0.12); color: #15803d; }
+.records-badge-vault   { background: rgba(59,76,202,0.12);  color: #3b4cca; }
+.records-badge-buddy   { background: rgba(255,203,5,0.20);  color: #a07000; }
+.records-badge-fasting { background: rgba(251,146,60,0.15); color: #c2410c; }
+.records-badge-sugar   { background: rgba(236,72,153,0.12); color: #db2777; }
+.records-badge-egg     { background: rgba(34,197,94,0.12);  color: #15803d; }

@@ -2490,21 +2490,40 @@ export default function PokemonWalker({ onStop }) {
                       </>
                     )}
 
-                    {/* Evolution & Hatch Log */}
-                    <div className="gba-section-title" style={{ margin: '14px 0 6px' }}>Records</div>
-                    {(appState.evolutionLog || []).length === 0 ? (
-                      <div className="gba-empty">No evolutions or hatches recorded yet.</div>
-                    ) : (
-                      <div className="evo-log-list">
-                        {(appState.evolutionLog || []).map((entry, i) => (
-                          <div key={i} className="evo-log-row">
-                            <span className="evo-log-date">{entry.date}</span>
-                            <span className="evo-log-names">{entry.from} → {entry.to}</span>
-                            <span className={`evo-log-method evo-log-method-${entry.method}`}>{entry.method}</span>
+                    {/* Records */}
+                    {(() => {
+                      const allRecords = appState.evolutionLog || [];
+                      const evolutions = allRecords.filter(e => e.method !== 'egg');
+                      const hatches = allRecords.filter(e => e.method === 'egg');
+                      return (
+                        <div className="records-container">
+                          <div className="records-block">
+                            <div className="records-block-title records-block-title-evo">✨ Evolutions</div>
+                            {evolutions.length === 0 ? (
+                              <div className="records-empty">None yet</div>
+                            ) : evolutions.map((entry, i) => (
+                              <div key={i} className="records-row">
+                                <span className="records-date">{entry.date}</span>
+                                <span className="records-names">{entry.from} → {entry.to}</span>
+                                <span className={`records-badge records-badge-${entry.method}`}>{entry.method}</span>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                          <div className="records-block">
+                            <div className="records-block-title records-block-title-egg">🥚 Hatches</div>
+                            {hatches.length === 0 ? (
+                              <div className="records-empty">None yet</div>
+                            ) : hatches.map((entry, i) => (
+                              <div key={i} className="records-row">
+                                <span className="records-date">{entry.date}</span>
+                                <span className="records-names">{entry.to}</span>
+                                <span className="records-badge records-badge-egg">egg</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
