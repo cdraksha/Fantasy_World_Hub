@@ -995,6 +995,8 @@ export default function PokemonWalker({ onStop }) {
   const [regionFilter, setRegionFilter] = useState(null);
   const [showTeamList, setShowTeamList] = useState(false);
   const [openTiers, setOpenTiers] = useState({});
+  const [showEvoRecords, setShowEvoRecords] = useState(false);
+  const [showHatchRecords, setShowHatchRecords] = useState(false);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
@@ -2497,29 +2499,43 @@ export default function PokemonWalker({ onStop }) {
                       const hatches = allRecords.filter(e => e.method === 'egg');
                       return (
                         <div className="records-container">
-                          <div className="records-block">
-                            <div className="records-block-title records-block-title-evo">✨ Evolutions</div>
-                            {evolutions.length === 0 ? (
-                              <div className="records-empty">None yet</div>
-                            ) : evolutions.map((entry, i) => (
-                              <div key={i} className="records-row">
-                                <span className="records-date">{entry.date}</span>
-                                <span className="records-names">{entry.from} → {entry.to}</span>
-                                <span className={`records-badge records-badge-${entry.method}`}>{entry.method}</span>
+                          <div className="pklist-section">
+                            <button className="pklist-toggle pklist-toggle-evo" onClick={() => setShowEvoRecords(p => !p)}>
+                              <span>✨ Evolutions · {evolutions.length}</span>
+                              <span className="pklist-chevron">{showEvoRecords ? '▲' : '▼'}</span>
+                            </button>
+                            {showEvoRecords && (
+                              <div className="pklist-list">
+                                {evolutions.length === 0 ? (
+                                  <div className="records-empty">None yet</div>
+                                ) : evolutions.map((entry, i) => (
+                                  <div key={i} className="records-row">
+                                    <span className="records-date">{entry.date}</span>
+                                    <span className="records-names">{entry.from} → {entry.to}</span>
+                                    <span className={`records-badge records-badge-${entry.method}`}>{entry.method}</span>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            )}
                           </div>
-                          <div className="records-block">
-                            <div className="records-block-title records-block-title-egg">🥚 Hatches</div>
-                            {hatches.length === 0 ? (
-                              <div className="records-empty">None yet</div>
-                            ) : hatches.map((entry, i) => (
-                              <div key={i} className="records-row">
-                                <span className="records-date">{entry.date}</span>
-                                <span className="records-names">{entry.to}</span>
-                                <span className="records-badge records-badge-egg">egg</span>
+                          <div className="pklist-section">
+                            <button className="pklist-toggle pklist-toggle-egg" onClick={() => setShowHatchRecords(p => !p)}>
+                              <span>🥚 Hatches · {hatches.length}</span>
+                              <span className="pklist-chevron">{showHatchRecords ? '▲' : '▼'}</span>
+                            </button>
+                            {showHatchRecords && (
+                              <div className="pklist-list">
+                                {hatches.length === 0 ? (
+                                  <div className="records-empty">None yet</div>
+                                ) : hatches.map((entry, i) => (
+                                  <div key={i} className="records-row">
+                                    <span className="records-date">{entry.date}</span>
+                                    <span className="records-names">{entry.to}</span>
+                                    <span className="records-badge records-badge-egg">egg</span>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            )}
                           </div>
                         </div>
                       );

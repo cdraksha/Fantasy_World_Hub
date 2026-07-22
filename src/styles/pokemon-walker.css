@@ -4009,6 +4009,10 @@
 .pklist-toggle-epic:hover      { background: rgba(124,58,237,0.14); }
 .pklist-toggle-rare:hover      { background: rgba(43,80,161,0.14); }
 .pklist-toggle-common:hover    { background: rgba(61,158,66,0.14); }
+.pklist-toggle-evo             { border-left-color: #3b4cca; color: #3b4cca; background: rgba(59,76,202,0.07); }
+.pklist-toggle-evo:hover       { background: rgba(59,76,202,0.13); }
+.pklist-toggle-egg             { border-left-color: #15803d; color: #15803d; background: rgba(34,197,94,0.07); }
+.pklist-toggle-egg:hover       { background: rgba(34,197,94,0.13); }
 
 .pklist-chevron { font-size: 8px; opacity: 0.5; }
 
