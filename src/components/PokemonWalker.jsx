@@ -269,6 +269,17 @@ function initSugar() {
   return { unlockedTiers: ['easy'], completedTiers: [], active: null, frozenPokemon: null };
 }
 
+const TIMING_MILESTONES = [
+  { days: 5,  tier: 'common' },
+  { days: 15, tier: 'rare' },
+  { days: 25, tier: 'epic' },
+  { days: 35, tier: 'legendary' },
+];
+
+function initTiming() {
+  return { streak: 0, lastLogDate: null, claimedMilestones: [], pendingReward: null };
+}
+
 function loanThreshold(index, prevDefaulted) {
   return LOAN_BASE * (index + 1) + (prevDefaulted ? LOAN_PENALTY : 0);
 }
@@ -557,6 +568,7 @@ function defaultState(steps) {
     stepHistory: [],
     evolutionLog: [],
     caughtDex: [],
+    timing: initTiming(),
   };
 }
 
@@ -577,6 +589,7 @@ function loadState() {
     if (!saved.daycare) saved.daycare = initDaycare();
     if (!saved.stepHistory) saved.stepHistory = [];
     if (!saved.evolutionLog) saved.evolutionLog = [];
+    if (!saved.timing) saved.timing = initTiming();
     // Seed caughtDex from existing pokemon on first migration
     if (!saved.caughtDex || saved.caughtDex.length === 0) {
       saved.caughtDex = [...new Set((saved.pokemon || []).map(p => p.dexId))];
@@ -687,6 +700,10 @@ function loadState() {
       // Day Care cooldown expiry
       if (saved.daycare?.status === 'cooldown' && saved.daycare.cooldownUntil && today >= saved.daycare.cooldownUntil) {
         saved.daycare = initDaycare();
+      }
+      // Timing streak — if yesterday wasn't logged, reset streak
+      if (saved.timing?.streak > 0 && saved.timing.lastLogDate !== saved.todayDate) {
+        saved.timing = { ...saved.timing, streak: 0, claimedMilestones: [], pendingReward: null };
       }
       // Log completed day before resetting
       if (saved.todaySteps > 0) {
@@ -997,6 +1014,7 @@ export default function PokemonWalker({ onStop }) {
   const [openTiers, setOpenTiers] = useState({});
   const [showEvoRecords, setShowEvoRecords] = useState(false);
   const [showHatchRecords, setShowHatchRecords] = useState(false);
+  const [showTimingPanel, setShowTimingPanel] = useState(false);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
@@ -1916,6 +1934,39 @@ export default function PokemonWalker({ onStop }) {
   };
 
   // ─── Midnight handlers ────────────────────────────────────────────────
+  const handleLogTiming = () => {
+    const today = todayString();
+    setAppState(prev => {
+      const t = prev.timing || initTiming();
+      if (t.lastLogDate === today) return prev;
+      const newStreak = t.streak + 1;
+      const claimed = t.claimedMilestones || [];
+      const hit = TIMING_MILESTONES.find(m => m.days === newStreak && !claimed.includes(m.days));
+      return {
+        ...prev,
+        timing: {
+          ...t,
+          streak: newStreak,
+          lastLogDate: today,
+          claimedMilestones: hit ? [...claimed, hit.days] : claimed,
+          pendingReward: hit ? hit.tier : t.pendingReward,
+        },
+      };
+    });
+  };
+
+  const handleClaimTimingReward = () => {
+    setAppState(prev => {
+      const tier = prev.timing?.pendingReward;
+      if (!tier) return prev;
+      return {
+        ...prev,
+        packInventory: { ...prev.packInventory, [tier]: prev.packInventory[tier] + 1 },
+        timing: { ...prev.timing, pendingReward: null },
+      };
+    });
+  };
+
   const handleMidnightSpend = () => { setShowMidnight(false); };
   const handleMidnightDeposit = () => { handleDepositAll(); setShowMidnight(false); };
   const handleMidnightIgnore = () => { setShowMidnight(false); };
@@ -3128,6 +3179,64 @@ export default function PokemonWalker({ onStop }) {
                               })}
                             </div>
                             <div className="fast-idle-hint">Stay under the daily sugar limit for the required days within the window.</div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Timing */}
+                    <div className="gba-section">
+                      <button className="timing-toggle-btn" onClick={() => setShowTimingPanel(p => !p)}>
+                        🕗 Timing
+                        {(appState.timing?.streak || 0) > 0 && <span className="dt-active-dot" />}
+                      </button>
+                      {showTimingPanel && (() => {
+                        const t = appState.timing || initTiming();
+                        const today = todayString();
+                        const loggedToday = t.lastLogDate === today;
+                        const nextMilestone = TIMING_MILESTONES.find(m => m.days > t.streak && !(t.claimedMilestones || []).includes(m.days));
+
+                        if (t.pendingReward) {
+                          return (
+                            <div className="fast-panel fast-rewarding">
+                              <div className="fast-result-title">🎉 Milestone Reached!</div>
+                              <div className="fast-result-reward">You earned a <strong>{t.pendingReward}</strong> pack!</div>
+                              <button className="fast-claim-btn" onClick={handleClaimTimingReward}>Claim Pack</button>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="fast-panel fast-idle" style={{ padding: '10px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                              <span style={{ fontSize: 11, fontWeight: 800, color: '#1a1a2e' }}>No food after 8pm</span>
+                              <span style={{ fontSize: 18, fontWeight: 900, color: '#0ea5e9' }}>🔥 {t.streak}</span>
+                            </div>
+                            {nextMilestone && (
+                              <div style={{ fontSize: 9, color: '#7a7a8a', marginBottom: 8 }}>
+                                Next reward: <strong>{nextMilestone.tier}</strong> pack at day {nextMilestone.days} ({nextMilestone.days - t.streak} to go)
+                              </div>
+                            )}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
+                              {TIMING_MILESTONES.map(m => {
+                                const done = (t.claimedMilestones || []).includes(m.days);
+                                const active = t.streak >= m.days;
+                                return (
+                                  <div key={m.days} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 8 }}>
+                                    <span style={{ color: done ? '#16a34a' : active ? '#0ea5e9' : '#ccc', fontWeight: 800 }}>{done ? '✓' : active ? '●' : '○'}</span>
+                                    <span style={{ flex: 1, color: '#5a5a6a' }}>Day {m.days}</span>
+                                    <span className={`records-badge records-badge-${done ? 'egg' : 'vault'}`} style={{ opacity: done ? 0.5 : 1 }}>{m.tier}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <button
+                              className={`fast-log-btn${loggedToday ? ' logged' : ''}`}
+                              onClick={handleLogTiming}
+                              disabled={loggedToday}
+                            >
+                              {loggedToday ? '✓ Logged for today' : 'Log Clean Evening'}
+                            </button>
                           </div>
                         );
                       })()}

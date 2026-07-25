@@ -3767,6 +3767,31 @@
   box-shadow: 0 0 12px rgba(168,85,247,0.24);
 }
 
+.timing-toggle-btn {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(14,165,233,0.10), rgba(2,132,199,0.08));
+  border: 1.5px solid rgba(14,165,233,0.35);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #0284c7;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 8px rgba(14,165,233,0.12);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.timing-toggle-btn:hover {
+  background: linear-gradient(135deg, rgba(14,165,233,0.18), rgba(2,132,199,0.14));
+  border-color: rgba(14,165,233,0.60);
+  box-shadow: 0 0 12px rgba(14,165,233,0.24);
+}
+
 .sugar-toggle-btn {
   width: 100%;
   background: linear-gradient(135deg, rgba(236,72,153,0.10), rgba(219,39,119,0.08));
