@@ -2661,18 +2661,15 @@ export default function PokemonWalker({ onStop }) {
                           );
                         }
                         const stepsNeeded = threshold - totalSteps;
-                        if (stepsNeeded <= LOAN_PREVIEW_WINDOW) {
-                          return (
-                            <div className="loan-panel loan-locked">
-                              <div className="loan-locked-icon">🔓</div>
-                              <div className="loan-locked-title">Almost there — Loan #{loan.index + 1}</div>
-                              <div className="loan-locked-desc"><strong>{fmtNum(stepsNeeded)}</strong> more steps to unlock</div>
-                              <div className="loan-bar loan-bar-muted"><div className="loan-bar-fill" style={{ width: `${Math.min(totalSteps / threshold, 1) * 100}%` }} /></div>
-                              <div className="loan-locked-remaining">Goal: {fmtNum(threshold)} lifetime steps</div>
-                            </div>
-                          );
-                        }
-                        return null;
+                        return (
+                          <div className="loan-panel loan-locked">
+                            <div className="loan-locked-icon">{stepsNeeded <= LOAN_PREVIEW_WINDOW ? '🔓' : '🔒'}</div>
+                            <div className="loan-locked-title">{stepsNeeded <= LOAN_PREVIEW_WINDOW ? 'Almost there —' : ''} Loan #{loan.index + 1}</div>
+                            <div className="loan-locked-desc"><strong>{fmtNum(stepsNeeded)}</strong> more lifetime steps to unlock</div>
+                            <div className="loan-bar loan-bar-muted"><div className="loan-bar-fill" style={{ width: `${Math.min(totalSteps / threshold, 1) * 100}%` }} /></div>
+                            <div className="loan-locked-remaining">Goal: {fmtNum(threshold)} lifetime steps</div>
+                          </div>
+                        );
                       })()}
                     </div>
 
