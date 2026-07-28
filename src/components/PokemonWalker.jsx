@@ -269,6 +269,10 @@ function initSugar() {
   return { unlockedTiers: ['easy'], completedTiers: [], active: null, frozenPokemon: null };
 }
 
+function initWeight() {
+  return { lastKg: null, lastChangeDate: null };
+}
+
 const TIMING_MILESTONES = [
   { days: 5,  tier: 'common' },
   { days: 15, tier: 'rare' },
@@ -569,6 +573,7 @@ function defaultState(steps) {
     evolutionLog: [],
     caughtDex: [],
     timing: initTiming(),
+    weight: initWeight(),
   };
 }
 
@@ -590,6 +595,7 @@ function loadState() {
     if (!saved.stepHistory) saved.stepHistory = [];
     if (!saved.evolutionLog) saved.evolutionLog = [];
     if (!saved.timing) saved.timing = initTiming();
+    if (!saved.weight) saved.weight = initWeight();
     // Seed caughtDex from existing pokemon on first migration
     if (!saved.caughtDex || saved.caughtDex.length === 0) {
       saved.caughtDex = [...new Set((saved.pokemon || []).map(p => p.dexId))];
@@ -1015,6 +1021,9 @@ export default function PokemonWalker({ onStop }) {
   const [showEvoRecords, setShowEvoRecords] = useState(false);
   const [showHatchRecords, setShowHatchRecords] = useState(false);
   const [showTimingPanel, setShowTimingPanel] = useState(false);
+  const [showWeightPanel, setShowWeightPanel] = useState(false);
+  const [weightInput, setWeightInput] = useState('');
+  const [weightResult, setWeightResult] = useState(null);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
@@ -1964,6 +1973,52 @@ export default function PokemonWalker({ onStop }) {
         packInventory: { ...prev.packInventory, [tier]: prev.packInventory[tier] + 1 },
         timing: { ...prev.timing, pendingReward: null },
       };
+    });
+  };
+
+  const handleLogWeight = () => {
+    const raw = parseFloat(weightInput);
+    if (isNaN(raw) || raw <= 0) return;
+    const newKg = Math.floor(raw);
+    setWeightInput('');
+    setAppState(prev => {
+      const w = prev.weight || initWeight();
+      // First ever log — just record, no reward/penalty
+      if (w.lastKg === null) {
+        setWeightResult({ type: 'recorded', kg: newKg });
+        setTimeout(() => setWeightResult(null), 4000);
+        return { ...prev, weight: { lastKg: newKg, lastChangeDate: todayString() } };
+      }
+      if (newKg === w.lastKg) {
+        setWeightResult({ type: 'nochange', kg: newKg });
+        setTimeout(() => setWeightResult(null), 3000);
+        return prev;
+      }
+      const days = daysBetween(w.lastChangeDate, todayString());
+      const tier = days <= 7 ? 'epic' : days <= 14 ? 'rare' : 'common';
+      const lost = newKg < w.lastKg;
+      let next = { ...prev, weight: { lastKg: newKg, lastChangeDate: todayString() } };
+      if (lost) {
+        next = { ...next, packInventory: { ...next.packInventory, [tier]: next.packInventory[tier] + 1 } };
+        setWeightResult({ type: 'loss', kg: newKg, diff: w.lastKg - newKg, tier, days });
+      } else {
+        // Penalty — reduce buddy steps
+        const buddyUid = prev.buddy;
+        if (buddyUid) {
+          const factor = days <= 7 ? 0 : days <= 14 ? 0.5 : 0.75;
+          next = {
+            ...next,
+            pokemon: next.pokemon.map(p =>
+              p.uid === buddyUid ? { ...p, buddySteps: Math.floor((p.buddySteps || 0) * factor) } : p
+            ),
+          };
+          setWeightResult({ type: 'gain', kg: newKg, diff: newKg - w.lastKg, factor, days });
+        } else {
+          setWeightResult({ type: 'gain-nobuddy', kg: newKg, diff: newKg - w.lastKg, days });
+        }
+      }
+      setTimeout(() => setWeightResult(null), 5000);
+      return next;
     });
   };
 
@@ -3176,6 +3231,72 @@ export default function PokemonWalker({ onStop }) {
                               })}
                             </div>
                             <div className="fast-idle-hint">Stay under the daily sugar limit for the required days within the window.</div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Weight Loss */}
+                    <div className="gba-section">
+                      <button className="weight-toggle-btn" onClick={() => setShowWeightPanel(p => !p)}>
+                        ⚖️ Weight Loss
+                        {appState.weight?.lastKg !== null && <span className="dt-active-dot" />}
+                      </button>
+                      {showWeightPanel && (() => {
+                        const w = appState.weight || initWeight();
+                        const buddyPoke = appState.buddy ? appState.pokemon.find(p => p.uid === appState.buddy) : null;
+                        return (
+                          <div className="wt-panel">
+                            {w.lastKg !== null && (
+                              <div className="wt-last-row">
+                                <span className="wt-last-label">Last recorded</span>
+                                <span className="wt-last-val">{w.lastKg} kg</span>
+                                <span className="wt-last-date">{w.lastChangeDate}</span>
+                              </div>
+                            )}
+                            <div className="wt-rules">
+                              <div className="wt-rule-group wt-rule-good">
+                                <div className="wt-rule-title">↓ Lose 1kg</div>
+                                <div className="wt-rule-row"><span>&lt;7 days</span><span className="records-badge records-badge-vault">epic pack</span></div>
+                                <div className="wt-rule-row"><span>&lt;14 days</span><span className="records-badge records-badge-fasting">rare pack</span></div>
+                                <div className="wt-rule-row"><span>14+ days</span><span className="records-badge records-badge-egg">common pack</span></div>
+                              </div>
+                              <div className="wt-rule-group wt-rule-bad">
+                                <div className="wt-rule-title">↑ Gain 1kg</div>
+                                <div className="wt-rule-row"><span>&lt;7 days</span><span className="records-badge records-badge-sugar">buddy loses all steps</span></div>
+                                <div className="wt-rule-row"><span>&lt;14 days</span><span className="records-badge records-badge-sugar">buddy loses 50%</span></div>
+                                <div className="wt-rule-row"><span>14+ days</span><span className="records-badge records-badge-sugar">buddy loses 25%</span></div>
+                              </div>
+                            </div>
+                            <div className="wt-input-row">
+                              <input
+                                className="wt-input"
+                                type="number"
+                                step="0.1"
+                                min="30"
+                                max="300"
+                                placeholder="Enter weight (kg)"
+                                value={weightInput}
+                                onChange={e => setWeightInput(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleLogWeight()}
+                              />
+                              <button className="wt-submit-btn" onClick={handleLogWeight} disabled={!weightInput}>Log</button>
+                            </div>
+                            {weightInput && !isNaN(parseFloat(weightInput)) && (
+                              <div className="wt-preview">Will record as <strong>{Math.floor(parseFloat(weightInput))} kg</strong></div>
+                            )}
+                            {weightResult && (
+                              <div className={`wt-result wt-result-${weightResult.type}`}>
+                                {weightResult.type === 'recorded' && `✓ First entry recorded: ${weightResult.kg} kg`}
+                                {weightResult.type === 'nochange' && `↔ No change — still ${weightResult.kg} kg`}
+                                {weightResult.type === 'loss' && `🎉 Lost ${weightResult.diff}kg in ${weightResult.days}d → ${weightResult.tier} pack added!`}
+                                {weightResult.type === 'gain' && `😬 Gained ${weightResult.diff}kg in ${weightResult.days}d → buddy lost ${weightResult.factor === 0 ? 'all' : weightResult.factor === 0.5 ? '50%' : '25%'} steps`}
+                                {weightResult.type === 'gain-nobuddy' && `↑ Gained ${weightResult.diff}kg — no buddy set, no penalty applied`}
+                              </div>
+                            )}
+                            {buddyPoke && (
+                              <div className="wt-buddy-note">Buddy: {buddyPoke.name} · {fmtNum(buddyPoke.buddySteps || 0)} steps</div>
+                            )}
                           </div>
                         );
                       })()}
