@@ -3142,7 +3142,7 @@ export default function PokemonWalker({ onStop }) {
                                 onClick={() => handleLogTiming()}
                                 disabled={loggedToday}
                               >
-                                {loggedToday ? '✓ Logged for today' : 'Log Clean Evening'}
+                                {loggedToday ? '✓ Logged' : 'Log Clean Evening'}
                               </button>
                               {loggedToday && (
                                 <button className="fast-log-undo-btn" onClick={handleUndoTiming}>Undo</button>
@@ -3232,7 +3232,7 @@ export default function PokemonWalker({ onStop }) {
                                   onClick={() => handleLogFast()}
                                   disabled={loggedToday}
                                 >
-                                  {loggedToday ? '✓ Logged today' : '+ Log Fast'}
+                                  {loggedToday ? '✓ Logged' : '+ Log Fast'}
                                 </button>
                                 {loggedToday && (
                                   <button className="fast-log-undo-btn" onClick={handleUndoFast}>Undo</button>
@@ -3418,7 +3418,7 @@ export default function PokemonWalker({ onStop }) {
                               </div>
                               <div className="fast-log-row">
                                 <button className={`fast-log-btn${loggedToday ? ' logged' : ''}`} onClick={() => handleLogSugar()} disabled={loggedToday}>
-                                  {loggedToday ? '✓ Logged today' : '+ Log Clean Day'}
+                                  {loggedToday ? '✓ Logged' : '+ Log Clean Day'}
                                 </button>
                                 {loggedToday && (
                                   <button className="fast-log-undo-btn" onClick={handleUndoSugar}>Undo</button>
