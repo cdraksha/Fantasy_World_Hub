@@ -2888,6 +2888,215 @@ export default function PokemonWalker({ onStop }) {
                       })()}
                     </div>
 
+                    {/* Day Care */}
+                    <div className="gba-section">
+                      <button className="dc-toggle-btn" onClick={() => setShowDaycarePanel(p => !p)}>
+                        🥚 Day Care
+                      </button>
+                      {showDaycarePanel && (() => {
+                        const dc = appState.daycare || initDaycare();
+                        if (dc.status === 'cooldown') {
+                          const daysLeft = dc.cooldownUntil ? Math.max(0, daysBetween(todayString(), dc.cooldownUntil)) : 0;
+                          return (
+                            <div className="dc-panel dc-cooldown">
+                              <div className="dc-header">
+                                <span className="dc-icon">😴</span>
+                                <span className="dc-title">Day Care</span>
+                                <span className="dc-status-badge dc-status-cooldown">Cooldown</span>
+                              </div>
+                              <div className="dc-cooldown-msg">Next Pokémon available in <strong>{daysLeft} day{daysLeft !== 1 ? 's' : ''}</strong></div>
+                            </div>
+                          );
+                        }
+                        if (dc.status === 'active') {
+                          const accum = dc.stepsAccumulated || 0;
+                          const pct = Math.min(100, (accum / 50000) * 100);
+                          const daysElapsed = daysBetween(dc.startDate, todayString());
+                          const daysLeft = Math.max(0, 10 - daysElapsed);
+                          return (
+                            <div className="dc-panel dc-active">
+                              <div className="dc-header">
+                                {dc.pokemon?.sprite && <img src={dc.pokemon.sprite} alt={dc.pokemon.name} className="dc-poke-sprite" />}
+                                <div className="dc-poke-info">
+                                  <div className="dc-poke-name">{dc.pokemon?.name}</div>
+                                  <div className="dc-poke-sub">friend's Pokémon · not yours</div>
+                                </div>
+                                <span className="dc-status-badge dc-status-active">Active</span>
+                              </div>
+                              <div className="dc-progress-row">
+                                <span className="dc-progress-label">{accum.toLocaleString()} / 50,000 steps</span>
+                                <span className="dc-days-label">{daysLeft}d left</span>
+                              </div>
+                              <div className="dc-bar"><div className="dc-bar-fill" style={{ width: `${pct.toFixed(1)}%` }} /></div>
+                              <div className="dc-reward-row">🎁 Reward: <strong>1× Rare Pack</strong> on success</div>
+                            </div>
+                          );
+                        }
+                        // available
+                        return (
+                          <div className="dc-panel dc-available">
+                            <div className="dc-header">
+                              <span className="dc-icon">🥚</span>
+                              <span className="dc-title">Day Care</span>
+                              <span className="dc-status-badge dc-status-ready">Ready</span>
+                            </div>
+                            <div className="dc-available-desc">
+                              A friend's Pokémon needs training. Walk 50,000 steps in 10 days — earn a Rare Pack.
+                            </div>
+                            <div className="dc-rules">
+                              <div>📅 10 days max</div>
+                              <div>👟 50,000 total steps</div>
+                              <div>🎁 Rare Pack on success</div>
+                              <div>😴 3-day cooldown on failure</div>
+                            </div>
+                            <button
+                              className="dc-start-btn"
+                              onClick={handleStartDaycare}
+                              disabled={startingDaycare}
+                            >
+                              {startingDaycare ? 'Loading Pokémon…' : '🤝 Start Day Care'}
+                            </button>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="obj-category-label" style={{ marginTop: 10 }}>Manual Update</div>
+
+                    {/* Weight Loss */}
+                    <div className="gba-section">
+                      <button className="weight-toggle-btn" onClick={() => setShowWeightPanel(p => !p)}>
+                        ⚖️ Weight Loss
+                        {appState.weight?.lastKg !== null && <span className="obj-pending-badge">Pending</span>}
+                      </button>
+                      {showWeightPanel && (() => {
+                        const w = appState.weight || initWeight();
+                        const buddyPoke = appState.buddy ? appState.pokemon.find(p => p.uid === appState.buddy) : null;
+                        return (
+                          <div className="wt-panel">
+                            {w.lastKg !== null && (
+                              <div className="wt-last-row">
+                                <span className="wt-last-label">Last recorded</span>
+                                <span className="wt-last-val">{w.lastKg} kg</span>
+                                <span className="wt-last-date">{w.lastChangeDate}</span>
+                              </div>
+                            )}
+                            <div className="wt-rules">
+                              <div className="wt-rule-group wt-rule-good">
+                                <div className="wt-rule-title">↓ Lose 1kg</div>
+                                <div className="wt-rule-row"><span>&lt;7 days</span><span className="records-badge records-badge-vault">epic pack</span></div>
+                                <div className="wt-rule-row"><span>&lt;14 days</span><span className="records-badge records-badge-fasting">rare pack</span></div>
+                                <div className="wt-rule-row"><span>14+ days</span><span className="records-badge records-badge-egg">common pack</span></div>
+                              </div>
+                              <div className="wt-rule-group wt-rule-bad">
+                                <div className="wt-rule-title">↑ Gain 1kg</div>
+                                <div className="wt-rule-row"><span>&lt;7 days</span><span className="records-badge records-badge-sugar">buddy loses all steps</span></div>
+                                <div className="wt-rule-row"><span>&lt;14 days</span><span className="records-badge records-badge-sugar">buddy loses 50%</span></div>
+                                <div className="wt-rule-row"><span>14+ days</span><span className="records-badge records-badge-sugar">buddy loses 25%</span></div>
+                              </div>
+                            </div>
+                            <div className="wt-input-row">
+                              <input
+                                className="wt-input"
+                                type="number"
+                                step="0.1"
+                                min="30"
+                                max="300"
+                                placeholder="Enter weight (kg)"
+                                value={weightInput}
+                                onChange={e => setWeightInput(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleLogWeight()}
+                              />
+                              <button className="wt-submit-btn" onClick={handleLogWeight} disabled={!weightInput}>Log</button>
+                            </div>
+                            {weightInput && !isNaN(parseFloat(weightInput)) && (
+                              <div className="wt-preview">Will record as <strong>{Math.floor(parseFloat(weightInput))} kg</strong></div>
+                            )}
+                            {weightResult && (
+                              <div className={`wt-result wt-result-${weightResult.type}`}>
+                                {weightResult.type === 'recorded' && `✓ First entry recorded: ${weightResult.kg} kg`}
+                                {weightResult.type === 'nochange' && `↔ No change — still ${weightResult.kg} kg`}
+                                {weightResult.type === 'loss' && `🎉 Lost ${weightResult.diff}kg in ${weightResult.days}d → ${weightResult.tier} pack added!`}
+                                {weightResult.type === 'gain' && `😬 Gained ${weightResult.diff}kg in ${weightResult.days}d → buddy lost ${weightResult.factor === 0 ? 'all' : weightResult.factor === 0.5 ? '50%' : '25%'} steps`}
+                                {weightResult.type === 'gain-nobuddy' && `↑ Gained ${weightResult.diff}kg — no buddy set, no penalty applied`}
+                              </div>
+                            )}
+                            {buddyPoke && (
+                              <div className="wt-buddy-note">Buddy: {buddyPoke.name} · {fmtNum(buddyPoke.buddySteps || 0)} steps</div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Timing */}
+                    <div className="gba-section">
+                      <button className="timing-toggle-btn" onClick={() => setShowTimingPanel(p => !p)}>
+                        🕗 Timing
+                        {(appState.timing?.streak || 0) > 0 && appState.timing?.lastLogDate !== todayString() && <span className="obj-pending-badge">Pending</span>}
+                      </button>
+                      {showTimingPanel && (() => {
+                        const t = appState.timing || initTiming();
+                        const today = todayString();
+                        const loggedToday = t.lastLogDate === today;
+                        const nextMilestone = TIMING_MILESTONES.find(m => m.days > t.streak && !(t.claimedMilestones || []).includes(m.days));
+
+                        if (t.pendingReward) {
+                          return (
+                            <div className="fast-panel fast-rewarding">
+                              <div className="fast-result-title">🎉 Milestone Reached!</div>
+                              <div className="fast-result-reward">You earned a <strong>{t.pendingReward}</strong> pack!</div>
+                              <button className="fast-claim-btn" onClick={handleClaimTimingReward}>Claim Pack</button>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="fast-panel fast-idle" style={{ padding: '10px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                              <span style={{ fontSize: 11, fontWeight: 800, color: '#1a1a2e' }}>No food after 8pm</span>
+                              <span style={{ fontSize: 18, fontWeight: 900, color: '#0ea5e9' }}>🔥 {t.streak}</span>
+                            </div>
+                            {nextMilestone && (
+                              <div style={{ fontSize: 9, color: '#7a7a8a', marginBottom: 8 }}>
+                                Next reward: <strong>{nextMilestone.tier}</strong> pack at day {nextMilestone.days} ({nextMilestone.days - t.streak} to go)
+                              </div>
+                            )}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
+                              {TIMING_MILESTONES.map(m => {
+                                const done = (t.claimedMilestones || []).includes(m.days);
+                                const active = t.streak >= m.days;
+                                return (
+                                  <div key={m.days} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 8 }}>
+                                    <span style={{ color: done ? '#16a34a' : active ? '#0ea5e9' : '#ccc', fontWeight: 800 }}>{done ? '✓' : active ? '●' : '○'}</span>
+                                    <span style={{ flex: 1, color: '#5a5a6a' }}>Day {m.days}</span>
+                                    <span className={`records-badge records-badge-${done ? 'egg' : 'vault'}`} style={{ opacity: done ? 0.5 : 1 }}>{m.tier}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="fast-log-row">
+                              <button
+                                className={`fast-log-btn${loggedToday ? ' logged' : ''}`}
+                                onClick={() => handleLogTiming()}
+                                disabled={loggedToday}
+                              >
+                                {loggedToday ? '✓ Logged for today' : 'Log Clean Evening'}
+                              </button>
+                              <button
+                                className="fast-log-yesterday-btn"
+                                onClick={() => handleLogTiming(addDays(todayString(), -1))}
+                                disabled={t.lastLogDate === addDays(todayString(), -1)}
+                                title="Log for yesterday"
+                              >
+                                {t.lastLogDate === addDays(todayString(), -1) ? '✓ Yesterday' : '+ Yesterday'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
                     {/* Fasting Challenge */}
                     <div className="gba-section">
                       <button className="fast-toggle-btn" onClick={() => setShowFastingPanel(p => !p)}>
@@ -3245,214 +3454,6 @@ export default function PokemonWalker({ onStop }) {
                               })}
                             </div>
                             <div className="fast-idle-hint">Stay under the daily sugar limit for the required days within the window.</div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    <div className="obj-category-label" style={{ marginTop: 10 }}>Daily</div>
-
-                    {/* Weight Loss */}
-                    <div className="gba-section">
-                      <button className="weight-toggle-btn" onClick={() => setShowWeightPanel(p => !p)}>
-                        ⚖️ Weight Loss
-                      </button>
-                      {showWeightPanel && (() => {
-                        const w = appState.weight || initWeight();
-                        const buddyPoke = appState.buddy ? appState.pokemon.find(p => p.uid === appState.buddy) : null;
-                        return (
-                          <div className="wt-panel">
-                            {w.lastKg !== null && (
-                              <div className="wt-last-row">
-                                <span className="wt-last-label">Last recorded</span>
-                                <span className="wt-last-val">{w.lastKg} kg</span>
-                                <span className="wt-last-date">{w.lastChangeDate}</span>
-                              </div>
-                            )}
-                            <div className="wt-rules">
-                              <div className="wt-rule-group wt-rule-good">
-                                <div className="wt-rule-title">↓ Lose 1kg</div>
-                                <div className="wt-rule-row"><span>&lt;7 days</span><span className="records-badge records-badge-vault">epic pack</span></div>
-                                <div className="wt-rule-row"><span>&lt;14 days</span><span className="records-badge records-badge-fasting">rare pack</span></div>
-                                <div className="wt-rule-row"><span>14+ days</span><span className="records-badge records-badge-egg">common pack</span></div>
-                              </div>
-                              <div className="wt-rule-group wt-rule-bad">
-                                <div className="wt-rule-title">↑ Gain 1kg</div>
-                                <div className="wt-rule-row"><span>&lt;7 days</span><span className="records-badge records-badge-sugar">buddy loses all steps</span></div>
-                                <div className="wt-rule-row"><span>&lt;14 days</span><span className="records-badge records-badge-sugar">buddy loses 50%</span></div>
-                                <div className="wt-rule-row"><span>14+ days</span><span className="records-badge records-badge-sugar">buddy loses 25%</span></div>
-                              </div>
-                            </div>
-                            <div className="wt-input-row">
-                              <input
-                                className="wt-input"
-                                type="number"
-                                step="0.1"
-                                min="30"
-                                max="300"
-                                placeholder="Enter weight (kg)"
-                                value={weightInput}
-                                onChange={e => setWeightInput(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleLogWeight()}
-                              />
-                              <button className="wt-submit-btn" onClick={handleLogWeight} disabled={!weightInput}>Log</button>
-                            </div>
-                            {weightInput && !isNaN(parseFloat(weightInput)) && (
-                              <div className="wt-preview">Will record as <strong>{Math.floor(parseFloat(weightInput))} kg</strong></div>
-                            )}
-                            {weightResult && (
-                              <div className={`wt-result wt-result-${weightResult.type}`}>
-                                {weightResult.type === 'recorded' && `✓ First entry recorded: ${weightResult.kg} kg`}
-                                {weightResult.type === 'nochange' && `↔ No change — still ${weightResult.kg} kg`}
-                                {weightResult.type === 'loss' && `🎉 Lost ${weightResult.diff}kg in ${weightResult.days}d → ${weightResult.tier} pack added!`}
-                                {weightResult.type === 'gain' && `😬 Gained ${weightResult.diff}kg in ${weightResult.days}d → buddy lost ${weightResult.factor === 0 ? 'all' : weightResult.factor === 0.5 ? '50%' : '25%'} steps`}
-                                {weightResult.type === 'gain-nobuddy' && `↑ Gained ${weightResult.diff}kg — no buddy set, no penalty applied`}
-                              </div>
-                            )}
-                            {buddyPoke && (
-                              <div className="wt-buddy-note">Buddy: {buddyPoke.name} · {fmtNum(buddyPoke.buddySteps || 0)} steps</div>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    {/* Timing */}
-                    <div className="gba-section">
-                      <button className="timing-toggle-btn" onClick={() => setShowTimingPanel(p => !p)}>
-                        🕗 Timing
-                        {(appState.timing?.streak || 0) > 0 && appState.timing?.lastLogDate !== todayString() && <span className="obj-pending-badge">Pending</span>}
-                      </button>
-                      {showTimingPanel && (() => {
-                        const t = appState.timing || initTiming();
-                        const today = todayString();
-                        const loggedToday = t.lastLogDate === today;
-                        const nextMilestone = TIMING_MILESTONES.find(m => m.days > t.streak && !(t.claimedMilestones || []).includes(m.days));
-
-                        if (t.pendingReward) {
-                          return (
-                            <div className="fast-panel fast-rewarding">
-                              <div className="fast-result-title">🎉 Milestone Reached!</div>
-                              <div className="fast-result-reward">You earned a <strong>{t.pendingReward}</strong> pack!</div>
-                              <button className="fast-claim-btn" onClick={handleClaimTimingReward}>Claim Pack</button>
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <div className="fast-panel fast-idle" style={{ padding: '10px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                              <span style={{ fontSize: 11, fontWeight: 800, color: '#1a1a2e' }}>No food after 8pm</span>
-                              <span style={{ fontSize: 18, fontWeight: 900, color: '#0ea5e9' }}>🔥 {t.streak}</span>
-                            </div>
-                            {nextMilestone && (
-                              <div style={{ fontSize: 9, color: '#7a7a8a', marginBottom: 8 }}>
-                                Next reward: <strong>{nextMilestone.tier}</strong> pack at day {nextMilestone.days} ({nextMilestone.days - t.streak} to go)
-                              </div>
-                            )}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
-                              {TIMING_MILESTONES.map(m => {
-                                const done = (t.claimedMilestones || []).includes(m.days);
-                                const active = t.streak >= m.days;
-                                return (
-                                  <div key={m.days} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 8 }}>
-                                    <span style={{ color: done ? '#16a34a' : active ? '#0ea5e9' : '#ccc', fontWeight: 800 }}>{done ? '✓' : active ? '●' : '○'}</span>
-                                    <span style={{ flex: 1, color: '#5a5a6a' }}>Day {m.days}</span>
-                                    <span className={`records-badge records-badge-${done ? 'egg' : 'vault'}`} style={{ opacity: done ? 0.5 : 1 }}>{m.tier}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            <div className="fast-log-row">
-                              <button
-                                className={`fast-log-btn${loggedToday ? ' logged' : ''}`}
-                                onClick={() => handleLogTiming()}
-                                disabled={loggedToday}
-                              >
-                                {loggedToday ? '✓ Logged for today' : 'Log Clean Evening'}
-                              </button>
-                              <button
-                                className="fast-log-yesterday-btn"
-                                onClick={() => handleLogTiming(addDays(todayString(), -1))}
-                                disabled={t.lastLogDate === addDays(todayString(), -1)}
-                                title="Log for yesterday"
-                              >
-                                {t.lastLogDate === addDays(todayString(), -1) ? '✓ Yesterday' : '+ Yesterday'}
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    {/* Day Care */}
-                    <div className="gba-section">
-                      <button className="dc-toggle-btn" onClick={() => setShowDaycarePanel(p => !p)}>
-                        🥚 Day Care
-                      </button>
-                      {showDaycarePanel && (() => {
-                        const dc = appState.daycare || initDaycare();
-                        if (dc.status === 'cooldown') {
-                          const daysLeft = dc.cooldownUntil ? Math.max(0, daysBetween(todayString(), dc.cooldownUntil)) : 0;
-                          return (
-                            <div className="dc-panel dc-cooldown">
-                              <div className="dc-header">
-                                <span className="dc-icon">😴</span>
-                                <span className="dc-title">Day Care</span>
-                                <span className="dc-status-badge dc-status-cooldown">Cooldown</span>
-                              </div>
-                              <div className="dc-cooldown-msg">Next Pokémon available in <strong>{daysLeft} day{daysLeft !== 1 ? 's' : ''}</strong></div>
-                            </div>
-                          );
-                        }
-                        if (dc.status === 'active') {
-                          const accum = dc.stepsAccumulated || 0;
-                          const pct = Math.min(100, (accum / 50000) * 100);
-                          const daysElapsed = daysBetween(dc.startDate, todayString());
-                          const daysLeft = Math.max(0, 10 - daysElapsed);
-                          return (
-                            <div className="dc-panel dc-active">
-                              <div className="dc-header">
-                                {dc.pokemon?.sprite && <img src={dc.pokemon.sprite} alt={dc.pokemon.name} className="dc-poke-sprite" />}
-                                <div className="dc-poke-info">
-                                  <div className="dc-poke-name">{dc.pokemon?.name}</div>
-                                  <div className="dc-poke-sub">friend's Pokémon · not yours</div>
-                                </div>
-                                <span className="dc-status-badge dc-status-active">Active</span>
-                              </div>
-                              <div className="dc-progress-row">
-                                <span className="dc-progress-label">{accum.toLocaleString()} / 50,000 steps</span>
-                                <span className="dc-days-label">{daysLeft}d left</span>
-                              </div>
-                              <div className="dc-bar"><div className="dc-bar-fill" style={{ width: `${pct.toFixed(1)}%` }} /></div>
-                              <div className="dc-reward-row">🎁 Reward: <strong>1× Rare Pack</strong> on success</div>
-                            </div>
-                          );
-                        }
-                        // available
-                        return (
-                          <div className="dc-panel dc-available">
-                            <div className="dc-header">
-                              <span className="dc-icon">🥚</span>
-                              <span className="dc-title">Day Care</span>
-                              <span className="dc-status-badge dc-status-ready">Ready</span>
-                            </div>
-                            <div className="dc-available-desc">
-                              A friend's Pokémon needs training. Walk 50,000 steps in 10 days — earn a Rare Pack.
-                            </div>
-                            <div className="dc-rules">
-                              <div>📅 10 days max</div>
-                              <div>👟 50,000 total steps</div>
-                              <div>🎁 Rare Pack on success</div>
-                              <div>😴 3-day cooldown on failure</div>
-                            </div>
-                            <button
-                              className="dc-start-btn"
-                              onClick={handleStartDaycare}
-                              disabled={startingDaycare}
-                            >
-                              {startingDaycare ? 'Loading Pokémon…' : '🤝 Start Day Care'}
-                            </button>
                           </div>
                         );
                       })()}
