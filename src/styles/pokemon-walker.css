@@ -2230,7 +2230,7 @@
   transition: background 0.18s, border-color 0.18s;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 6px;
 }
 .loan-eligible-btn:hover {
@@ -2452,7 +2452,7 @@
   transition: background 0.18s, border-color 0.18s;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 6px;
 }
 .egg-eligible-btn:hover {
@@ -2591,10 +2591,9 @@
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
-  text-align: center;
-  justify-content: center;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
   letter-spacing: 0.04em;
   transition: background 0.2s, border-color 0.2s;
@@ -3470,10 +3469,13 @@
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
-  text-align: center;
   letter-spacing: 0.04em;
   box-shadow: 0 0 8px rgba(255,203,5,0.18);
   transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
 .fast-toggle-btn:hover {
   background: linear-gradient(135deg, rgba(255,203,5,0.18), rgba(245,158,11,0.14));
@@ -3758,13 +3760,12 @@
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
-  text-align: center;
   letter-spacing: 0.04em;
   box-shadow: 0 0 8px rgba(168,85,247,0.12);
   transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 6px;
 }
 .dc-toggle-btn:hover {
@@ -3835,42 +3836,22 @@
   background: rgba(239,68,68,0.15);
 }
 
-.obj-pending-badge {
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  padding: 2px 7px;
-  border-radius: 20px;
-  background: #f97316;
-  color: #fff;
-}
-.obj-updated-badge {
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  padding: 2px 7px;
-  border-radius: 20px;
-  background: #16a34a;
-  color: #fff;
-}
-.obj-active-badge {
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  padding: 2px 7px;
-  border-radius: 20px;
-  background: #0ea5e9;
-  color: #fff;
-}
+.obj-pending-badge,
+.obj-updated-badge,
+.obj-active-badge,
 .obj-cooldown-badge {
-  font-size: 8px;
+  font-size: 8.5px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  padding: 2px 7px;
-  border-radius: 20px;
-  background: #8b5cf6;
-  color: #fff;
+  letter-spacing: 0.03em;
+  padding: 3px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
+.obj-pending-badge  { background: #fef3c7; color: #92400e; }
+.obj-updated-badge  { background: #dcfce7; color: #14532d; }
+.obj-active-badge   { background: #e0f2fe; color: #0c4a6e; }
+.obj-cooldown-badge { background: #ede9fe; color: #4c1d95; }
 
 .weight-toggle-btn {
   width: 100%;
@@ -3882,13 +3863,12 @@
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
-  text-align: center;
   letter-spacing: 0.04em;
   box-shadow: 0 0 8px rgba(34,197,94,0.12);
   transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 6px;
 }
 .weight-toggle-btn:hover {
@@ -4000,13 +3980,12 @@
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
-  text-align: center;
   letter-spacing: 0.04em;
   box-shadow: 0 0 8px rgba(14,165,233,0.12);
   transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 6px;
 }
 .timing-toggle-btn:hover {
@@ -4025,13 +4004,12 @@
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
-  text-align: center;
   letter-spacing: 0.04em;
   box-shadow: 0 0 8px rgba(236,72,153,0.12);
   transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 6px;
 }
 .sugar-toggle-btn:hover {

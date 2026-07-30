@@ -3027,7 +3027,7 @@ export default function PokemonWalker({ onStop }) {
                     <div className="gba-section">
                       <button className="weight-toggle-btn" onClick={() => setShowWeightPanel(p => !p)}>
                         ⚖️ Weight Loss
-                        {appState.weight?.lastKg !== null && <span className="obj-pending-badge">Pending</span>}
+                        {appState.weight?.lastKg !== null && <span className="obj-active-badge">Active</span>}
                       </button>
                       {showWeightPanel && (() => {
                         const w = appState.weight || initWeight();
