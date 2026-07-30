@@ -2228,7 +2228,10 @@
   letter-spacing: 0.02em;
   cursor: pointer;
   transition: background 0.18s, border-color 0.18s;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 .loan-eligible-btn:hover {
   background: rgba(124,58,237,0.15);
@@ -2447,7 +2450,10 @@
   letter-spacing: 0.02em;
   cursor: pointer;
   transition: background 0.18s, border-color 0.18s;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 .egg-eligible-btn:hover {
   background: rgba(22,163,74,0.15);
@@ -3768,16 +3774,13 @@
 }
 
 .obj-pending-badge {
-  margin-left: auto;
-  font-size: 7px;
+  font-size: 8px;
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 2px 6px;
-  border-radius: 8px;
-  background: rgba(251,146,60,0.18);
-  color: #c2410c;
-  border: 1px solid rgba(251,146,60,0.30);
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: #f97316;
+  color: #fff;
 }
 
 .weight-toggle-btn {
