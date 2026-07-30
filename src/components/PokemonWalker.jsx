@@ -2662,6 +2662,7 @@ export default function PokemonWalker({ onStop }) {
                     <div className="gba-section">
                       <button className="loan-eligible-btn" onClick={() => setShowLoanPanel(p => !p)}>
                         🏦 {showLoanPanel ? 'Hide loan info' : 'Eligible for a loan?'}
+                        {appState.loan?.status === 'active' && <span className="obj-pending-badge">Pending</span>}
                       </button>
                       {showLoanPanel && (() => {
                         const loan = appState.loan;
@@ -2732,6 +2733,7 @@ export default function PokemonWalker({ onStop }) {
                     <div className="gba-section">
                       <button className="egg-eligible-btn" onClick={() => setShowEggPanel(p => !p)}>
                         🥚 {showEggPanel ? 'Hide egg info' : 'Eligible for an egg?'}
+                        {(appState.egg?.status === 'active' || appState.egg?.status === 'hatching') && <span className="obj-pending-badge">Pending</span>}
                       </button>
                       {showEggPanel && (() => {
                         const egg = appState.egg;
@@ -2898,7 +2900,7 @@ export default function PokemonWalker({ onStop }) {
                     <div className="gba-section">
                       <button className="fast-toggle-btn" onClick={() => setShowFastingPanel(p => !p)}>
                         🍽️ Fasting Challenge
-                        {appState.fasting?.active?.status === 'running' && <span className="dt-active-dot" />}
+                        {appState.fasting?.active?.status === 'running' && <span className="obj-pending-badge">Pending</span>}
                       </button>
                       {showFastingPanel && (() => {
                         const fasting = appState.fasting;
@@ -3075,7 +3077,7 @@ export default function PokemonWalker({ onStop }) {
                     <div className="gba-section">
                       <button className="sugar-toggle-btn" onClick={() => setShowSugarPanel(p => !p)}>
                         🍬 Sugar Control
-                        {appState.sugar?.active?.status === 'running' && <span className="dt-active-dot" />}
+                        {appState.sugar?.active?.status === 'running' && <span className="obj-pending-badge">Pending</span>}
                       </button>
                       {showSugarPanel && (() => {
                         const sugar = appState.sugar;
@@ -3240,7 +3242,7 @@ export default function PokemonWalker({ onStop }) {
                     <div className="gba-section">
                       <button className="weight-toggle-btn" onClick={() => setShowWeightPanel(p => !p)}>
                         ⚖️ Weight Loss
-                        {appState.weight?.lastKg !== null && <span className="dt-active-dot" />}
+                        {appState.weight?.lastKg !== null && <span className="obj-pending-badge">Pending</span>}
                       </button>
                       {showWeightPanel && (() => {
                         const w = appState.weight || initWeight();
@@ -3306,7 +3308,7 @@ export default function PokemonWalker({ onStop }) {
                     <div className="gba-section">
                       <button className="timing-toggle-btn" onClick={() => setShowTimingPanel(p => !p)}>
                         🕗 Timing
-                        {(appState.timing?.streak || 0) > 0 && <span className="dt-active-dot" />}
+                        {(appState.timing?.streak || 0) > 0 && <span className="obj-pending-badge">Pending</span>}
                       </button>
                       {showTimingPanel && (() => {
                         const t = appState.timing || initTiming();
@@ -3364,7 +3366,7 @@ export default function PokemonWalker({ onStop }) {
                     <div className="gba-section">
                       <button className="dc-toggle-btn" onClick={() => setShowDaycarePanel(p => !p)}>
                         🥚 Day Care
-                        {appState.daycare?.status === 'active' && <span className="dt-active-dot" />}
+                        {appState.daycare?.status === 'active' && <span className="obj-pending-badge">Pending</span>}
                       </button>
                       {showDaycarePanel && (() => {
                         const dc = appState.daycare || initDaycare();
