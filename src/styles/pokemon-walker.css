@@ -3773,6 +3773,47 @@
   box-shadow: 0 0 12px rgba(168,85,247,0.24);
 }
 
+.obj-category-label {
+  font-size: 7px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #b0aaa0;
+  padding: 2px 4px;
+  border-bottom: 1px solid #e8e4da;
+  margin-bottom: 6px;
+}
+
+.fast-log-row {
+  display: flex;
+  gap: 6px;
+}
+.fast-log-row .fast-log-btn { flex: 1; }
+
+.fast-log-yesterday-btn {
+  background: #f0ece2;
+  border: 1.5px solid #d0cbc0;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #7a7a8a;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.fast-log-yesterday-btn:hover:not(:disabled) {
+  background: #e4e0d6;
+  border-color: #b0aba0;
+  color: #4a4a5a;
+}
+.fast-log-yesterday-btn:disabled {
+  background: #f5f2ec;
+  color: #b0b0b8;
+  cursor: default;
+  border-color: #e4e0d6;
+}
+
 .obj-pending-badge {
   font-size: 8px;
   font-weight: 800;
