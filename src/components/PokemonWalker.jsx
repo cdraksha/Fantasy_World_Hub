@@ -1024,6 +1024,9 @@ export default function PokemonWalker({ onStop }) {
   const [showWeightPanel, setShowWeightPanel] = useState(false);
   const [weightInput, setWeightInput] = useState('');
   const [weightResult, setWeightResult] = useState(null);
+  const [fastYesterdayJustLogged, setFastYesterdayJustLogged] = useState(false);
+  const [sugarYesterdayJustLogged, setSugarYesterdayJustLogged] = useState(false);
+  const [timingYesterdayJustLogged, setTimingYesterdayJustLogged] = useState(false);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
@@ -1956,6 +1959,45 @@ export default function PokemonWalker({ onStop }) {
     });
   };
 
+  const handleUndoFast = () => {
+    setAppState(prev => {
+      const fa = prev.fasting?.active;
+      if (!fa || fa.status !== 'running' || fa.lastLogDate !== todayString()) return prev;
+      return {
+        ...prev,
+        fasting: {
+          ...prev.fasting,
+          active: { ...fa, fastsCompleted: Math.max(0, fa.fastsCompleted - 1), lastLogDate: null },
+        },
+      };
+    });
+  };
+
+  const handleUndoSugar = () => {
+    setAppState(prev => {
+      const sa = prev.sugar?.active;
+      if (!sa || sa.status !== 'running' || sa.lastLogDate !== todayString()) return prev;
+      return {
+        ...prev,
+        sugar: {
+          ...prev.sugar,
+          active: { ...sa, daysCompleted: Math.max(0, sa.daysCompleted - 1), lastLogDate: null },
+        },
+      };
+    });
+  };
+
+  const handleUndoTiming = () => {
+    setAppState(prev => {
+      const t = prev.timing;
+      if (!t || t.lastLogDate !== todayString()) return prev;
+      return {
+        ...prev,
+        timing: { ...t, streak: Math.max(0, t.streak - 1), lastLogDate: null },
+      };
+    });
+  };
+
   const handleClaimTimingReward = () => {
     setAppState(prev => {
       const tier = prev.timing?.pendingReward;
@@ -2656,6 +2698,11 @@ export default function PokemonWalker({ onStop }) {
                     <div className="gba-section">
                       <button className="loan-eligible-btn" onClick={() => setShowLoanPanel(p => !p)}>
                         🏦 {showLoanPanel ? 'Hide loan info' : 'Eligible for a loan?'}
+                        {appState.loan?.status === 'active' && (
+                          appState.loan.lastPaidDate === todayString()
+                            ? <span className="obj-updated-badge">Updated</span>
+                            : <span className="obj-pending-badge">Pending</span>
+                        )}
                       </button>
                       {showLoanPanel && (() => {
                         const loan = appState.loan;
@@ -2726,6 +2773,12 @@ export default function PokemonWalker({ onStop }) {
                     <div className="gba-section">
                       <button className="egg-eligible-btn" onClick={() => setShowEggPanel(p => !p)}>
                         🥚 {showEggPanel ? 'Hide egg info' : 'Eligible for an egg?'}
+                        {appState.egg?.status === 'active' && (
+                          appState.egg.lastHatchDate === todayString()
+                            ? <span className="obj-updated-badge">Updated</span>
+                            : <span className="obj-pending-badge">Pending</span>
+                        )}
+                        {appState.egg?.status === 'available' && <span className="obj-updated-badge">Claim!</span>}
                       </button>
                       {showEggPanel && (() => {
                         const egg = appState.egg;
@@ -2782,7 +2835,12 @@ export default function PokemonWalker({ onStop }) {
                     <div className="gba-section">
                       <button className="dt-challenge-btn" onClick={() => setShowChallengePanel(p => !p)}>
                         ⚔️ Challenge
-                        {appState.debtTrap?.status === 'active' && <span className="dt-active-dot" />}
+                        {appState.debtTrap?.status === 'active' && (
+                          appState.debtTrap.lastPaidDate === todayString()
+                            ? <span className="obj-updated-badge">Updated</span>
+                            : <span className="obj-pending-badge">Pending</span>
+                        )}
+                        {appState.debtTrap?.status === 'available' && <span className="obj-updated-badge">Available</span>}
                       </button>
                       {showChallengePanel && (() => {
                         const dt = appState.debtTrap;
@@ -2892,6 +2950,8 @@ export default function PokemonWalker({ onStop }) {
                     <div className="gba-section">
                       <button className="dc-toggle-btn" onClick={() => setShowDaycarePanel(p => !p)}>
                         🥚 Day Care
+                        {appState.daycare?.status === 'active' && <span className="obj-active-badge">Active</span>}
+                        {appState.daycare?.status === 'cooldown' && <span className="obj-cooldown-badge">Cooldown</span>}
                       </button>
                       {showDaycarePanel && (() => {
                         const dc = appState.daycare || initDaycare();
@@ -3031,9 +3091,13 @@ export default function PokemonWalker({ onStop }) {
 
                     {/* Timing */}
                     <div className="gba-section">
-                      <button className="timing-toggle-btn" onClick={() => setShowTimingPanel(p => !p)}>
+                      <button className="timing-toggle-btn" onClick={() => { setShowTimingPanel(p => !p); setTimingYesterdayJustLogged(false); }}>
                         🕗 Timing
-                        {(appState.timing?.streak || 0) > 0 && appState.timing?.lastLogDate !== todayString() && <span className="obj-pending-badge">Pending</span>}
+                        {appState.timing?.lastLogDate === todayString()
+                          ? <span className="obj-updated-badge">Updated</span>
+                          : (appState.timing?.streak || 0) > 0
+                            ? <span className="obj-pending-badge">Pending</span>
+                            : null}
                       </button>
                       {showTimingPanel && (() => {
                         const t = appState.timing || initTiming();
@@ -3083,13 +3147,16 @@ export default function PokemonWalker({ onStop }) {
                               >
                                 {loggedToday ? '✓ Logged for today' : 'Log Clean Evening'}
                               </button>
+                              {loggedToday && (
+                                <button className="fast-log-undo-btn" onClick={handleUndoTiming}>Undo</button>
+                              )}
                               <button
-                                className="fast-log-yesterday-btn"
-                                onClick={() => handleLogTiming(addDays(todayString(), -1))}
+                                className={`fast-log-yesterday-btn${t.lastLogDate === addDays(todayString(), -1) ? ' logged' : ''}`}
+                                onClick={() => { handleLogTiming(addDays(todayString(), -1)); setTimingYesterdayJustLogged(true); }}
                                 disabled={t.lastLogDate === addDays(todayString(), -1)}
                                 title="Log for yesterday"
                               >
-                                {t.lastLogDate === addDays(todayString(), -1) ? '✓ Yesterday' : '+ Yesterday'}
+                                {timingYesterdayJustLogged ? 'Logged' : t.lastLogDate === addDays(todayString(), -1) ? 'Updated' : 'Pending'}
                               </button>
                             </div>
                           </div>
@@ -3099,9 +3166,13 @@ export default function PokemonWalker({ onStop }) {
 
                     {/* Fasting Challenge */}
                     <div className="gba-section">
-                      <button className="fast-toggle-btn" onClick={() => setShowFastingPanel(p => !p)}>
+                      <button className="fast-toggle-btn" onClick={() => { setShowFastingPanel(p => !p); setFastYesterdayJustLogged(false); }}>
                         🍽️ Fasting Challenge
-                        {appState.fasting?.active?.status === 'running' && appState.fasting?.active?.lastLogDate !== todayString() && <span className="obj-pending-badge">Pending</span>}
+                        {appState.fasting?.active?.status === 'running' && (
+                          appState.fasting.active.lastLogDate === todayString()
+                            ? <span className="obj-updated-badge">Updated</span>
+                            : <span className="obj-pending-badge">Pending</span>
+                        )}
                       </button>
                       {showFastingPanel && (() => {
                         const fasting = appState.fasting;
@@ -3167,13 +3238,16 @@ export default function PokemonWalker({ onStop }) {
                                 >
                                   {loggedToday ? '✓ Logged today' : '+ Log Fast'}
                                 </button>
+                                {loggedToday && (
+                                  <button className="fast-log-undo-btn" onClick={handleUndoFast}>Undo</button>
+                                )}
                                 <button
-                                  className="fast-log-yesterday-btn"
-                                  onClick={() => handleLogFast(addDays(todayString(), -1))}
+                                  className={`fast-log-yesterday-btn${fa.lastLogDate === addDays(todayString(), -1) ? ' logged' : ''}`}
+                                  onClick={() => { handleLogFast(addDays(todayString(), -1)); setFastYesterdayJustLogged(true); }}
                                   disabled={fa.lastLogDate === addDays(todayString(), -1)}
                                   title="Log for yesterday"
                                 >
-                                  {fa.lastLogDate === addDays(todayString(), -1) ? '✓ Yesterday' : '+ Yesterday'}
+                                  {fastYesterdayJustLogged ? 'Logged' : fa.lastLogDate === addDays(todayString(), -1) ? 'Updated' : 'Pending'}
                                 </button>
                               </div>
                             </div>
@@ -3286,9 +3360,13 @@ export default function PokemonWalker({ onStop }) {
 
                     {/* Sugar Control */}
                     <div className="gba-section">
-                      <button className="sugar-toggle-btn" onClick={() => setShowSugarPanel(p => !p)}>
+                      <button className="sugar-toggle-btn" onClick={() => { setShowSugarPanel(p => !p); setSugarYesterdayJustLogged(false); }}>
                         🍬 Sugar Control
-                        {appState.sugar?.active?.status === 'running' && appState.sugar?.active?.lastLogDate !== todayString() && <span className="obj-pending-badge">Pending</span>}
+                        {appState.sugar?.active?.status === 'running' && (
+                          appState.sugar.active.lastLogDate === todayString()
+                            ? <span className="obj-updated-badge">Updated</span>
+                            : <span className="obj-pending-badge">Pending</span>
+                        )}
                       </button>
                       {showSugarPanel && (() => {
                         const sugar = appState.sugar;
@@ -3347,13 +3425,16 @@ export default function PokemonWalker({ onStop }) {
                                 <button className={`fast-log-btn${loggedToday ? ' logged' : ''}`} onClick={() => handleLogSugar()} disabled={loggedToday}>
                                   {loggedToday ? '✓ Logged today' : '+ Log Clean Day'}
                                 </button>
+                                {loggedToday && (
+                                  <button className="fast-log-undo-btn" onClick={handleUndoSugar}>Undo</button>
+                                )}
                                 <button
-                                  className="fast-log-yesterday-btn"
-                                  onClick={() => handleLogSugar(addDays(todayString(), -1))}
+                                  className={`fast-log-yesterday-btn${sa.lastLogDate === addDays(todayString(), -1) ? ' logged' : ''}`}
+                                  onClick={() => { handleLogSugar(addDays(todayString(), -1)); setSugarYesterdayJustLogged(true); }}
                                   disabled={sa.lastLogDate === addDays(todayString(), -1)}
                                   title="Log for yesterday"
                                 >
-                                  {sa.lastLogDate === addDays(todayString(), -1) ? '✓ Yesterday' : '+ Yesterday'}
+                                  {sugarYesterdayJustLogged ? 'Logged' : sa.lastLogDate === addDays(todayString(), -1) ? 'Updated' : 'Pending'}
                                 </button>
                               </div>
                             </div>
