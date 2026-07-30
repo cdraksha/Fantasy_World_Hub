@@ -3144,16 +3144,6 @@ export default function PokemonWalker({ onStop }) {
                               >
                                 {loggedToday ? '✓ Logged' : 'Log Clean Evening'}
                               </button>
-                              {loggedToday && (
-                                <button className="fast-log-undo-btn" onClick={handleUndoTiming}>Undo</button>
-                              )}
-                              <button
-                                className={`fast-log-yesterday-btn${t.lastLogDate === addDays(todayString(), -1) ? ' logged' : ''}`}
-                                onClick={() => handleLogTiming(addDays(todayString(), -1))}
-                                disabled={t.lastLogDate === addDays(todayString(), -1)}
-                              >
-                                {t.lastLogDate === addDays(todayString(), -1) ? 'Logged' : 'Log Yesterday'}
-                              </button>
                             </div>
                           </div>
                         );
@@ -3165,7 +3155,7 @@ export default function PokemonWalker({ onStop }) {
                       <button className="fast-toggle-btn" onClick={() => setShowFastingPanel(p => !p)}>
                         🍽️ Fasting Challenge
                         {appState.fasting?.active?.status === 'running' && (
-                          appState.fasting.active.lastLogDate === todayString()
+                          appState.fasting.active.lastLogDate === addDays(todayString(), -1)
                             ? <span className="obj-updated-badge">Updated</span>
                             : <span className="obj-pending-badge">Pending</span>
                         )}
@@ -3206,7 +3196,8 @@ export default function PokemonWalker({ onStop }) {
                           const windowEnd = addDays(fa.startDate, fa.window);
                           const daysLeft = Math.max(0, daysBetween(today, windowEnd));
                           const pct = Math.min(100, (fa.fastsCompleted / fa.days) * 100);
-                          const loggedToday = fa.lastLogDate === today;
+                          const yesterday = addDays(today, -1);
+                          const loggedYesterday = fa.lastLogDate === yesterday;
                           return (
                             <div className="fast-panel fast-active">
                               <div className="fast-active-header">
@@ -3228,21 +3219,11 @@ export default function PokemonWalker({ onStop }) {
                               </div>
                               <div className="fast-log-row">
                                 <button
-                                  className={`fast-log-btn${loggedToday ? ' logged' : ''}`}
-                                  onClick={() => handleLogFast()}
-                                  disabled={loggedToday}
+                                  className={`fast-log-btn${loggedYesterday ? ' logged' : ''}`}
+                                  onClick={() => handleLogFast(yesterday)}
+                                  disabled={loggedYesterday}
                                 >
-                                  {loggedToday ? '✓ Logged' : '+ Log Fast'}
-                                </button>
-                                {loggedToday && (
-                                  <button className="fast-log-undo-btn" onClick={handleUndoFast}>Undo</button>
-                                )}
-                                <button
-                                  className={`fast-log-yesterday-btn${fa.lastLogDate === addDays(todayString(), -1) ? ' logged' : ''}`}
-                                  onClick={() => handleLogFast(addDays(todayString(), -1))}
-                                  disabled={fa.lastLogDate === addDays(todayString(), -1)}
-                                >
-                                  {fa.lastLogDate === addDays(todayString(), -1) ? 'Logged' : 'Log Yesterday'}
+                                  {loggedYesterday ? '✓ Logged' : '+ Log Fast'}
                                 </button>
                               </div>
                             </div>
@@ -3358,7 +3339,7 @@ export default function PokemonWalker({ onStop }) {
                       <button className="sugar-toggle-btn" onClick={() => setShowSugarPanel(p => !p)}>
                         🍬 Sugar Control
                         {appState.sugar?.active?.status === 'running' && (
-                          appState.sugar.active.lastLogDate === todayString()
+                          appState.sugar.active.lastLogDate === addDays(todayString(), -1)
                             ? <span className="obj-updated-badge">Updated</span>
                             : <span className="obj-pending-badge">Pending</span>
                         )}
@@ -3396,7 +3377,8 @@ export default function PokemonWalker({ onStop }) {
                           const windowEnd = addDays(sa.startDate, sa.window);
                           const daysLeft = Math.max(0, daysBetween(today, windowEnd));
                           const pct = Math.min(100, (sa.daysCompleted / sa.days) * 100);
-                          const loggedToday = sa.lastLogDate === today;
+                          const yesterday = addDays(today, -1);
+                          const loggedYesterday = sa.lastLogDate === yesterday;
                           return (
                             <div className="fast-panel fast-active">
                               <div className="fast-active-header">
@@ -3417,18 +3399,8 @@ export default function PokemonWalker({ onStop }) {
                                 <span className="fast-info-val">{sa.penalty.label}</span>
                               </div>
                               <div className="fast-log-row">
-                                <button className={`fast-log-btn${loggedToday ? ' logged' : ''}`} onClick={() => handleLogSugar()} disabled={loggedToday}>
-                                  {loggedToday ? '✓ Logged' : '+ Log Clean Day'}
-                                </button>
-                                {loggedToday && (
-                                  <button className="fast-log-undo-btn" onClick={handleUndoSugar}>Undo</button>
-                                )}
-                                <button
-                                  className={`fast-log-yesterday-btn${sa.lastLogDate === addDays(todayString(), -1) ? ' logged' : ''}`}
-                                  onClick={() => handleLogSugar(addDays(todayString(), -1))}
-                                  disabled={sa.lastLogDate === addDays(todayString(), -1)}
-                                >
-                                  {sa.lastLogDate === addDays(todayString(), -1) ? 'Logged' : 'Log Yesterday'}
+                                <button className={`fast-log-btn${loggedYesterday ? ' logged' : ''}`} onClick={() => handleLogSugar(yesterday)} disabled={loggedYesterday}>
+                                  {loggedYesterday ? '✓ Logged' : '+ Log Clean Day'}
                                 </button>
                               </div>
                             </div>
