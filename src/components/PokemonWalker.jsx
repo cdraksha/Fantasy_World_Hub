@@ -273,6 +273,10 @@ function initWeight() {
   return { lastKg: null, lastChangeDate: null };
 }
 
+function initWifeChallenge() {
+  return { logs: {}, claimedMonths: [] };
+}
+
 const TIMING_MILESTONES = [
   { days: 5,  tier: 'common' },
   { days: 15, tier: 'rare' },
@@ -381,6 +385,19 @@ const RARE_IDS = new Set([
 ]);
 
 const COMMON_IDS = ALL_IDS.filter(id => !LEGENDARY_IDS.has(id) && !EPIC_IDS.has(id) && !RARE_IDS.has(id));
+
+// All base-form starter Pokémon across all generations
+const STARTERS_POOL = [
+  1,4,7,       // Gen 1: Bulbasaur, Charmander, Squirtle
+  152,155,158, // Gen 2: Chikorita, Cyndaquil, Totodile
+  252,255,258, // Gen 3: Treecko, Torchic, Mudkip
+  387,390,393, // Gen 4: Turtwig, Chimchar, Piplup
+  495,498,501, // Gen 5: Snivy, Tepig, Oshawott
+  650,653,656, // Gen 6: Chespin, Fennekin, Froakie
+  722,725,728, // Gen 7: Rowlet, Litten, Popplio
+  810,813,816, // Gen 8: Grookey, Scorbunny, Sobble
+  906,909,912, // Gen 9: Sprigatito, Fuecoco, Quaxly
+];
 
 const POOLS = {
   common: COMMON_IDS,
@@ -574,6 +591,7 @@ function defaultState(steps) {
     caughtDex: [],
     timing: initTiming(),
     weight: initWeight(),
+    wifeChallenge: initWifeChallenge(),
   };
 }
 
@@ -596,6 +614,7 @@ function loadState() {
     if (!saved.evolutionLog) saved.evolutionLog = [];
     if (!saved.timing) saved.timing = initTiming();
     if (!saved.weight) saved.weight = initWeight();
+    if (!saved.wifeChallenge) saved.wifeChallenge = initWifeChallenge();
     // Seed caughtDex from existing pokemon on first migration
     if (!saved.caughtDex || saved.caughtDex.length === 0) {
       saved.caughtDex = [...new Set((saved.pokemon || []).map(p => p.dexId))];
@@ -1024,6 +1043,11 @@ export default function PokemonWalker({ onStop }) {
   const [showWeightPanel, setShowWeightPanel] = useState(false);
   const [weightInput, setWeightInput] = useState('');
   const [weightResult, setWeightResult] = useState(null);
+  const [showWifeChallengePanel, setShowWifeChallengePanel] = useState(false);
+  const [wifeChallengeInput, setWifeChallengeInput] = useState('');
+  const [wifeChallengeDate, setWifeChallengeDate] = useState(todayString());
+  const [claimingVictory, setClaimingVictory] = useState(false);
+  const [victoryStarters, setVictoryStarters] = useState(null);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
@@ -1637,6 +1661,7 @@ export default function PokemonWalker({ onStop }) {
     setShowMyPokemonPanel(false);
     setShowSystemsPanel(false);
     setShowStepsHistoryPanel(false);
+    setShowWifeChallengePanel(false);
   };
 
   // ─── Set / unset buddy ────────────────────────────────────────────────
@@ -1956,6 +1981,41 @@ export default function PokemonWalker({ onStop }) {
     });
   };
 
+  const handleLogWifeSteps = () => {
+    const steps = parseInt(wifeChallengeInput, 10);
+    if (!wifeChallengeDate || isNaN(steps) || steps < 0) return;
+    setAppState(prev => ({
+      ...prev,
+      wifeChallenge: {
+        ...prev.wifeChallenge,
+        logs: { ...(prev.wifeChallenge?.logs || {}), [wifeChallengeDate]: steps },
+      },
+    }));
+    setWifeChallengeInput('');
+  };
+
+  const handleClaimWifeVictory = async (month) => {
+    if (claimingVictory) return;
+    setClaimingVictory(true);
+    try {
+      const shuffled = [...STARTERS_POOL].sort(() => Math.random() - 0.5);
+      const picked = shuffled.slice(0, 3);
+      const pokes = await Promise.all(picked.map(id => fetchPokemonById(id)));
+      const newPokes = pokes.map(p => ({ ...p, uid: `wc-${month}-${p.dexId}-${Date.now()}${Math.random()}`, packTier: 'epic', buddySteps: 0 }));
+      setAppState(prev => ({
+        ...prev,
+        pokemon: [...prev.pokemon, ...newPokes],
+        caughtDex: [...new Set([...(prev.caughtDex || []), ...newPokes.map(p => p.dexId)])],
+        wifeChallenge: {
+          ...prev.wifeChallenge,
+          claimedMonths: [...(prev.wifeChallenge?.claimedMonths || []), month],
+        },
+      }));
+      setVictoryStarters(newPokes);
+    } catch {}
+    setClaimingVictory(false);
+  };
+
   const handleUndoFast = () => {
     setAppState(prev => {
       const fa = prev.fasting?.active;
@@ -2211,11 +2271,11 @@ export default function PokemonWalker({ onStop }) {
                 </button>
                 <div className="pw-sidebar-sep" />
                 {[
-                  { key: 'vault',   icon: '🏦', label: 'Vault',        active: showVaultPanel,          toggle: () => { setShowVaultPanel(p => !p); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
-                  { key: 'packs',   icon: '📦', label: 'Packs',        active: showPacksPanel,          toggle: () => { setShowPacksPanel(p => !p); setShowVaultPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
-                  { key: 'pokemon', icon: '🎒', label: 'Pokémon',      active: showMyPokemonPanel,      toggle: () => { setShowMyPokemonPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
-                  { key: 'systems', icon: '⚔️', label: 'Objectives',   active: showSystemsPanel,        toggle: () => { setShowSystemsPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowStepsHistoryPanel(false); } },
-                  { key: 'history', icon: '📅', label: 'Daily Steps',  active: showStepsHistoryPanel,   toggle: () => { setShowStepsHistoryPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); } },
+                  { key: 'vault',         icon: '🏦', label: 'Vault',        active: showVaultPanel,          toggle: () => { setShowVaultPanel(p => !p); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
+                  { key: 'packs',         icon: '📦', label: 'Packs',        active: showPacksPanel,          toggle: () => { setShowPacksPanel(p => !p); setShowVaultPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
+                  { key: 'pokemon',       icon: '🎒', label: 'Pokémon',      active: showMyPokemonPanel,      toggle: () => { setShowMyPokemonPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
+                  { key: 'systems',       icon: '⚔️', label: 'Objectives',   active: showSystemsPanel,        toggle: () => { setShowSystemsPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowStepsHistoryPanel(false); } },
+                  { key: 'history',       icon: '📅', label: 'Daily Steps',  active: showStepsHistoryPanel,   toggle: () => { setShowStepsHistoryPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); } },
                 ].map(({ key, icon, label, active, toggle }) => (
                   <button key={key} className={`pw-icon-btn${active ? ' active' : ''}`} onClick={toggle}>
                     <span className="pw-icon-bubble"><span className="pw-icon-emoji">{icon}</span></span>
@@ -3501,6 +3561,180 @@ export default function PokemonWalker({ onStop }) {
                               })}
                             </div>
                             <div className="fast-idle-hint">Stay under the daily sugar limit for the required days within the window.</div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* ── Surprise Challenges ── */}
+                    <div className="obj-category-label" style={{ marginTop: 10 }}>Surprise Challenges</div>
+
+                    {/* Wife Challenge */}
+                    <div className="gba-section">
+                      <button className="wc-toggle-btn" onClick={() => setShowWifeChallengePanel(p => !p)}>
+                        🏅 Vishnupriya's Challenge
+                        {(() => {
+                          const today = todayString();
+                          const month = today.slice(0, 7);
+                          const mo = parseInt(month.slice(5, 7));
+                          const yr = parseInt(month.slice(0, 4));
+                          const daysInMo = new Date(yr, mo, 0).getDate();
+                          const lastDay = `${month}-${String(daysInMo).padStart(2, '0')}`;
+                          const complete = today > lastDay;
+                          const logs = appState.wifeChallenge?.logs || {};
+                          if (complete) {
+                            // compute winner
+                            const days2 = [];
+                            for (let d = 1; d <= daysInMo; d++) days2.push(`${month}-${String(d).padStart(2, '0')}`);
+                            const chandanMap2 = {};
+                            (appState.stepHistory || []).forEach(e => { if (e.date.startsWith(month)) chandanMap2[e.date] = e.steps; });
+                            const ct = days2.reduce((s, d) => s + (chandanMap2[d] || 0), 0);
+                            const vt = days2.reduce((s, d) => s + (logs[d] !== undefined ? logs[d] + 3000 : 0), 0);
+                            if (ct > vt) return <span className="obj-updated-badge">You won!</span>;
+                            if (vt > ct) return <span className="obj-pending-badge">V won 💸</span>;
+                            return <span className="obj-active-badge">Draw</span>;
+                          }
+                          return logs[today] !== undefined
+                            ? <span className="obj-updated-badge">Updated</span>
+                            : <span className="obj-pending-badge">Pending</span>;
+                        })()}
+                      </button>
+                      {showWifeChallengePanel && (() => {
+                        const today = todayString();
+                        const month = today.slice(0, 7);
+                        const year = parseInt(month.slice(0, 4));
+                        const mo = parseInt(month.slice(5, 7));
+                        const daysInMonth = new Date(year, mo, 0).getDate();
+                        const days = [];
+                        for (let d = 1; d <= daysInMonth; d++) {
+                          const ds = `${month}-${String(d).padStart(2, '0')}`;
+                          if (ds > today) break;
+                          days.push(ds);
+                        }
+                        const logs = appState.wifeChallenge?.logs || {};
+                        const chandanMap = {};
+                        (appState.stepHistory || []).forEach(e => { if (e.date.startsWith(month)) chandanMap[e.date] = e.steps; });
+                        chandanMap[today] = appState.todaySteps || 0;
+                        const HEADSTART = 3000;
+                        const chandanTotal = days.reduce((s, d) => s + (chandanMap[d] || 0), 0);
+                        // Vishnupriya gets 3k headstart per logged day
+                        const vishLoggedDays = days.filter(d => logs[d] !== undefined).length;
+                        const vishTotal = days.reduce((s, d) => s + (logs[d] !== undefined ? (logs[d] + HEADSTART) : 0), 0);
+                        const chandanDays10k = days.filter(d => (chandanMap[d] || 0) >= 10000).length;
+                        const vishDays10k = days.filter(d => logs[d] !== undefined && (logs[d] + HEADSTART) >= 10000).length;
+                        const leader = chandanTotal > vishTotal ? 'Chandan' : vishTotal > chandanTotal ? 'Vishnupriya' : null;
+                        const lead = Math.abs(chandanTotal - vishTotal);
+                        const monthLabel = new Date(month + '-02').toLocaleString('default', { month: 'long', year: 'numeric' });
+                        const lastDayStr = `${month}-${String(daysInMonth).padStart(2, '0')}`;
+                        const monthComplete = today > lastDayStr;
+                        const claimed = (appState.wifeChallenge?.claimedMonths || []).includes(month);
+                        return (
+                          <div className="wc-panel">
+                            <div className="wc-month-label">{monthLabel} · 10,000 steps/day</div>
+                            <div className="wc-scoreboard">
+                              <div className="wc-player wc-player-chandan">
+                                <div className="wc-player-name">Chandan</div>
+                                <div className="wc-player-steps">{chandanTotal.toLocaleString()}</div>
+                                <div className="wc-player-sub">{chandanDays10k}d ≥ 10k</div>
+                              </div>
+                              <div className="wc-vs">VS</div>
+                              <div className="wc-player wc-player-vish">
+                                <div className="wc-player-name">Vishnupriya</div>
+                                <div className="wc-player-steps">{vishTotal.toLocaleString()}</div>
+                                <div className="wc-player-sub">{vishDays10k}d ≥ 10k</div>
+                              </div>
+                            </div>
+                            {leader ? (
+                              <div className={`wc-leader-bar wc-leader-${leader === 'Chandan' ? 'chandan' : 'vish'}`}>
+                                {monthComplete ? `${leader} won!` : `${leader} leads`} · {lead.toLocaleString()} steps
+                              </div>
+                            ) : days.length > 0 ? (
+                              <div className="wc-leader-bar wc-leader-tie">{monthComplete ? 'Draw!' : 'Tied!'}</div>
+                            ) : null}
+
+                            {/* Month over: claim or result */}
+                            {monthComplete && leader === 'Chandan' && !claimed && (
+                              <div className="wc-victory-box">
+                                <div className="wc-victory-title">🏆 You won this month!</div>
+                                <div className="wc-victory-sub">Claim your reward: 3 Starter Eggs</div>
+                                <button className="wc-claim-btn" onClick={() => handleClaimWifeVictory(month)} disabled={claimingVictory}>
+                                  {claimingVictory ? 'Opening eggs…' : '🥚 Claim 3 Starter Eggs'}
+                                </button>
+                              </div>
+                            )}
+                            {monthComplete && leader === 'Vishnupriya' && (
+                              <div className="wc-defeat-box">
+                                <div className="wc-defeat-title">💸 Vishnupriya won — time to buy her something cool!</div>
+                              </div>
+                            )}
+                            {victoryStarters && claimed && (
+                              <div className="wc-starters-reveal">
+                                <div className="wc-starters-title">🎉 Your 3 Starters!</div>
+                                <div className="wc-starters-row">
+                                  {victoryStarters.map(p => (
+                                    <div key={p.uid} className="wc-starter-card">
+                                      {p.sprite && <img src={p.sprite} alt={p.name} className="wc-starter-sprite" />}
+                                      <div className="wc-starter-name">{p.name}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                                <button className="wc-dismiss-btn" onClick={() => setVictoryStarters(null)}>Done</button>
+                              </div>
+                            )}
+
+                            {!monthComplete && <div className="wc-log-section">
+                              <div className="wc-log-label">Log Vishnupriya's steps</div>
+                              <div className="wc-log-row">
+                                <input
+                                  type="date"
+                                  className="wc-date-input"
+                                  value={wifeChallengeDate}
+                                  max={today}
+                                  onChange={e => setWifeChallengeDate(e.target.value)}
+                                />
+                                <input
+                                  type="number"
+                                  className="wc-steps-input"
+                                  placeholder="Steps"
+                                  min="0"
+                                  value={wifeChallengeInput}
+                                  onChange={e => setWifeChallengeInput(e.target.value)}
+                                  onKeyDown={e => e.key === 'Enter' && handleLogWifeSteps()}
+                                />
+                                <button className="wc-log-btn" onClick={handleLogWifeSteps}>Log</button>
+                              </div>
+                            </div>}
+                            <table className="wc-table">
+                              <thead>
+                                <tr>
+                                  <th className="wc-th">Day</th>
+                                  <th className="wc-th wc-th-c">Chandan</th>
+                                  <th className="wc-th wc-th-c">Vishnupriya</th>
+                                  <th className="wc-th wc-th-c">W</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {[...days].reverse().map(ds => {
+                                  const day = parseInt(ds.slice(8));
+                                  const cs = chandanMap[ds] || 0;
+                                  const vsRaw = logs[ds] ?? null;
+                                  const vsEff = vsRaw !== null ? vsRaw + HEADSTART : null;
+                                  const w = vsEff !== null ? (cs > vsEff ? 'C' : vsEff > cs ? 'V' : '=') : null;
+                                  return (
+                                    <tr key={ds} className="wc-row">
+                                      <td className="wc-td">{day}</td>
+                                      <td className={`wc-td wc-td-c${cs >= 10000 ? ' wc-10k' : ''}`}>{cs ? cs.toLocaleString() : '—'}</td>
+                                      <td className={`wc-td wc-td-c${vsEff !== null && vsEff >= 10000 ? ' wc-10k' : ''}`}>{vsRaw !== null ? `${vsRaw.toLocaleString()} +3k` : '—'}</td>
+                                      <td className="wc-td wc-td-c">
+                                        {w === 'C' && <span className="wc-win-badge wc-win-c">C</span>}
+                                        {w === 'V' && <span className="wc-win-badge wc-win-v">V</span>}
+                                        {w === '=' && <span className="wc-win-badge wc-win-tie">=</span>}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
                           </div>
                         );
                       })()}

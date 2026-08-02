@@ -4366,3 +4366,198 @@
 .records-badge-fasting { background: rgba(251,146,60,0.15); color: #c2410c; }
 .records-badge-sugar   { background: rgba(236,72,153,0.12); color: #db2777; }
 .records-badge-egg     { background: rgba(34,197,94,0.12);  color: #15803d; }
+
+/* ── Wife / Surprise Challenge ──────────────────────────────── */
+.wc-toggle-btn {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(236,72,153,0.08));
+  border: 1.5px solid rgba(99,102,241,0.30);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #4338ca;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 8px rgba(99,102,241,0.10);
+  transition: background 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.wc-toggle-btn:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(236,72,153,0.14));
+  border-color: rgba(99,102,241,0.55);
+}
+.wc-panel {
+  background: #fff;
+  border: 1px solid #e4e0d6;
+  border-radius: 8px;
+  margin-top: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wc-month-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: #888;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.wc-scoreboard {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(236,72,153,0.06));
+  border: 1px solid rgba(99,102,241,0.14);
+  border-radius: 8px;
+  padding: 10px 8px;
+}
+.wc-player { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.wc-player-name { font-size: 8px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.wc-player-steps { font-size: 16px; font-weight: 900; font-family: 'JetBrains Mono', monospace; }
+.wc-player-sub { font-size: 7px; color: #aaa; }
+.wc-player-chandan .wc-player-name  { color: #4338ca; }
+.wc-player-chandan .wc-player-steps { color: #4338ca; }
+.wc-player-vish .wc-player-name     { color: #be185d; }
+.wc-player-vish .wc-player-steps    { color: #be185d; }
+.wc-vs { font-size: 10px; font-weight: 900; color: #ccc; letter-spacing: 0.06em; }
+.wc-leader-bar {
+  text-align: center;
+  font-size: 8.5px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 5px;
+}
+.wc-leader-chandan { background: rgba(99,102,241,0.10); color: #4338ca; }
+.wc-leader-vish    { background: rgba(236,72,153,0.10); color: #be185d; }
+.wc-leader-tie     { background: #f0ece2; color: #7a7a8a; }
+.wc-log-section {
+  background: #fafaf8;
+  border: 1px solid #e4e0d6;
+  border-radius: 7px;
+  padding: 7px 8px;
+}
+.wc-log-label { font-size: 7.5px; font-weight: 700; color: #999; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+.wc-log-row { display: flex; gap: 5px; align-items: center; }
+.wc-date-input {
+  width: 108px;
+  flex-shrink: 0;
+  border: 1.5px solid #d0cbc0;
+  border-radius: 6px;
+  padding: 5px 5px;
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  background: #fff;
+  color: #3a3a4a;
+  outline: none;
+}
+.wc-steps-input {
+  flex: 1;
+  min-width: 0;
+  border: 1.5px solid #d0cbc0;
+  border-radius: 6px;
+  padding: 5px 7px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  background: #fff;
+  color: #3a3a4a;
+  outline: none;
+}
+.wc-date-input:focus, .wc-steps-input:focus { border-color: #be185d; }
+.wc-log-btn {
+  background: linear-gradient(135deg, rgba(236,72,153,0.14), rgba(219,39,119,0.10));
+  border: 1.5px solid rgba(236,72,153,0.38);
+  border-radius: 6px;
+  padding: 5px 11px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #be185d;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.wc-log-btn:hover { background: rgba(236,72,153,0.22); }
+.wc-table { width: 100%; border-collapse: collapse; }
+.wc-th {
+  padding: 4px 3px;
+  font-size: 7px;
+  font-weight: 800;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1.5px solid #e4e0d6;
+  text-align: left;
+}
+.wc-th-c { text-align: center; }
+.wc-row:nth-child(even) { background: rgba(0,0,0,0.015); }
+.wc-td { padding: 4px 3px; font-size: 9px; color: #3a3a4a; font-family: 'JetBrains Mono', monospace; border-bottom: 1px solid #f0ece2; }
+.wc-td-c { text-align: center; }
+.wc-10k { color: #15803d; font-weight: 700; }
+.wc-win-badge { display: inline-block; font-size: 7.5px; font-weight: 900; padding: 1px 5px; border-radius: 3px; }
+.wc-win-c   { background: rgba(99,102,241,0.12); color: #4338ca; }
+.wc-win-v   { background: rgba(236,72,153,0.12); color: #be185d; }
+.wc-win-tie { background: #f0ece2; color: #9a9aaa; }
+
+.wc-victory-box {
+  background: rgba(99,102,241,0.08);
+  border: 1.5px solid rgba(99,102,241,0.25);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.wc-victory-title { font-size: 11px; font-weight: 900; color: #4338ca; }
+.wc-victory-sub   { font-size: 8px; color: #6366f1; }
+.wc-claim-btn {
+  background: linear-gradient(135deg, rgba(99,102,241,0.20), rgba(79,70,229,0.14));
+  border: 1.5px solid rgba(99,102,241,0.45);
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #4338ca;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.wc-claim-btn:hover:not(:disabled) { background: rgba(99,102,241,0.28); }
+.wc-claim-btn:disabled { opacity: 0.6; cursor: default; }
+.wc-defeat-box {
+  background: rgba(236,72,153,0.08);
+  border: 1.5px solid rgba(236,72,153,0.25);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+.wc-defeat-title { font-size: 10px; font-weight: 800; color: #be185d; }
+.wc-starters-reveal {
+  background: rgba(34,197,94,0.07);
+  border: 1.5px solid rgba(34,197,94,0.25);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.wc-starters-title { font-size: 10px; font-weight: 800; color: #15803d; }
+.wc-starters-row { display: flex; gap: 8px; justify-content: center; }
+.wc-starter-card { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.wc-starter-sprite { width: 48px; height: 48px; image-rendering: pixelated; }
+.wc-starter-name { font-size: 7.5px; font-weight: 700; color: #3a3a4a; text-transform: capitalize; }
+.wc-dismiss-btn {
+  background: #f0ece2;
+  border: 1px solid #d0cbc0;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #7a7a8a;
+  cursor: pointer;
+}
