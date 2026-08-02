@@ -679,6 +679,9 @@ function loadState() {
           if (missedDays >= 5 || saved.debtTrap.daysCompleted + (saved.debtTrap.duration - missedDays * saved.debtTrap.compoundRate) <= 0) {
             // DEFAULT
             const newDefaultCount = saved.debtTrap.defaultCount + 1;
+            const dtFaction = saved.debtTrap.faction || 'Debt Trap';
+            const dtDays = saved.debtTrap.daysCompleted;
+            saved.challengeLog = [{ date: today, type: 'debtTrap', tier: null, outcome: `Defaulted on ${dtFaction} deal — ${dtDays} day${dtDays !== 1 ? 's' : ''} completed` }, ...(saved.challengeLog || [])];
             saved.pokemon = (saved.pokemon || []).filter(
               p => p.uid !== saved.debtTrap.collateralUid && p.uid !== saved.debtTrap.legendaryCompanionUid
             );
@@ -1319,6 +1322,7 @@ export default function PokemonWalker({ onStop }) {
       }
 
       // ── Debt Trap daily payment ────────────────────────────────────────
+      let completedDTLog = null;
       let newDT = prev.debtTrap;
       if (newDT?.status === 'active' && newTodaySteps >= newDT.dailyTarget) {
         const dtToday = todayString();
@@ -1332,6 +1336,7 @@ export default function PokemonWalker({ onStop }) {
               if (p.uid === newDT.legendaryCompanionUid) return { ...p, isDTLoan: false };
               return p;
             });
+            completedDTLog = { date: todayString(), type: 'debtTrap', tier: null, outcome: `Completed ${newDT.faction || 'Debt Trap'} deal in ${newDaysCompleted} days` };
             setDeltaFlash('🎉 Challenge complete! New deal generated.');
             setTimeout(() => setDeltaFlash(null), 4000);
             newDT = generateDebtTrap(newDT.index + 1, newDT.defaultCount);
@@ -1362,6 +1367,7 @@ export default function PokemonWalker({ onStop }) {
         streak10k: newStreak10k,
         bestStreak10k: newBestStreak10k,
         lastStreak10kDate: newLastStreak10kDate,
+        challengeLog: completedDTLog ? [completedDTLog, ...(prev.challengeLog || [])] : prev.challengeLog,
       };
       if (delta > 0) {
         setDeltaFlash(`+${fmtFull(delta)} new steps`);
@@ -3645,7 +3651,7 @@ export default function PokemonWalker({ onStop }) {
                         const defeated = (appState.wifeChallenge?.defeatedMonths || []).includes(month);
                         return (
                           <div className="wc-panel">
-                            <div className="wc-month-label">{monthLabel} · 10,000 steps/day</div>
+                            <div className="wc-month-label">{monthLabel}</div>
                             <div className="wc-stakes">
                               <div className="wc-stake wc-stake-win">🥚 You win → 3 Starter Eggs</div>
                               <div className="wc-stake wc-stake-lose">💸 She wins → Buy her a gift</div>
