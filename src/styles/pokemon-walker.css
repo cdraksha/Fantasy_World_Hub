@@ -4551,6 +4551,30 @@
 .wc-starter-card { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .wc-starter-sprite { width: 48px; height: 48px; image-rendering: pixelated; }
 .wc-starter-name { font-size: 7.5px; font-weight: 700; color: #3a3a4a; text-transform: capitalize; }
+.wc-stakes {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.wc-stake {
+  flex: 1;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 5px 8px;
+  border-radius: 7px;
+}
+.wc-stake-win {
+  background: #dcfce7;
+  color: #14532d;
+  border: 1.5px solid rgba(34,197,94,0.3);
+}
+.wc-stake-lose {
+  background: #fce7f3;
+  color: #831843;
+  border: 1.5px solid rgba(236,72,153,0.3);
+}
+
 .wc-dismiss-btn {
   background: #f0ece2;
   border: 1px solid #d0cbc0;
@@ -4560,4 +4584,84 @@
   font-weight: 700;
   color: #7a7a8a;
   cursor: pointer;
+}
+
+/* ─── Log Panel ─── */
+.log-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f0ece2;
+  border: 1.5px solid #d0cbc0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #3a3a4a;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+.log-section-toggle:hover { background: #e8e3d8; }
+
+.log-section-chevron {
+  font-size: 9px;
+  color: #7a7a8a;
+  flex-shrink: 0;
+}
+
+/* ─── Completed Challenges log ─── */
+.clog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.clog-row {
+  background: #fafaf8;
+  border: 1.5px solid #e0dbd0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.clog-row-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clog-type {
+  font-size: 9px;
+  font-weight: 800;
+  background: #e0f2fe;
+  color: #0c4a6e;
+  border-radius: 4px;
+  padding: 2px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.clog-tier {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.clog-date {
+  margin-left: auto;
+  font-size: 8.5px;
+  color: #7a7a8a;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.clog-outcome {
+  font-size: 10px;
+  color: #3a3a4a;
+  font-weight: 600;
 }

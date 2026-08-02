@@ -592,6 +592,7 @@ function defaultState(steps) {
     timing: initTiming(),
     weight: initWeight(),
     wifeChallenge: initWifeChallenge(),
+    challengeLog: [],
   };
 }
 
@@ -615,6 +616,7 @@ function loadState() {
     if (!saved.timing) saved.timing = initTiming();
     if (!saved.weight) saved.weight = initWeight();
     if (!saved.wifeChallenge) saved.wifeChallenge = initWifeChallenge();
+    if (!saved.challengeLog) saved.challengeLog = [];
     // Seed caughtDex from existing pokemon on first migration
     if (!saved.caughtDex || saved.caughtDex.length === 0) {
       saved.caughtDex = [...new Set((saved.pokemon || []).map(p => p.dexId))];
@@ -1045,9 +1047,10 @@ export default function PokemonWalker({ onStop }) {
   const [weightResult, setWeightResult] = useState(null);
   const [showWifeChallengePanel, setShowWifeChallengePanel] = useState(false);
   const [wifeChallengeInput, setWifeChallengeInput] = useState('');
-  const [wifeChallengeDate, setWifeChallengeDate] = useState(todayString());
   const [claimingVictory, setClaimingVictory] = useState(false);
   const [victoryStarters, setVictoryStarters] = useState(null);
+  const [showLogStepsDropdown, setShowLogStepsDropdown] = useState(false);
+  const [showLogChallengesDropdown, setShowLogChallengesDropdown] = useState(true);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
@@ -1782,6 +1785,7 @@ export default function PokemonWalker({ onStop }) {
 
       return {
         ...next,
+        challengeLog: [{ date: todayString(), type: 'fasting', tier: fa.tier, outcome: reward.label }, ...(prev.challengeLog || [])],
         fasting: {
           ...next.fasting,
           active: { ...fa, status: 'done' },
@@ -1910,7 +1914,7 @@ export default function PokemonWalker({ onStop }) {
       const nextTierIdx = tierOrder.indexOf(tier) + 1;
       const unlockedTiers = nextTierIdx < tierOrder.length && !prev.sugar.unlockedTiers.includes(tierOrder[nextTierIdx])
         ? [...prev.sugar.unlockedTiers, tierOrder[nextTierIdx]] : prev.sugar.unlockedTiers;
-      return { ...next, sugar: { ...next.sugar, active: { ...sa, status: 'done' }, completedTiers, unlockedTiers } };
+      return { ...next, challengeLog: [{ date: todayString(), type: 'sugar', tier: sa.tier, outcome: reward.label }, ...(prev.challengeLog || [])], sugar: { ...next.sugar, active: { ...sa, status: 'done' }, completedTiers, unlockedTiers } };
     });
     setSugarPickedPoke(null);
   };
@@ -1983,12 +1987,13 @@ export default function PokemonWalker({ onStop }) {
 
   const handleLogWifeSteps = () => {
     const steps = parseInt(wifeChallengeInput, 10);
-    if (!wifeChallengeDate || isNaN(steps) || steps < 0) return;
+    if (isNaN(steps) || steps < 0) return;
+    const dateToLog = todayString();
     setAppState(prev => ({
       ...prev,
       wifeChallenge: {
-        ...prev.wifeChallenge,
-        logs: { ...(prev.wifeChallenge?.logs || {}), [wifeChallengeDate]: steps },
+        ...(prev.wifeChallenge || initWifeChallenge()),
+        logs: { ...((prev.wifeChallenge?.logs) || {}), [dateToLog]: steps },
       },
     }));
     setWifeChallengeInput('');
@@ -2002,6 +2007,7 @@ export default function PokemonWalker({ onStop }) {
       const picked = shuffled.slice(0, 3);
       const pokes = await Promise.all(picked.map(id => fetchPokemonById(id)));
       const newPokes = pokes.map(p => ({ ...p, uid: `wc-${month}-${p.dexId}-${Date.now()}${Math.random()}`, packTier: 'epic', buddySteps: 0 }));
+      const monthLabel2 = new Date(month + '-02').toLocaleString('default', { month: 'long', year: 'numeric' });
       setAppState(prev => ({
         ...prev,
         pokemon: [...prev.pokemon, ...newPokes],
@@ -2010,6 +2016,7 @@ export default function PokemonWalker({ onStop }) {
           ...prev.wifeChallenge,
           claimedMonths: [...(prev.wifeChallenge?.claimedMonths || []), month],
         },
+        challengeLog: [{ date: todayString(), type: 'wifeChallenge', tier: 'epic', outcome: `Won ${monthLabel2} · 3 Starter Eggs: ${newPokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
       }));
       setVictoryStarters(newPokes);
     } catch {}
@@ -2059,10 +2066,12 @@ export default function PokemonWalker({ onStop }) {
     setAppState(prev => {
       const tier = prev.timing?.pendingReward;
       if (!tier) return prev;
+      const streak = prev.timing?.streak || 0;
       return {
         ...prev,
         packInventory: { ...prev.packInventory, [tier]: prev.packInventory[tier] + 1 },
         timing: { ...prev.timing, pendingReward: null },
+        challengeLog: [{ date: todayString(), type: 'timing', tier, outcome: `${tier} pack · ${streak}-day streak` }, ...(prev.challengeLog || [])],
       };
     });
   };
@@ -2275,7 +2284,7 @@ export default function PokemonWalker({ onStop }) {
                   { key: 'packs',         icon: '📦', label: 'Packs',        active: showPacksPanel,          toggle: () => { setShowPacksPanel(p => !p); setShowVaultPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
                   { key: 'pokemon',       icon: '🎒', label: 'Pokémon',      active: showMyPokemonPanel,      toggle: () => { setShowMyPokemonPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
                   { key: 'systems',       icon: '⚔️', label: 'Objectives',   active: showSystemsPanel,        toggle: () => { setShowSystemsPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowStepsHistoryPanel(false); } },
-                  { key: 'history',       icon: '📅', label: 'Daily Steps',  active: showStepsHistoryPanel,   toggle: () => { setShowStepsHistoryPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); } },
+                  { key: 'history',       icon: '📋', label: 'Log',         active: showStepsHistoryPanel,   toggle: () => { setShowStepsHistoryPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); } },
                 ].map(({ key, icon, label, active, toggle }) => (
                   <button key={key} className={`pw-icon-btn${active ? ' active' : ''}`} onClick={toggle}>
                     <span className="pw-icon-bubble"><span className="pw-icon-emoji">{icon}</span></span>
@@ -3631,6 +3640,10 @@ export default function PokemonWalker({ onStop }) {
                         return (
                           <div className="wc-panel">
                             <div className="wc-month-label">{monthLabel} · 10,000 steps/day</div>
+                            <div className="wc-stakes">
+                              <div className="wc-stake wc-stake-win">🥚 You win → 3 Starter Eggs</div>
+                              <div className="wc-stake wc-stake-lose">💸 She wins → Buy her a gift</div>
+                            </div>
                             <div className="wc-scoreboard">
                               <div className="wc-player wc-player-chandan">
                                 <div className="wc-player-name">Chandan</div>
@@ -3683,15 +3696,8 @@ export default function PokemonWalker({ onStop }) {
                             )}
 
                             {!monthComplete && <div className="wc-log-section">
-                              <div className="wc-log-label">Log Vishnupriya's steps</div>
+                              <div className="wc-log-label">Vishnupriya's steps today</div>
                               <div className="wc-log-row">
-                                <input
-                                  type="date"
-                                  className="wc-date-input"
-                                  value={wifeChallengeDate}
-                                  max={today}
-                                  onChange={e => setWifeChallengeDate(e.target.value)}
-                                />
                                 <input
                                   type="number"
                                   className="wc-steps-input"
@@ -3743,11 +3749,11 @@ export default function PokemonWalker({ onStop }) {
                   </div>
                 </div>
               )}
-              {/* ── Daily Steps History Panel ── */}
+              {/* ── Log Panel ── */}
               {showStepsHistoryPanel && (
                 <div className="pw-icon-panel">
                   <div className="pw-ip-header">
-                    <span className="pw-ip-title">Daily Steps</span>
+                    <span className="pw-ip-title">📋 Log</span>
                     {(appState.stepHistory || []).length > 0 && (
                       <button
                         className="sh-download-btn"
@@ -3764,26 +3770,68 @@ export default function PokemonWalker({ onStop }) {
                     )}
                   </div>
                   <div className="pw-ip-body">
-                    {(appState.stepHistory || []).length === 0 ? (
-                      <div className="sh-empty">No history yet — steps are logged at the end of each day.</div>
-                    ) : (
-                      <table className="sh-table">
-                        <thead>
-                          <tr>
-                            <th className="sh-th">Date</th>
-                            <th className="sh-th sh-th-right">Steps</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(appState.stepHistory || []).map((entry, i) => (
-                            <tr key={i} className={`sh-row${entry.steps >= 10000 ? ' sh-row-10k' : ''}`}>
-                              <td className="sh-td">{entry.date}</td>
-                              <td className="sh-td sh-td-right">{entry.steps.toLocaleString()}</td>
+
+                    {/* Steps dropdown */}
+                    <button className="log-section-toggle" onClick={() => setShowLogStepsDropdown(p => !p)}>
+                      👣 Daily Steps · {(appState.stepHistory || []).length}
+                      <span className="log-section-chevron">{showLogStepsDropdown ? '▲' : '▼'}</span>
+                    </button>
+                    {showLogStepsDropdown && (
+                      (appState.stepHistory || []).length === 0 ? (
+                        <div className="sh-empty">No history yet — steps log at midnight.</div>
+                      ) : (
+                        <table className="sh-table">
+                          <thead>
+                            <tr>
+                              <th className="sh-th">Date</th>
+                              <th className="sh-th sh-th-right">Steps</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {(appState.stepHistory || []).map((entry, i) => (
+                              <tr key={i} className={`sh-row${entry.steps >= 10000 ? ' sh-row-10k' : ''}`}>
+                                <td className="sh-td">{entry.date}</td>
+                                <td className="sh-td sh-td-right">{entry.steps.toLocaleString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )
                     )}
+
+                    {/* Completed challenges dropdown */}
+                    <button className="log-section-toggle" style={{ marginTop: 8 }} onClick={() => setShowLogChallengesDropdown(p => !p)}>
+                      🏆 Completed Challenges · {(appState.challengeLog || []).length}
+                      <span className="log-section-chevron">{showLogChallengesDropdown ? '▲' : '▼'}</span>
+                    </button>
+                    {showLogChallengesDropdown && (
+                      (appState.challengeLog || []).length === 0 ? (
+                        <div className="sh-empty">No challenges completed yet.</div>
+                      ) : (
+                        <div className="clog-list">
+                          {(appState.challengeLog || []).map((entry, i) => {
+                            const typeLabel = {
+                              fasting: '🍽️ Fasting',
+                              sugar: '🍬 Sugar Control',
+                              timing: '🕗 Timing',
+                              wifeChallenge: '🏅 Wife Challenge',
+                            }[entry.type] || entry.type;
+                            const tierColor = { common: '#7a7a8a', rare: '#1a6fb5', epic: '#7c3aed', legendary: '#b8860b' }[entry.tier] || '#444';
+                            return (
+                              <div key={i} className="clog-row">
+                                <div className="clog-row-top">
+                                  <span className="clog-type">{typeLabel}</span>
+                                  <span className="clog-tier" style={{ color: tierColor }}>{entry.tier}</span>
+                                  <span className="clog-date">{entry.date}</span>
+                                </div>
+                                <div className="clog-outcome">{entry.outcome}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )
+                    )}
+
                   </div>
                 </div>
               )}
