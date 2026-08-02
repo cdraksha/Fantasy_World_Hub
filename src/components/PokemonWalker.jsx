@@ -274,7 +274,7 @@ function initWeight() {
 }
 
 function initWifeChallenge() {
-  return { logs: {}, claimedMonths: [] };
+  return { logs: {}, claimedMonths: [], defeatedMonths: [] };
 }
 
 const TIMING_MILESTONES = [
@@ -616,6 +616,7 @@ function loadState() {
     if (!saved.timing) saved.timing = initTiming();
     if (!saved.weight) saved.weight = initWeight();
     if (!saved.wifeChallenge) saved.wifeChallenge = initWifeChallenge();
+    if (!saved.wifeChallenge.defeatedMonths) saved.wifeChallenge = { ...saved.wifeChallenge, defeatedMonths: [] };
     if (!saved.challengeLog) saved.challengeLog = [];
     // Seed caughtDex from existing pokemon on first migration
     if (!saved.caughtDex || saved.caughtDex.length === 0) {
@@ -706,6 +707,7 @@ function loadState() {
         if (today > windowEnd) {
           saved = applyFastingPenalty(saved, fa.penalty);
           saved.fasting = { ...saved.fasting, active: { ...fa, status: 'failed' } };
+          saved.challengeLog = [{ date: today, type: 'fasting', tier: fa.tier, outcome: 'Failed — window expired' }, ...(saved.challengeLog || [])];
         }
       }
       // Expire frozen Pokémon
@@ -719,6 +721,7 @@ function loadState() {
         if (today > windowEnd) {
           saved = applySugarPenalty(saved, sa.penalty);
           saved.sugar = { ...saved.sugar, active: { ...sa, status: 'failed' } };
+          saved.challengeLog = [{ date: today, type: 'sugar', tier: sa.tier, outcome: 'Failed — window expired' }, ...(saved.challengeLog || [])];
         }
       }
       if (saved.sugar?.frozenPokemon && today > saved.sugar.frozenPokemon.until) {
@@ -730,7 +733,9 @@ function loadState() {
       }
       // Timing streak — if yesterday wasn't logged, reset streak
       if (saved.timing?.streak > 0 && saved.timing.lastLogDate !== saved.todayDate) {
+        const oldStreak = saved.timing.streak;
         saved.timing = { ...saved.timing, streak: 0, claimedMilestones: [], pendingReward: null };
+        saved.challengeLog = [{ date: today, type: 'timing', tier: null, outcome: `Streak broke at ${oldStreak} day${oldStreak !== 1 ? 's' : ''}` }, ...(saved.challengeLog || [])];
       }
       // Log completed day before resetting
       if (saved.todaySteps > 0) {
@@ -3637,6 +3642,7 @@ export default function PokemonWalker({ onStop }) {
                         const lastDayStr = `${month}-${String(daysInMonth).padStart(2, '0')}`;
                         const monthComplete = today > lastDayStr;
                         const claimed = (appState.wifeChallenge?.claimedMonths || []).includes(month);
+                        const defeated = (appState.wifeChallenge?.defeatedMonths || []).includes(month);
                         return (
                           <div className="wc-panel">
                             <div className="wc-month-label">{monthLabel} · 10,000 steps/day</div>
@@ -3675,9 +3681,19 @@ export default function PokemonWalker({ onStop }) {
                                 </button>
                               </div>
                             )}
-                            {monthComplete && leader === 'Vishnupriya' && (
+                            {monthComplete && leader === 'Vishnupriya' && !defeated && (
                               <div className="wc-defeat-box">
                                 <div className="wc-defeat-title">💸 Vishnupriya won — time to buy her something cool!</div>
+                                <button className="wc-dismiss-btn" style={{ marginTop: 8 }} onClick={() => {
+                                  setAppState(prev => ({
+                                    ...prev,
+                                    wifeChallenge: {
+                                      ...(prev.wifeChallenge || initWifeChallenge()),
+                                      defeatedMonths: [...(prev.wifeChallenge?.defeatedMonths || []), month],
+                                    },
+                                    challengeLog: [{ date: today, type: 'wifeChallenge', tier: 'epic', outcome: `Lost ${monthLabel} — owe Vishnupriya a gift` }, ...(prev.challengeLog || [])],
+                                  }));
+                                }}>Noted 😔</button>
                               </div>
                             )}
                             {victoryStarters && claimed && (
