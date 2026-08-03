@@ -3823,7 +3823,7 @@ export default function PokemonWalker({ onStop }) {
 
                     {/* Completed challenges dropdown */}
                     <button className="log-section-toggle" style={{ marginTop: 8 }} onClick={() => setShowLogChallengesDropdown(p => !p)}>
-                      🏆 Completed Challenges · {(appState.challengeLog || []).length}
+                      🏆 Challenges · {(appState.challengeLog || []).length}
                       <span className="log-section-chevron">{showLogChallengesDropdown ? '▲' : '▼'}</span>
                     </button>
                     {showLogChallengesDropdown && (
@@ -3837,8 +3837,11 @@ export default function PokemonWalker({ onStop }) {
                               sugar: '🍬 Sugar Control',
                               timing: '🕗 Timing',
                               wifeChallenge: '🏅 Wife Challenge',
+                              debtTrap: '🏦 Debt Trap',
                             }[entry.type] || entry.type;
                             const tierColor = { common: '#7a7a8a', rare: '#1a6fb5', epic: '#7c3aed', legendary: '#b8860b' }[entry.tier] || '#444';
+                            const isLoss = /failed|broke|lost|defaulted/i.test(entry.outcome);
+                            const outcomeColor = isLoss ? '#dc2626' : '#15803d';
                             return (
                               <div key={i} className="clog-row">
                                 <div className="clog-row-top">
@@ -3846,7 +3849,7 @@ export default function PokemonWalker({ onStop }) {
                                   <span className="clog-tier" style={{ color: tierColor }}>{entry.tier}</span>
                                   <span className="clog-date">{entry.date}</span>
                                 </div>
-                                <div className="clog-outcome">{entry.outcome}</div>
+                                <div className="clog-outcome" style={{ color: outcomeColor }}>{entry.outcome}</div>
                               </div>
                             );
                           })}
