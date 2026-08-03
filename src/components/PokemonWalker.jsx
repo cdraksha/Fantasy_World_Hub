@@ -800,8 +800,7 @@ function TypeBadge({ type }) {
 
 // ─── Pokémon Detail Popup ─────────────────────────────────────────────────
 
-function PokemonDetailPopup({ pokemon, allPokemon, team, vault, buddy, onClose, onAddTeam, onRemoveTeam, onEvolve, onSetBuddy, evolving }) {
-  const isTeamMember = team.includes(pokemon.uid);
+function PokemonDetailPopup({ pokemon, allPokemon, vault, buddy, onClose, onEvolve, onSetBuddy, evolving }) {
   const ownedCount = allPokemon.filter(p => p.dexId === pokemon.dexId).length;
   const timesEvolved = pokemon.timesEvolved || 0;
   const evolveCost = timesEvolved === 0 ? 50000 : 100000;
@@ -863,23 +862,6 @@ function PokemonDetailPopup({ pokemon, allPokemon, team, vault, buddy, onClose, 
           >
             {buddy === pokemon.uid ? '👑 Remove Buddy' : '🤝 Set as Buddy'}
           </button>
-        </div>
-        <div className="pw-popup-action-row">
-          {isTeamMember ? (
-            <button className="pw-popup-remove-btn" onClick={() => { onRemoveTeam(pokemon.uid); onClose(); }}>
-              → Put in Storage
-            </button>
-          ) : (
-            <button
-              className="pw-popup-toteam-btn"
-              onClick={() => { onAddTeam(pokemon.uid); onClose(); }}
-              disabled={team.length >= 6}
-              title={team.length >= 6 ? 'Team is full' : ''}
-              style={team.length >= 6 ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
-            >
-              {team.length >= 6 ? '🔒 Team Full' : '→ Add to Team'}
-            </button>
-          )}
         </div>
 
         <button className="pw-popup-close-btn" onClick={onClose}>Close</button>
@@ -963,11 +945,8 @@ function PackOpeningScreen({ tier, onClose, onCatch }) {
               <div className="pw-dup-text">Duplicate ×{dupCount + 1}</div>
             )}
             <div className="pw-pack-actions">
-              <button className="pw-pack-add-btn" onClick={() => onCatch(fetched, 'team')}>
-                + Add to Team
-              </button>
-              <button className="pw-pack-store-btn" onClick={() => onCatch(fetched, 'storage')}>
-                → Storage
+              <button className="pw-pack-add-btn" onClick={() => onCatch(fetched)}>
+                → Catch!
               </button>
             </div>
           </div>
@@ -1587,12 +1566,10 @@ export default function PokemonWalker({ onStop }) {
   };
 
   // ─── Catch Pokémon from pack ─────────────────────────────────────────
-  const handleCatch = (fetched, destination) => {
+  const handleCatch = (fetched) => {
     setPackOpening(null);
     setAppState(prev => {
-      const isTeam = destination === 'team' && prev.pokemon.filter(p => p.onTeam).length < 6;
       const newPoke = {
-
         uid: makeUID(),
         dexId: fetched.dexId,
         name: fetched.name,
@@ -1602,7 +1579,7 @@ export default function PokemonWalker({ onStop }) {
         location: 'Unknown',
         packTier: packOpening || 'common',
         caughtDate: todayString(),
-        onTeam: isTeam,
+        onTeam: false,
         buddySteps: 0,
       };
       const newPokemon = [...prev.pokemon, newPoke];
@@ -2249,12 +2226,9 @@ export default function PokemonWalker({ onStop }) {
         <PokemonDetailPopup
           pokemon={detailPokemon}
           allPokemon={appState.pokemon}
-          team={team}
           vault={appState.stepVault}
           buddy={appState.buddy}
           onClose={() => setDetailPokemon(null)}
-          onAddTeam={handleAddTeam}
-          onRemoveTeam={handleRemoveTeam}
           onEvolve={handleEvolve}
           onSetBuddy={handleSetBuddy}
           evolving={evolving}
@@ -2528,25 +2502,6 @@ export default function PokemonWalker({ onStop }) {
                   </div>
                 </div>
 
-                {/* Active Team */}
-                <div className="gba-section">
-                  <div className="gba-section-title">Active Team ({teamPokemon.length}/6)</div>
-                  {teamPokemon.length === 0 ? (
-                    <div className="gba-empty">No team yet. Open packs to catch Pokémon!</div>
-                  ) : (
-                    <div className="gba-team-scroll">
-                      {teamPokemon.map(p => (
-                        <div key={p.uid} className={`gba-team-card ${p.packTier || ''}`} onClick={() => setDetailPokemon(p)}>
-                          {p.sprite && <img src={p.sprite} alt={p.name} className="gba-team-sprite" />}
-                          <div className="gba-team-name">{p.name}</div>
-                          <div className="gba-team-region">{getRegion(p.dexId)}</div>
-                          <div className="gba-team-types">{p.types.map(t => <TypeBadge key={t} type={t} />)}</div>
-                          <div className={`gba-team-tier ${p.packTier}`}>{p.packTier}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
 
 
               </div>{/* end gba-screen-content */}
@@ -2658,35 +2613,13 @@ export default function PokemonWalker({ onStop }) {
                         );
                       })}
                     </div>
-                    {storagePokemon.length === 0 && teamPokemon.length === 0 ? (
+                    {appState.pokemon.length === 0 ? (
                       <div className="gba-empty">No Pokémon yet. Open packs to catch some!</div>
                     ) : (
                       <>
-                        {/* Team */}
-                        {teamPokemon.length > 0 && (() => {
-                          const filteredTeam = regionFilter ? teamPokemon.filter(p => getRegion(p.dexId) === regionFilter) : teamPokemon;
-                          if (filteredTeam.length === 0) return null;
-                          return (
-                            <>
-                              <div className="gba-section-title" style={{ margin: '12px 0 6px' }}>
-                                Team ({filteredTeam.length}{regionFilter ? ` · ${regionFilter}` : ''}/6)
-                              </div>
-                              <div className="gba-team-scroll">
-                                {filteredTeam.map(p => (
-                                  <div key={p.uid} className={`gba-team-card ${p.packTier || ''}`} onClick={() => setDetailPokemon(p)}>
-                                    {p.sprite && <img src={p.sprite} alt={p.name} className="gba-team-sprite" />}
-                                    <div className="gba-team-name">{p.name}</div>
-                                    <div className={`gba-team-tier ${p.packTier}`}>{p.packTier}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            </>
-                          );
-                        })()}
-
-                        {/* Storage by tier */}
-                        {storagePokemon.length > 0 && (() => {
-                          const filteredStorage = regionFilter ? storagePokemon.filter(p => getRegion(p.dexId) === regionFilter) : storagePokemon;
+                        {(() => {
+                          const allPokes = appState.pokemon;
+                          const filteredStorage = regionFilter ? allPokes.filter(p => getRegion(p.dexId) === regionFilter) : allPokes;
                           if (filteredStorage.length === 0) return <div className="gba-empty" style={{ marginTop: 8 }}>No {regionFilter} Pokémon in storage.</div>;
                           return (['legendary', 'epic', 'rare', 'common']).map(tier => {
                             const group = filteredStorage.filter(p => p.packTier === tier);
