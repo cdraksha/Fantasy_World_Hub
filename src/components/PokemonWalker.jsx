@@ -1026,6 +1026,7 @@ export default function PokemonWalker({ onStop }) {
   const [showEggPanel, setShowEggPanel] = useState(false);
   const [showChallengePanel, setShowChallengePanel] = useState(false);
   const [showBuddyDetail, setShowBuddyDetail] = useState(false);
+  const [buddyNextEvoId, setBuddyNextEvoId] = useState(undefined);
   const [acceptingDT, setAcceptingDT] = useState(false);
   const [selectedCollateral, setSelectedCollateral] = useState(null);
   const [showVaultPanel, setShowVaultPanel] = useState(false);
@@ -1174,6 +1175,14 @@ export default function PokemonWalker({ onStop }) {
     })();
     return () => { cancelled = true; };
   }, [hatchingTier]);
+
+  // Fetch buddy's next evolution whenever buddy changes
+  useEffect(() => {
+    const buddyPoke = appState?.buddy ? appState.pokemon.find(p => p.uid === appState.buddy) : null;
+    if (!buddyPoke) { setBuddyNextEvoId(null); return; }
+    setBuddyNextEvoId(undefined);
+    fetchEvolution(buddyPoke.dexId).then(setBuddyNextEvoId).catch(() => setBuddyNextEvoId(null));
+  }, [appState?.buddy, appState?.pokemon.find(p => p.uid === appState?.buddy)?.dexId]);
 
   // ─── Derived state ──────────────────────────────────────────────────
   const team = appState ? appState.pokemon.filter(p => p.onTeam).map(p => p.uid) : [];
@@ -2365,17 +2374,22 @@ export default function PokemonWalker({ onStop }) {
                             <div className="pw-buddy-popup-bar">
                               <div className="pw-buddy-popup-bar-fill" style={{ width: `${buddyPct.toFixed(1)}%`, background: ringColor }} />
                             </div>
-                            {buddySteps >= 50000 ? (
-                              <button
-                                className="pw-buddy-popup-evolve"
-                                onClick={e => { e.stopPropagation(); handleBuddyEvolve(); }}
-                                disabled={!!evolving}
-                              >
-                                {evolving === appState.buddy ? 'Evolving…' : '✨ Ready to Evolve!'}
-                              </button>
-                            ) : (
-                              <div className="pw-buddy-popup-left">{fmtFull(50000 - buddySteps)} steps left to evolve</div>
-                            )}
+                            {(() => {
+                              const timesEvolved = buddyPoke?.timesEvolved || 0;
+                              const canEvolve = buddyNextEvoId !== null && timesEvolved < 2;
+                              if (buddyNextEvoId === undefined) return <div className="pw-buddy-popup-left">Checking evolution…</div>;
+                              if (!canEvolve) return <div className="pw-buddy-popup-left">Max Evolution</div>;
+                              if (buddySteps >= 50000) return (
+                                <button
+                                  className="pw-buddy-popup-evolve"
+                                  onClick={e => { e.stopPropagation(); handleBuddyEvolve(); }}
+                                  disabled={!!evolving}
+                                >
+                                  {evolving === appState.buddy ? 'Evolving…' : '✨ Ready to Evolve!'}
+                                </button>
+                              );
+                              return <div className="pw-buddy-popup-left">{fmtFull(50000 - buddySteps)} steps left to evolve</div>;
+                            })()}
                           </div>
                           </>
                         )}
