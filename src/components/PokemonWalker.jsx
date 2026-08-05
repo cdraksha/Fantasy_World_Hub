@@ -1487,6 +1487,7 @@ export default function PokemonWalker({ onStop }) {
           isDTLoan: true,
         }];
       }
+      const todayAlreadyMet = (prev.todaySteps || 0) >= dt.dailyTarget;
       return {
         ...prev,
         packInventory: newPacks,
@@ -1498,6 +1499,8 @@ export default function PokemonWalker({ onStop }) {
           collateralUid,
           legendaryCompanionUid,
           startDate: todayString(),
+          daysCompleted: todayAlreadyMet ? 1 : 0,
+          lastPaidDate: todayAlreadyMet ? todayString() : null,
         },
       };
     });
