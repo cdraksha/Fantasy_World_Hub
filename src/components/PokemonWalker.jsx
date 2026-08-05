@@ -764,6 +764,21 @@ function loadState() {
         saved.loan = { ...saved.loan, daysCompleted: newDays, lastPaidDate: saved.todayDate };
       }
     }
+    // Credit debt trap if today's steps already meet the daily target
+    if (saved.debtTrap?.status === 'active' && saved.todaySteps >= saved.debtTrap.dailyTarget && saved.debtTrap.lastPaidDate !== saved.todayDate) {
+      const newDays = (saved.debtTrap.daysCompleted || 0) + 1;
+      const totalRequired = saved.debtTrap.duration + Math.ceil(saved.debtTrap.daysCompounded || 0);
+      if (newDays >= totalRequired) {
+        saved.pokemon = (saved.pokemon || []).map(p => {
+          if (p.uid === saved.debtTrap.collateralUid) return { ...p, isDTCollateral: false };
+          if (p.uid === saved.debtTrap.legendaryCompanionUid) return { ...p, isDTLoan: false };
+          return p;
+        });
+        saved.debtTrap = generateDebtTrap(saved.debtTrap.index + 1, saved.debtTrap.defaultCount);
+      } else {
+        saved.debtTrap = { ...saved.debtTrap, daysCompleted: newDays, lastPaidDate: saved.todayDate };
+      }
+    }
 
     return saved;
   } catch {
