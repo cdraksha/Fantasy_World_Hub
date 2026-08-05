@@ -1038,7 +1038,7 @@ export default function PokemonWalker({ onStop }) {
   const [claimingVictory, setClaimingVictory] = useState(false);
   const [victoryStarters, setVictoryStarters] = useState(null);
   const [showLogStepsDropdown, setShowLogStepsDropdown] = useState(false);
-  const [showLogChallengesDropdown, setShowLogChallengesDropdown] = useState(true);
+  const [showLogChallengesDropdown, setShowLogChallengesDropdown] = useState(false);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
