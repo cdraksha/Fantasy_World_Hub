@@ -22,17 +22,14 @@ const EGG_HATCH_DAYS      = 10;       // fixed 10 days to hatch (pauses on miss,
 const EGG_CLAIM_HOURS     = 24;       // claim window after vault milestone hit
 const EGG_PREVIEW_WINDOW  = 5_000;    // show panel only within 5k vault steps of threshold
 
-function eggThreshold(index) {
-  return EGG_BASE * (index + 1);
-}
-
 function eggTier(index) {
   return index % 5 === 4 ? 'rare' : 'common'; // every 5th egg is Rare
 }
 
-function initEgg() {
+function initEgg(vaultBaseline = 0) {
   return {
     index: 0,
+    vaultBaseline,         // lifetime vault deposits at last egg unlock
     status: 'waiting',     // waiting | available | active | hatching
     tier: null,
     availableUntil: null,  // ms timestamp — 24hr claim window
@@ -605,6 +602,7 @@ function loadState() {
     // Migrate older saves
     if (!saved.loan) saved.loan = initLoan();
     if (!saved.egg)  saved.egg  = initEgg();
+    if (saved.egg.vaultBaseline === undefined) saved.egg = { ...saved.egg, vaultBaseline: Math.max(0, (saved.lifetimeVaultDeposits || 0) - EGG_BASE) };
     if (!saved.debtTrap) saved.debtTrap = initDebtTrap();
     if (saved.vaultFrozenUntil === undefined) saved.vaultFrozenUntil = null;
     if (saved.buddy === undefined) saved.buddy = null;
@@ -650,7 +648,7 @@ function loadState() {
 
     // Expire unclaimed egg
     if (saved.egg.status === 'available' && Date.now() > saved.egg.availableUntil) {
-      saved.egg = { ...initEgg(), index: saved.egg.index + 1 };
+      saved.egg = { ...initEgg(saved.lifetimeVaultDeposits || 0), index: saved.egg.index + 1 };
     }
 
     // Daily reset
@@ -1159,7 +1157,7 @@ export default function PokemonWalker({ onStop }) {
         setAppState(prev => ({
           ...prev,
           pokemon: [...prev.pokemon, { uid, ...poke, packTier: hatchingTier, onTeam: false, xp: 0, level: 1 }],
-          egg: { ...initEgg(), index: prev.egg.index + 1 },
+          egg: { ...initEgg(prev.lifetimeVaultDeposits || 0), index: prev.egg.index + 1 },
           evolutionLog: [{ date: todayString(), from: '🥚 Egg', to: poke.name, method: 'egg' }, ...(prev.evolutionLog || [])],
           caughtDex: prev.caughtDex?.includes(poke.dexId) ? prev.caughtDex : [...(prev.caughtDex || []), poke.dexId],
         }));
@@ -1558,7 +1556,7 @@ export default function PokemonWalker({ onStop }) {
       const { newPacks, resetVault } = checkVaultMilestones(newVault, prev.packInventory);
       // Check if vault milestone crossed for egg
       let newEgg = prev.egg;
-      if (newEgg.status === 'waiting' && newLifetime >= eggThreshold(newEgg.index)) {
+      if (newEgg.status === 'waiting' && newLifetime - (newEgg.vaultBaseline || 0) >= EGG_BASE) {
         newEgg = {
           ...newEgg,
           status: 'available',
@@ -2825,7 +2823,7 @@ export default function PokemonWalker({ onStop }) {
                       {showEggPanel && (() => {
                         const egg = appState.egg;
                         const vaultLifetime = appState.lifetimeVaultDeposits;
-                        const threshold = eggThreshold(egg.index);
+                        const threshold = (egg.vaultBaseline || 0) + EGG_BASE;
                         if (egg.status === 'active' || egg.status === 'hatching') {
                           const today = todayString();
                           const doneToday = egg.lastHatchDate === today;
