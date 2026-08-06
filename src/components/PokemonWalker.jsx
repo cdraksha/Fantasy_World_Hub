@@ -596,7 +596,7 @@ function loadState() {
     // Migrate older saves
     if (!saved.loan) saved.loan = initLoan();
     if (!saved.egg)  saved.egg  = initEgg();
-    if (saved.egg.vaultBaseline === undefined) saved.egg = { ...saved.egg, vaultBaseline: saved.lifetimeVaultDeposits || 0 };
+    if (!saved.egg.eggV2Reset) saved.egg = { ...saved.egg, vaultBaseline: saved.lifetimeVaultDeposits || 0, eggV2Reset: true, status: saved.egg.status === 'available' ? 'waiting' : saved.egg.status };
     if (!saved.debtTrap) saved.debtTrap = initDebtTrap();
     if (saved.vaultFrozenUntil === undefined) saved.vaultFrozenUntil = null;
     if (saved.buddy === undefined) saved.buddy = null;
