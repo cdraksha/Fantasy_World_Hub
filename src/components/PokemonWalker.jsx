@@ -17,10 +17,7 @@ const LOAN_PREVIEW_WINDOW = 20_000;
 
 // ─── Egg constants ────────────────────────────────────────────────────────────
 const EGG_BASE            = 10_000;   // new egg every 10k vault steps since last hatch
-const EGG_DAILY_REQ       = 5_000;    // steps/day to progress the egg
-const EGG_HATCH_DAYS      = 10;       // fixed 10 days to hatch
 const EGG_CLAIM_HOURS     = 24;       // claim window after vault milestone hit
-const EGG_PREVIEW_WINDOW  = 5_000;    // show panel only within 5k vault steps of threshold
 
 function eggTier(index) {
   return index % 5 === 4 ? 'rare' : 'common'; // every 5th egg is Rare
@@ -30,12 +27,9 @@ function initEgg(vaultBaseline = 0) {
   return {
     index: 0,
     vaultBaseline,
-    status: 'waiting',     // waiting | available | active | hatching
+    status: 'waiting',     // waiting | available
     tier: null,
     availableUntil: null,
-    claimedDate: null,
-    daysCompleted: 0,
-    lastHatchDate: null,
   };
 }
 
@@ -602,7 +596,7 @@ function loadState() {
     // Migrate older saves
     if (!saved.loan) saved.loan = initLoan();
     if (!saved.egg)  saved.egg  = initEgg();
-    if (saved.egg.vaultBaseline === undefined) saved.egg = { ...saved.egg, vaultBaseline: Math.max(0, (saved.lifetimeVaultDeposits || 0) - EGG_BASE) };
+    if (saved.egg.vaultBaseline === undefined) saved.egg = { ...saved.egg, vaultBaseline: saved.lifetimeVaultDeposits || 0 };
     if (!saved.debtTrap) saved.debtTrap = initDebtTrap();
     if (saved.vaultFrozenUntil === undefined) saved.vaultFrozenUntil = null;
     if (saved.buddy === undefined) saved.buddy = null;
@@ -1301,18 +1295,6 @@ export default function PokemonWalker({ onStop }) {
         }
       }
 
-      // ── Egg daily progress ───────────────────────────────────────────
-      let newEgg = prev.egg;
-      if (newEgg.status === 'active' && newTodaySteps >= EGG_DAILY_REQ) {
-        const today = todayString();
-        if (newEgg.lastHatchDate !== today) {
-          const newDays = newEgg.daysCompleted + 1;
-          newEgg = newDays >= EGG_HATCH_DAYS
-            ? { ...newEgg, daysCompleted: newDays, lastHatchDate: today, status: 'hatching' }
-            : { ...newEgg, daysCompleted: newDays, lastHatchDate: today };
-        }
-      }
-
       // ── Day Care step accumulation ────────────────────────────────────
       let newDaycare = prev.daycare || initDaycare();
       let newPackInventory = { ...prev.packInventory };
@@ -1366,7 +1348,6 @@ export default function PokemonWalker({ onStop }) {
         bestDay: newBestDay,
         bestDayDate: newBestDayDate,
         loan: newLoan,
-        egg: newEgg,
         debtTrap: newDT,
         daycare: newDaycare,
         packInventory: newPackInventory,
@@ -1530,11 +1511,11 @@ export default function PokemonWalker({ onStop }) {
     setAcceptingDT(false);
   };
 
-  // ─── Claim egg ───────────────────────────────────────────────────────
+  // ─── Claim egg — instant hatch ───────────────────────────────────────
   const handleClaimEgg = () => {
     setAppState(prev => {
       if (prev.egg.status !== 'available') return prev;
-      return { ...prev, egg: { ...prev.egg, status: 'active', claimedDate: todayString(), daysCompleted: 0, lastHatchDate: null } };
+      return { ...prev, egg: { ...prev.egg, status: 'hatching' } };
     });
   };
 
@@ -2813,63 +2794,35 @@ export default function PokemonWalker({ onStop }) {
                     {/* Egg */}
                     <div className="gba-section">
                       <button className="egg-eligible-btn" onClick={() => setShowEggPanel(p => !p)}>
-                        🥚 {showEggPanel ? 'Hide egg info' : 'Eligible for an egg?'}
-                        {appState.egg?.status === 'active' && (
-                          appState.egg.lastHatchDate === todayString()
-                            ? <span className="obj-updated-badge">Updated</span>
-                            : <span className="obj-pending-badge">Pending</span>
-                        )}
+                        🥚 {showEggPanel ? 'Hide egg info' : 'Egg Progress'}
                         {appState.egg?.status === 'available' && <span className="obj-updated-badge">Claim!</span>}
+                        {appState.egg?.status === 'hatching' && <span className="obj-active-badge">Hatching…</span>}
                       </button>
                       {showEggPanel && (() => {
                         const egg = appState.egg;
                         const vaultLifetime = appState.lifetimeVaultDeposits || 0;
                         const baseline = egg.vaultBaseline || 0;
-                        const threshold = baseline + EGG_BASE;
-                        if (egg.status === 'active' || egg.status === 'hatching') {
-                          const today = todayString();
-                          const doneToday = egg.lastHatchDate === today;
-                          return (
-                            <div className="egg-panel egg-active">
-                              <div className="egg-visual">
-                                <span className="egg-icon" style={{ filter: `sepia(${egg.daysCompleted / EGG_HATCH_DAYS})` }}>🥚</span>
-                                <div className="egg-tier-badge">{egg.tier}</div>
-                              </div>
-                              <div className="egg-progress-row">
-                                <span className="egg-progress-label">Day {egg.daysCompleted} / {EGG_HATCH_DAYS}</span>
-                                <div className="loan-bar"><div className="loan-bar-fill egg-bar-fill" style={{ width: `${(egg.daysCompleted / EGG_HATCH_DAYS) * 100}%` }} /></div>
-                              </div>
-                              <div className={`egg-today-badge ${doneToday ? 'paid' : 'unpaid'}`}>
-                                {egg.status === 'hatching' ? '✨ Hatching…' : doneToday ? `✓ ${fmtNum(EGG_DAILY_REQ)} steps hit today` : `● Hit ${fmtNum(EGG_DAILY_REQ)} steps to progress`}
-                              </div>
-                            </div>
-                          );
+                        const deposited = Math.min(vaultLifetime - baseline, EGG_BASE);
+                        const pct = Math.min(100, (deposited / EGG_BASE) * 100);
+                        if (egg.status === 'hatching') {
+                          return <div className="egg-panel egg-active"><div className="egg-visual"><span className="egg-icon egg-glow">🥚</span></div><div className="egg-avail-title">Hatching…</div></div>;
                         }
                         if (egg.status === 'available') {
-                          const msLeft = egg.availableUntil - Date.now();
-                          const hrsLeft = Math.max(0, Math.floor(msLeft / 3_600_000));
-                          const minLeft = Math.max(0, Math.floor((msLeft % 3_600_000) / 60_000));
                           return (
                             <div className="egg-panel egg-available">
                               <div className="egg-visual"><span className="egg-icon egg-glow">🥚</span><div className="egg-tier-badge">{egg.tier}</div></div>
                               <div className="egg-avail-title">An egg has appeared!</div>
-                              <div className="egg-avail-sub">Claim within {hrsLeft}h {minLeft}m or it disappears</div>
-                              <div className="egg-avail-terms">Hit {fmtNum(EGG_DAILY_REQ)} steps/day for {EGG_HATCH_DAYS} days to hatch</div>
-                              <button className="egg-claim-btn" onClick={handleClaimEgg}>🤲 Claim Egg</button>
+                              <button className="egg-claim-btn" onClick={handleClaimEgg}>🤲 Claim &amp; Hatch</button>
                             </div>
                           );
                         }
-                        const vaultNeeded = threshold - vaultLifetime;
-                        if (vaultNeeded <= EGG_PREVIEW_WINDOW) {
-                          return (
-                            <div className="egg-panel egg-locked">
-                              <div className="egg-visual"><span className="egg-icon egg-dim">🥚</span></div>
-                              <div className="egg-locked-desc"><strong>{fmtNum(vaultNeeded)}</strong> more vault steps to unlock a {eggTier(egg.index)} egg</div>
-                              <div className="loan-bar loan-bar-muted"><div className="loan-bar-fill egg-bar-fill" style={{ width: `${Math.min((vaultLifetime - baseline) / EGG_BASE, 1) * 100}%` }} /></div>
-                            </div>
-                          );
-                        }
-                        return null;
+                        return (
+                          <div className="egg-panel egg-locked">
+                            <div className="egg-visual"><span className="egg-icon egg-dim">🥚</span></div>
+                            <div className="egg-locked-desc">{fmtNum(deposited)} / {fmtNum(EGG_BASE)} vault steps · {eggTier(egg.index)} next</div>
+                            <div className="loan-bar loan-bar-muted"><div className="loan-bar-fill egg-bar-fill" style={{ width: `${pct}%` }} /></div>
+                          </div>
+                        );
                       })()}
                     </div>
 
