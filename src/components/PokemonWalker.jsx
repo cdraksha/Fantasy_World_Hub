@@ -762,6 +762,14 @@ function loadState() {
         saved.loan = { ...saved.loan, daysCompleted: newDays, lastPaidDate: saved.todayDate };
       }
     }
+    // Auto-unlock egg if lifetime vault deposits already exceed threshold
+    if (saved.egg?.status === 'waiting') {
+      const lifetime = saved.lifetimeVaultDeposits || 0;
+      const baseline = saved.egg.vaultBaseline || 0;
+      if (lifetime - baseline >= EGG_BASE) {
+        saved.egg = { ...saved.egg, status: 'available', tier: eggTier(saved.egg.index), availableUntil: Date.now() + EGG_CLAIM_HOURS * 60 * 60 * 1000 };
+      }
+    }
     // Credit debt trap if today's steps already meet the daily target
     if (saved.debtTrap?.status === 'active' && saved.todaySteps >= saved.debtTrap.dailyTarget && saved.debtTrap.lastPaidDate !== saved.todayDate) {
       const newDays = (saved.debtTrap.daysCompleted || 0) + 1;
