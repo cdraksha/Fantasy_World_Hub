@@ -268,6 +268,18 @@ function initWifeChallenge() {
   return { logs: {}, claimedMonths: [], defeatedMonths: [] };
 }
 
+const WEDDING_DATE = '2027-01-18';
+const WEDDING_GOAL_KG = 88;
+
+function initWeddingChallenge() {
+  return {
+    startDate: null,
+    startWeight: null,
+    claimedReward: false,
+    penaltyApplied: false,
+  };
+}
+
 const TIMING_MILESTONES = [
   { days: 5,  tier: 'common' },
   { days: 15, tier: 'rare' },
@@ -583,6 +595,7 @@ function defaultState(steps) {
     timing: initTiming(),
     weight: initWeight(),
     wifeChallenge: initWifeChallenge(),
+    weddingChallenge: initWeddingChallenge(),
     challengeLog: [],
   };
 }
@@ -609,6 +622,7 @@ function loadState() {
     if (!saved.weight) saved.weight = initWeight();
     if (!saved.wifeChallenge) saved.wifeChallenge = initWifeChallenge();
     if (!saved.wifeChallenge.defeatedMonths) saved.wifeChallenge = { ...saved.wifeChallenge, defeatedMonths: [] };
+    if (!saved.weddingChallenge) saved.weddingChallenge = initWeddingChallenge();
     if (!saved.challengeLog) saved.challengeLog = [];
     // Seed caughtDex from existing pokemon on first migration
     if (!saved.caughtDex || saved.caughtDex.length === 0) {
@@ -1053,6 +1067,10 @@ export default function PokemonWalker({ onStop }) {
   const [wifeChallengeInput, setWifeChallengeInput] = useState('');
   const [claimingVictory, setClaimingVictory] = useState(false);
   const [victoryStarters, setVictoryStarters] = useState(null);
+  const [showWeddingPanel, setShowWeddingPanel] = useState(false);
+  const [generatingWeddingImage, setGeneratingWeddingImage] = useState(false);
+  const [weddingImage, setWeddingImage] = useState(null);
+  const [claimingWeddingReward, setClaimingWeddingReward] = useState(false);
   const [showLogStepsDropdown, setShowLogStepsDropdown] = useState(false);
   const [showLogChallengesDropdown, setShowLogChallengesDropdown] = useState(false);
   const [mysteryIds] = useState(() => ({
@@ -1178,6 +1196,18 @@ export default function PokemonWalker({ onStop }) {
     setBuddyNextEvoId(undefined);
     fetchEvolution(buddyPoke.dexId).then(setBuddyNextEvoId).catch(() => setBuddyNextEvoId(null));
   }, [appState?.buddy, appState?.pokemon.find(p => p.uid === appState?.buddy)?.dexId]);
+
+  // One-time init of wedding challenge start date/weight when weight is first logged
+  useEffect(() => {
+    if (!appState) return;
+    const wc = appState.weddingChallenge;
+    if (!wc || wc.startDate !== null) return;
+    if (!appState.weight?.lastKg) return;
+    setAppState(prev => ({
+      ...prev,
+      weddingChallenge: { ...prev.weddingChallenge, startDate: todayString(), startWeight: prev.weight.lastKg },
+    }));
+  }, [appState?.weddingChallenge?.startDate, appState?.weight?.lastKg]);
 
   // ─── Derived state ──────────────────────────────────────────────────
   const team = appState ? appState.pokemon.filter(p => p.onTeam).map(p => p.uid) : [];
@@ -2016,6 +2046,66 @@ export default function PokemonWalker({ onStop }) {
       setVictoryStarters(newPokes);
     } catch {}
     setClaimingVictory(false);
+  };
+
+  // ─── Wedding Challenge handlers ──────────────────────────────────────
+  const handleGenerateWeddingImage = async () => {
+    if (generatingWeddingImage || weddingImage) return;
+    setGeneratingWeddingImage(true);
+    try {
+      const response = await fetch('https://api.segmind.com/v1/nano-banana', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': import.meta.env.VITE_SEGMIND_API_KEY },
+        body: JSON.stringify({
+          prompt: 'A confident fit Indian man dancing joyfully at a grand luxurious Indian wedding celebration, wearing elegant sherwani, looking fantastic and dashing, vibrant marigold decorations, bokeh fairy lights, euphoric atmosphere, cinematic photography, 4k',
+          negative_prompt: 'blurry, low quality, distorted, overweight, sad, ugly, cartoon',
+          width: 512,
+          height: 512,
+          num_inference_steps: 20,
+          guidance_scale: 7.5,
+        }),
+      });
+      if (!response.ok) throw new Error('Failed');
+      const blob = await response.blob();
+      setWeddingImage(URL.createObjectURL(blob));
+    } catch { /* silently fail */ }
+    setGeneratingWeddingImage(false);
+  };
+
+  const handleClaimWeddingReward = async () => {
+    if (claimingWeddingReward) return;
+    setClaimingWeddingReward(true);
+    try {
+      const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
+      const pool = [...LEGENDARY_IDS].filter(id => !ownedDexIds.has(id));
+      const src = pool.length >= 2 ? pool : [...LEGENDARY_IDS];
+      const ids = src.sort(() => Math.random() - 0.5).slice(0, 2);
+      const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
+      setAppState(prev => ({
+        ...prev,
+        pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'legendary', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
+        caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
+        weddingChallenge: { ...prev.weddingChallenge, claimedReward: true },
+        challengeLog: [{ date: todayString(), type: 'wedding', tier: 'legendary', outcome: `Won Prashant's Wedding Challenge — 2 Legendaries: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+      }));
+      setDeltaFlash(`🎊 Wedding challenge won! ${pokes.map(p => p.name).join(' & ')} are yours!`);
+      setTimeout(() => setDeltaFlash(null), 5000);
+    } catch { /* silently fail */ }
+    setClaimingWeddingReward(false);
+  };
+
+  const handleApplyWeddingPenalty = () => {
+    setAppState(prev => {
+      const epics = prev.pokemon.filter(p => p.packTier === 'epic' && !p.isDTCollateral && !p.isDTLoan && !p.isLoan);
+      const toRemove = epics.sort(() => Math.random() - 0.5).slice(0, 5);
+      const removeUids = new Set(toRemove.map(p => p.uid));
+      return {
+        ...prev,
+        pokemon: prev.pokemon.filter(p => !removeUids.has(p.uid)),
+        weddingChallenge: { ...prev.weddingChallenge, penaltyApplied: true },
+        challengeLog: [{ date: todayString(), type: 'wedding', tier: 'epic', outcome: `Lost Prashant's Wedding Challenge — forfeited ${toRemove.length} epic Pokémon: ${toRemove.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+      };
+    });
   };
 
   const handleUndoFast = () => {
@@ -3650,6 +3740,7 @@ export default function PokemonWalker({ onStop }) {
                                 <button className="wc-log-btn" onClick={handleLogWifeSteps}>Log</button>
                               </div>
                             </div>}
+
                             <table className="wc-table">
                               <thead>
                                 <tr>
@@ -3681,6 +3772,183 @@ export default function PokemonWalker({ onStop }) {
                                 })}
                               </tbody>
                             </table>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Prashant's Wedding Challenge */}
+                    <div className="gba-section">
+                      <button className="wc-toggle-btn" onClick={() => setShowWeddingPanel(p => !p)}>
+                        💍 Prashant's Wedding
+                        {(() => {
+                          const wc = appState.weddingChallenge || {};
+                          const today = todayString();
+                          const cw = appState.weight?.lastKg ?? null;
+                          if (wc.claimedReward) return <span className="obj-updated-badge">Won!</span>;
+                          if (wc.penaltyApplied) return <span className="obj-pending-badge">Lost</span>;
+                          if (today > WEDDING_DATE) {
+                            return cw !== null && cw <= WEDDING_GOAL_KG
+                              ? <span className="obj-updated-badge">Claim!</span>
+                              : <span className="obj-pending-badge">Penalty Due</span>;
+                          }
+                          return cw !== null && cw <= WEDDING_GOAL_KG
+                            ? <span className="obj-updated-badge">Goal Reached!</span>
+                            : <span className="obj-active-badge">Active</span>;
+                        })()}
+                      </button>
+                      {showWeddingPanel && (() => {
+                        const today = todayString();
+                        const wc = appState.weddingChallenge || initWeddingChallenge();
+                        const currentWeight = appState.weight?.lastKg ?? null;
+                        const startDate = wc.startDate || today;
+                        const startWeight = wc.startWeight || currentWeight || WEDDING_GOAL_KG + 5;
+                        const totalDays = Math.max(1, daysBetween(startDate, WEDDING_DATE));
+                        const daysElapsed = Math.max(0, daysBetween(startDate, today));
+                        const daysLeft = Math.max(0, daysBetween(today, WEDDING_DATE));
+                        const timePct = Math.min(100, (daysElapsed / totalDays) * 100);
+                        const weightToLose = Math.max(0, startWeight - WEDDING_GOAL_KG);
+                        const weightLost = currentWeight !== null ? Math.max(0, startWeight - currentWeight) : 0;
+                        const weightPct = weightToLose > 0 ? Math.min(100, (weightLost / weightToLose) * 100) : 0;
+                        const postWedding = today > WEDDING_DATE;
+                        const goalReached = currentWeight !== null && currentWeight <= WEDDING_GOAL_KG;
+
+                        const motivations = [
+                          "You are dancing at your closest friend's wedding. YOU WANT TO LOOK HOT.",
+                          "Prashant deserves to see you at your absolute best. Make it happen.",
+                          "Every step today is a step closer to that dance floor. MAKE IT COUNT.",
+                          "The wedding photos are forever. You will thank yourself on Jan 18th.",
+                          "Champion mindset — one meal, one walk, one day at a time.",
+                          "Picture yourself on that dance floor. Fit. Confident. Unstoppable.",
+                        ];
+                        const motivation = motivations[Math.floor((daysElapsed / totalDays) * motivations.length) % motivations.length];
+
+                        if (wc.claimedReward) {
+                          return (
+                            <div className="fast-panel fast-done">
+                              <div className="fast-result-title">🎊 Challenge Won!</div>
+                              <div className="fast-result-sub">You looked incredible at Prashant's wedding.</div>
+                            </div>
+                          );
+                        }
+                        if (wc.penaltyApplied) {
+                          return (
+                            <div className="fast-panel fast-failed">
+                              <div className="fast-result-title">💔 Challenge Over</div>
+                              <div className="fast-result-sub">5 epic Pokémon forfeited. Next time, champion.</div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div style={{ padding: '4px 0' }}>
+                            <div style={{ fontSize: 9, fontStyle: 'italic', color: '#6d28d9', marginBottom: 8, lineHeight: 1.4, textAlign: 'center', fontWeight: 700, padding: '6px 8px', background: 'rgba(109,40,217,0.08)', borderRadius: 6 }}>
+                              "{motivation}"
+                            </div>
+                            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                              <div style={{ flex: 1, background: '#fef3c7', borderRadius: 6, padding: '6px 8px', border: '1px solid #fcd34d' }}>
+                                <div style={{ fontSize: 8, color: '#92400e', fontWeight: 700 }}>GOAL</div>
+                                <div style={{ fontSize: 13, fontWeight: 900, color: '#78350f' }}>88 kg</div>
+                                <div style={{ fontSize: 8, color: '#b45309' }}>by Jan 18, 2027</div>
+                              </div>
+                              <div style={{ flex: 1, background: goalReached ? '#dcfce7' : '#fef2f2', borderRadius: 6, padding: '6px 8px', border: `1px solid ${goalReached ? '#86efac' : '#fca5a5'}` }}>
+                                <div style={{ fontSize: 8, color: '#374151', fontWeight: 700 }}>CURRENT</div>
+                                <div style={{ fontSize: 13, fontWeight: 900, color: goalReached ? '#15803d' : '#dc2626' }}>
+                                  {currentWeight !== null ? `${currentWeight} kg` : 'Not logged'}
+                                </div>
+                                <div style={{ fontSize: 8, color: '#6b7280' }}>
+                                  {currentWeight !== null
+                                    ? (currentWeight > WEDDING_GOAL_KG ? `${(currentWeight - WEDDING_GOAL_KG).toFixed(0)} kg to go` : '✓ Goal reached!')
+                                    : 'Log weight first'}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ marginBottom: 6 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: '#374151', marginBottom: 3 }}>
+                                <span>⏳ Time elapsed</span>
+                                <span>{daysLeft}d left · {Math.round(timePct)}%</span>
+                              </div>
+                              <div className="loan-bar loan-bar-muted">
+                                <div className="loan-bar-fill" style={{ width: `${timePct}%`, background: timePct > 80 ? '#dc2626' : timePct > 60 ? '#f59e0b' : '#0ea5e9' }} />
+                              </div>
+                            </div>
+
+                            {currentWeight !== null && weightToLose > 0 && (
+                              <div style={{ marginBottom: 8 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: '#374151', marginBottom: 3 }}>
+                                  <span>⚖️ Weight progress</span>
+                                  <span>{Math.round(weightPct)}% · {weightLost.toFixed(1)} kg lost</span>
+                                </div>
+                                <div className="loan-bar loan-bar-muted">
+                                  <div className="loan-bar-fill" style={{ width: `${weightPct}%`, background: '#16a34a' }} />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: '#9ca3af', marginTop: 2 }}>
+                                  <span>{startWeight} kg</span>
+                                  <span>{WEDDING_GOAL_KG} kg</span>
+                                </div>
+                              </div>
+                            )}
+
+                            <div style={{ display: 'flex', gap: 6, marginBottom: 8, fontSize: 8, padding: '6px 8px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ color: '#15803d', fontWeight: 700 }}>🏆 WIN</div>
+                                <div style={{ color: '#374151' }}>2 Legendary Pokémon</div>
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ color: '#dc2626', fontWeight: 700 }}>💀 LOSE</div>
+                                <div style={{ color: '#374151' }}>Lose 5 Epic Pokémon</div>
+                              </div>
+                            </div>
+
+                            {goalReached && !postWedding && (
+                              <button
+                                style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
+                                onClick={handleClaimWeddingReward}
+                                disabled={claimingWeddingReward}
+                              >
+                                {claimingWeddingReward ? 'Claiming…' : '🏆 Claim Your 2 Legendaries Early!'}
+                              </button>
+                            )}
+                            {postWedding && goalReached && (
+                              <button
+                                style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
+                                onClick={handleClaimWeddingReward}
+                                disabled={claimingWeddingReward}
+                              >
+                                {claimingWeddingReward ? 'Claiming…' : '🏆 You won! Claim 2 Legendaries'}
+                              </button>
+                            )}
+                            {postWedding && !goalReached && (
+                              <button
+                                style={{ width: '100%', padding: '8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
+                                onClick={handleApplyWeddingPenalty}
+                              >
+                                💀 Apply Penalty (lose 5 epics)
+                              </button>
+                            )}
+
+                            <div style={{ marginTop: 6 }}>
+                              {weddingImage ? (
+                                <div style={{ textAlign: 'center' }}>
+                                  <img src={weddingImage} alt="Motivation" style={{ width: '100%', borderRadius: 8, border: '2px solid #7c3aed' }} />
+                                  <div style={{ fontSize: 8, color: '#7c3aed', marginTop: 4 }}>Your motivation · resets on refresh</div>
+                                </div>
+                              ) : (
+                                <button
+                                  style={{ width: '100%', padding: '8px', background: 'linear-gradient(135deg, #7c3aed, #db2777)', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: generatingWeddingImage ? 'default' : 'pointer', opacity: generatingWeddingImage ? 0.7 : 1 }}
+                                  onClick={handleGenerateWeddingImage}
+                                  disabled={generatingWeddingImage}
+                                >
+                                  {generatingWeddingImage ? '✨ Generating motivation…' : '🎨 Generate AI Motivation Image'}
+                                </button>
+                              )}
+                            </div>
+
+                            {currentWeight === null && (
+                              <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center', marginTop: 8 }}>
+                                Log your weight under Weight Loss to track progress
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
@@ -3756,6 +4024,7 @@ export default function PokemonWalker({ onStop }) {
                               timing: '🕗 Timing',
                               wifeChallenge: '🏅 Wife Challenge',
                               debtTrap: '🏦 Debt Trap',
+                              wedding: '💍 Wedding Challenge',
                             }[entry.type] || entry.type;
                             const tierColor = { common: '#7a7a8a', rare: '#1a6fb5', epic: '#7c3aed', legendary: '#b8860b' }[entry.tier] || '#444';
                             const isLoss = /failed|broke|lost|defaulted/i.test(entry.outcome);
