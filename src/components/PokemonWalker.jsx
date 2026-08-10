@@ -19,8 +19,8 @@ const LOAN_PREVIEW_WINDOW = 20_000;
 const EGG_BASE            = 10_000;   // new egg every 10k vault steps since last hatch
 const EGG_CLAIM_HOURS     = 24;       // claim window after vault milestone hit
 
-function eggTier(index) {
-  return index % 5 === 4 ? 'rare' : 'common'; // every 5th egg is Rare
+function eggTier(_index) {
+  return 'common';
 }
 
 function initEgg(vaultBaseline = 0) {
