@@ -1053,9 +1053,11 @@ function WeightGraph({ history }) {
   const maxKg = rawMax + pad;
   const range = maxKg - minKg || 1;
 
-  const W = 320, H = 170;
-  const PL = 38, PR = 12, PT = 14, PB = 28;
-  const plotW = W - PL - PR;
+  const SPACING = 28; // fixed px per day — never shrinks
+  const H = 170;
+  const PL = 38, PR = 16, PT = 14, PB = 28;
+  const plotW = Math.max(SPACING * Math.max(recent.length - 1, 1), 240);
+  const W = PL + plotW + PR;
   const plotH = H - PT - PB;
 
   const xOf = i => PL + (i / Math.max(recent.length - 1, 1)) * plotW;
@@ -1085,7 +1087,8 @@ function WeightGraph({ history }) {
   const lowerPts = bandSegs.map(s => `${xOf(s.i).toFixed(1)},${yOf(s.lower).toFixed(1)}`);
 
   return (
-    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', borderRadius: 10, background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+    <div style={{ overflowX: 'auto', overflowY: 'hidden', borderRadius: 10, border: '1px solid #e5e7eb' }}>
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', background: '#f8fafc' }}>
       {/* Grid lines */}
       {yTicks.map(v => (
         <line key={v} x1={PL} y1={yOf(v).toFixed(1)} x2={W - PR} y2={yOf(v).toFixed(1)}
@@ -1130,6 +1133,7 @@ function WeightGraph({ history }) {
         );
       })}
     </svg>
+    </div>
   );
 }
 
