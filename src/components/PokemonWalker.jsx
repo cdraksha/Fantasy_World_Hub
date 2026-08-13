@@ -2208,7 +2208,8 @@ export default function PokemonWalker({ onStop }) {
       if (newKg === w.lastKg) {
         setWeightResult({ type: 'nochange', kg: newKg });
         setTimeout(() => setWeightResult(null), 3000);
-        return prev;
+        // Still update the date — confirms weight is still X as of today
+        return { ...prev, weight: { ...w, lastChangeDate: todayString() } };
       }
       const days = daysBetween(w.lastChangeDate, todayString());
       const tier = days <= 7 ? 'epic' : days <= 14 ? 'rare' : 'common';
@@ -2219,9 +2220,10 @@ export default function PokemonWalker({ onStop }) {
         setWeightResult({ type: 'loss', kg: newKg, diff: w.lastKg - newKg, tier, days });
       } else {
         // Penalty — reduce buddy steps
+        // ≤2 days = sudden gain (lose all), 3–7 days = moderate (lose 50%), 7+ days = gradual (lose 25%)
         const buddyUid = prev.buddy;
         if (buddyUid) {
-          const factor = days <= 7 ? 0 : days <= 14 ? 0.5 : 0.75;
+          const factor = days <= 2 ? 0 : days <= 7 ? 0.5 : 0.75;
           next = {
             ...next,
             pokemon: next.pokemon.map(p =>
@@ -3166,9 +3168,9 @@ export default function PokemonWalker({ onStop }) {
                               </div>
                               <div className="wt-rule-group wt-rule-bad">
                                 <div className="wt-rule-title">↑ Gain 1kg</div>
-                                <div className="wt-rule-row"><span>&lt;7 days</span><span className="records-badge records-badge-sugar">buddy loses all steps</span></div>
-                                <div className="wt-rule-row"><span>&lt;14 days</span><span className="records-badge records-badge-sugar">buddy loses 50%</span></div>
-                                <div className="wt-rule-row"><span>14+ days</span><span className="records-badge records-badge-sugar">buddy loses 25%</span></div>
+                                <div className="wt-rule-row"><span>0–2 days</span><span className="records-badge records-badge-sugar">buddy loses all steps</span></div>
+                                <div className="wt-rule-row"><span>3–7 days</span><span className="records-badge records-badge-sugar">buddy loses 50%</span></div>
+                                <div className="wt-rule-row"><span>7+ days</span><span className="records-badge records-badge-sugar">buddy loses 25%</span></div>
                               </div>
                             </div>
                             <div className="wt-input-row">
