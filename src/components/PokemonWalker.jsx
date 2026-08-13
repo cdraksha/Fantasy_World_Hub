@@ -287,6 +287,16 @@ const TIMING_MILESTONES = [
   { days: 35, tier: 'legendary' },
 ];
 
+const TREADMILL_TIERS = [
+  { mins: 5,  buddySteps: 500,  packs: {} },
+  { mins: 10, buddySteps: 2000, packs: {} },
+  { mins: 20, buddySteps: 0,    packs: { common: 1 } },
+  { mins: 30, buddySteps: 1000, packs: { common: 1 } },
+  { mins: 45, buddySteps: 3000, packs: { common: 1 } },
+  { mins: 50, buddySteps: 0,    packs: { rare: 1, common: 1 } },
+  { mins: 60, buddySteps: 3000, packs: { rare: 1, common: 1 } },
+];
+
 function initTiming() {
   return { streak: 0, lastLogDate: null, claimedMilestones: [], pendingReward: null };
 }
@@ -1060,6 +1070,9 @@ export default function PokemonWalker({ onStop }) {
   const [showEvoRecords, setShowEvoRecords] = useState(false);
   const [showHatchRecords, setShowHatchRecords] = useState(false);
   const [showTimingPanel, setShowTimingPanel] = useState(false);
+  const [showTreadmillPanel, setShowTreadmillPanel] = useState(false);
+  const [treadmillConfirming, setTreadmillConfirming] = useState(null); // mins value pending confirm
+  const treadmillConfirmTimer = useRef(null);
   const [showWeightPanel, setShowWeightPanel] = useState(false);
   const [weightInput, setWeightInput] = useState('');
   const [weightResult, setWeightResult] = useState(null);
@@ -2161,6 +2174,24 @@ export default function PokemonWalker({ onStop }) {
     });
   };
 
+  const handleClaimTreadmill = (tier) => {
+    setAppState(prev => {
+      let next = { ...prev };
+      if (tier.packs.common) next = { ...next, packInventory: { ...next.packInventory, common: next.packInventory.common + tier.packs.common } };
+      if (tier.packs.rare)   next = { ...next, packInventory: { ...next.packInventory, rare:   next.packInventory.rare   + tier.packs.rare   } };
+      if (tier.buddySteps > 0 && prev.buddy) {
+        next = { ...next, pokemon: next.pokemon.map(p => p.uid === prev.buddy ? { ...p, buddySteps: (p.buddySteps || 0) + tier.buddySteps } : p) };
+      }
+      return next;
+    });
+    const parts = [];
+    if (tier.packs.rare)    parts.push(`+${tier.packs.rare} rare pack`);
+    if (tier.packs.common)  parts.push(`+${tier.packs.common} common pack`);
+    if (tier.buddySteps > 0) parts.push(`buddy +${tier.buddySteps.toLocaleString()} steps`);
+    setDeltaFlash(`🏃 ${tier.mins}min claimed — ${parts.join(' · ')}`);
+    setTimeout(() => setDeltaFlash(null), 3000);
+  };
+
   const handleLogWeight = () => {
     const raw = parseFloat(weightInput);
     if (isNaN(raw) || raw <= 0) return;
@@ -3236,6 +3267,70 @@ export default function PokemonWalker({ onStop }) {
                           </div>
                         );
                       })()}
+                    </div>
+
+                    {/* Treadmill Jogging */}
+                    <div className="gba-section">
+                      <button className="timing-toggle-btn" onClick={() => setShowTreadmillPanel(p => !p)}>
+                        🏃 Treadmill Jogging
+                      </button>
+                      {showTreadmillPanel && (
+                        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center' }}>
+                            Claim after each nonstop run · same tier claimable multiple times
+                          </div>
+                          {TREADMILL_TIERS.map(tier => {
+                            const noBuddy = tier.buddySteps > 0 && !appState.buddy;
+                            return (
+                              <div key={tier.mins} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 8px' }}>
+                                <div style={{ minWidth: 36, textAlign: 'center' }}>
+                                  <div style={{ background: '#0ea5e9', color: '#fff', borderRadius: 6, fontWeight: 900, fontSize: 11, lineHeight: 1, padding: '3px 0' }}>
+                                    {tier.mins}
+                                  </div>
+                                  <div style={{ fontSize: 7, color: '#6b7280', marginTop: 2, fontWeight: 600 }}>MIN</div>
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  {tier.packs.rare && (
+                                    <div style={{ fontSize: 8, fontWeight: 700, color: '#1a6fb5' }}>📦 1× Rare Pack</div>
+                                  )}
+                                  {tier.packs.common && (
+                                    <div style={{ fontSize: 8, fontWeight: 700, color: '#5a5a6a' }}>📦 1× Common Pack</div>
+                                  )}
+                                  {tier.buddySteps > 0 && (
+                                    <div style={{ fontSize: 8, fontWeight: 700, color: '#16a34a' }}>
+                                      🦶 Buddy gets {tier.buddySteps.toLocaleString()} free steps
+                                      {noBuddy && <span style={{ color: '#f59e0b', fontWeight: 600 }}> (no buddy set)</span>}
+                                    </div>
+                                  )}
+                                </div>
+                                {treadmillConfirming === tier.mins ? (
+                                  <button
+                                    style={{ padding: '6px 10px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 900, fontSize: 9, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
+                                    onClick={() => {
+                                      clearTimeout(treadmillConfirmTimer.current);
+                                      setTreadmillConfirming(null);
+                                      handleClaimTreadmill(tier);
+                                    }}
+                                  >
+                                    ✓ Confirm
+                                  </button>
+                                ) : (
+                                  <button
+                                    style={{ padding: '6px 10px', background: 'linear-gradient(135deg, #16a34a, #15803d)', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 9, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}
+                                    onClick={() => {
+                                      clearTimeout(treadmillConfirmTimer.current);
+                                      setTreadmillConfirming(tier.mins);
+                                      treadmillConfirmTimer.current = setTimeout(() => setTreadmillConfirming(null), 4000);
+                                    }}
+                                  >
+                                    Claim
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {/* Fasting Challenge */}
