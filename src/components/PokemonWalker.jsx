@@ -261,7 +261,15 @@ function initSugar() {
 }
 
 function initWeight() {
-  return { lastKg: null, lastChangeDate: null };
+  return { lastKg: null, lastChangeDate: null, history: [] };
+}
+
+function calcBollinger(history, window = 7) {
+  if (!history || history.length < window) return null;
+  const recent = history.slice(-window).map(e => e.kg);
+  const mean = recent.reduce((a, b) => a + b, 0) / window;
+  const std = Math.sqrt(recent.reduce((a, b) => a + (b - mean) ** 2, 0) / window);
+  return { middle: +mean.toFixed(2), upper: +(mean + 2 * std).toFixed(2), lower: +(mean - 2 * std).toFixed(2) };
 }
 
 function initWifeChallenge() {
@@ -630,6 +638,14 @@ function loadState() {
     if (!saved.evolutionLog) saved.evolutionLog = [];
     if (!saved.timing) saved.timing = initTiming();
     if (!saved.weight) saved.weight = initWeight();
+    if (!saved.weight.history) {
+      saved.weight = {
+        ...saved.weight,
+        history: saved.weight.lastKg
+          ? [{ date: saved.weight.lastChangeDate || todayString(), kg: saved.weight.lastKg }]
+          : [],
+      };
+    }
     if (!saved.wifeChallenge) saved.wifeChallenge = initWifeChallenge();
     if (!saved.wifeChallenge.defeatedMonths) saved.wifeChallenge = { ...saved.wifeChallenge, defeatedMonths: [] };
     if (!saved.weddingChallenge) saved.weddingChallenge = initWeddingChallenge();
@@ -1021,6 +1037,99 @@ function MidnightWarning({ spendable, onSpend, onDeposit, onIgnore }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Weight Graph ────────────────────────────────────────────────────────
+
+function WeightGraph({ history }) {
+  if (!history || history.length < 1) return null;
+  const recent = history.slice(-14);
+  const kgs = recent.map(e => e.kg);
+  const rawMin = Math.min(...kgs);
+  const rawMax = Math.max(...kgs);
+  const pad = Math.max((rawMax - rawMin) * 0.4, 2);
+  const minKg = rawMin - pad;
+  const maxKg = rawMax + pad;
+  const range = maxKg - minKg || 1;
+
+  const W = 320, H = 170;
+  const PL = 38, PR = 12, PT = 14, PB = 28;
+  const plotW = W - PL - PR;
+  const plotH = H - PT - PB;
+
+  const xOf = i => PL + (i / Math.max(recent.length - 1, 1)) * plotW;
+  const yOf = kg => PT + (1 - (kg - minKg) / range) * plotH;
+
+  const yTickCount = 5;
+  const rawRange = rawMax - rawMin || 2;
+  const yStep = Math.ceil(rawRange / (yTickCount - 1)) || 1;
+  const yStart = Math.floor(rawMin);
+  const yTicks = Array.from({ length: yTickCount }, (_, i) => yStart + i * yStep);
+
+  const xTickIdxs = recent.length === 1
+    ? [0]
+    : [...new Set([0, Math.floor((recent.length - 1) / 2), recent.length - 1])];
+
+  const fmtDate = dateStr => {
+    const d = new Date(dateStr + 'T00:00:00');
+    return `${d.toLocaleString('default', { month: 'short' })} ${d.getDate()}`;
+  };
+
+  const bandAt = recent.map((_, i) => calcBollinger(recent.slice(0, i + 1)));
+  const bandSegs = bandAt.map((b, i) => b ? { i, upper: b.upper, lower: b.lower } : null).filter(Boolean);
+  const linePath = recent.length > 1
+    ? recent.map((e, i) => `${i === 0 ? 'M' : 'L'}${xOf(i).toFixed(1)},${yOf(e.kg).toFixed(1)}`).join(' ')
+    : null;
+  const upperPts = bandSegs.map(s => `${xOf(s.i).toFixed(1)},${yOf(s.upper).toFixed(1)}`);
+  const lowerPts = bandSegs.map(s => `${xOf(s.i).toFixed(1)},${yOf(s.lower).toFixed(1)}`);
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', borderRadius: 10, background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+      {/* Grid lines */}
+      {yTicks.map(v => (
+        <line key={v} x1={PL} y1={yOf(v).toFixed(1)} x2={W - PR} y2={yOf(v).toFixed(1)}
+          stroke="#e5e7eb" strokeWidth="1" />
+      ))}
+      {/* Y-axis labels */}
+      {yTicks.map(v => (
+        <text key={v} x={PL - 6} y={yOf(v)} textAnchor="end" dominantBaseline="middle"
+          fontSize="9" fill="#9ca3af" fontFamily="Inter, sans-serif" fontWeight="600">{v}</text>
+      ))}
+      {/* kg label */}
+      <text x={10} y={PT + plotH / 2} textAnchor="middle" dominantBaseline="middle"
+        fontSize="8" fill="#9ca3af" fontWeight="700"
+        transform={`rotate(-90, 10, ${PT + plotH / 2})`}>kg</text>
+      {/* X-axis labels */}
+      {xTickIdxs.map(i => (
+        <text key={i} x={xOf(i).toFixed(1)} y={H - 7} textAnchor="middle"
+          fontSize="9" fill="#9ca3af" fontFamily="Inter, sans-serif" fontWeight="600">{fmtDate(recent[i].date)}</text>
+      ))}
+      {/* Axis lines */}
+      <line x1={PL} y1={PT} x2={PL} y2={PT + plotH} stroke="#d1d5db" strokeWidth="1" />
+      <line x1={PL} y1={PT + plotH} x2={W - PR} y2={PT + plotH} stroke="#d1d5db" strokeWidth="1" />
+      {/* Bollinger band fill */}
+      {bandSegs.length > 1 && (
+        <polygon points={[...upperPts, ...[...lowerPts].reverse()].join(' ')} fill="rgba(99,102,241,0.08)" />
+      )}
+      {upperPts.length > 1 && <polyline points={upperPts.join(' ')} fill="none" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,3" opacity="0.7" />}
+      {lowerPts.length > 1 && <polyline points={lowerPts.join(' ')} fill="none" stroke="#16a34a" strokeWidth="1.5" strokeDasharray="4,3" opacity="0.7" />}
+      {/* Weight line */}
+      {linePath && <path d={linePath} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
+      {/* Dots */}
+      {recent.map((e, i) => {
+        const b = bandAt[i];
+        const color = b ? (e.kg > b.upper ? '#ef4444' : e.kg < b.lower ? '#16a34a' : '#6366f1') : '#6366f1';
+        const isLast = i === recent.length - 1;
+        return (
+          <g key={i}>
+            {isLast && <circle cx={xOf(i)} cy={yOf(e.kg)} r={9} fill={color} opacity="0.15" />}
+            <circle cx={xOf(i)} cy={yOf(e.kg)} r={isLast ? 5 : 3}
+              fill={color} stroke="#f8fafc" strokeWidth="1.5" />
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
@@ -2199,42 +2308,62 @@ export default function PokemonWalker({ onStop }) {
     setWeightInput('');
     setAppState(prev => {
       const w = prev.weight || initWeight();
-      // First ever log — just record, no reward/penalty
-      if (w.lastKg === null) {
+      const today = todayString();
+
+      // Upsert today's entry into history
+      const existingIdx = (w.history || []).findIndex(e => e.date === today);
+      let newHistory;
+      if (existingIdx >= 0) {
+        newHistory = w.history.map((e, i) => i === existingIdx ? { date: today, kg: newKg } : e);
+      } else {
+        newHistory = [...(w.history || []), { date: today, kg: newKg }];
+      }
+
+      const newWeight = { lastKg: newKg, lastChangeDate: today, history: newHistory };
+
+      // First ever log
+      if ((w.history || []).length === 0 && existingIdx < 0) {
         setWeightResult({ type: 'recorded', kg: newKg });
         setTimeout(() => setWeightResult(null), 4000);
-        return { ...prev, weight: { lastKg: newKg, lastChangeDate: todayString() } };
+        return { ...prev, weight: newWeight };
       }
-      if (newKg === w.lastKg) {
-        setWeightResult({ type: 'nochange', kg: newKg });
-        setTimeout(() => setWeightResult(null), 3000);
-        // Still update the date — confirms weight is still X as of today
-        return { ...prev, weight: { ...w, lastChangeDate: todayString() } };
+
+      // Compute bands from prior history (exclude today's entry)
+      const priorHistory = (w.history || []).filter(e => e.date !== today);
+      const bands = calcBollinger(priorHistory);
+
+      if (!bands) {
+        const daysLeft = 7 - priorHistory.length;
+        setWeightResult({ type: 'recorded', kg: newKg, daysLeft });
+        setTimeout(() => setWeightResult(null), 4000);
+        return { ...prev, weight: newWeight };
       }
-      const days = daysBetween(w.lastChangeDate, todayString());
-      const tier = days <= 7 ? 'epic' : days <= 14 ? 'rare' : 'common';
-      const lost = newKg < w.lastKg;
-      let next = { ...prev, weight: { lastKg: newKg, lastChangeDate: todayString() } };
-      if (lost) {
-        next = { ...next, packInventory: { ...next.packInventory, [tier]: next.packInventory[tier] + 1 } };
-        setWeightResult({ type: 'loss', kg: newKg, diff: w.lastKg - newKg, tier, days });
-      } else {
-        // Penalty — reduce buddy steps
-        // ≤2 days = sudden gain (lose all), 3–7 days = moderate (lose 50%), 7+ days = gradual (lose 25%)
+
+      let next = { ...prev, weight: newWeight };
+
+      if (newKg < bands.lower) {
+        // Broke below lower band — exceptional loss, epic pack reward
+        next = { ...next, packInventory: { ...next.packInventory, epic: next.packInventory.epic + 1 } };
+        setWeightResult({ type: 'band-loss', kg: newKg, lower: bands.lower, upper: bands.upper });
+      } else if (newKg > bands.upper) {
+        // Broke above upper band — weight spike penalty
         const buddyUid = prev.buddy;
         if (buddyUid) {
-          const factor = days <= 2 ? 0 : days <= 7 ? 0.5 : 0.75;
           next = {
             ...next,
             pokemon: next.pokemon.map(p =>
-              p.uid === buddyUid ? { ...p, buddySteps: Math.floor((p.buddySteps || 0) * factor) } : p
+              p.uid === buddyUid ? { ...p, buddySteps: Math.floor((p.buddySteps || 0) * 0.5) } : p
             ),
           };
-          setWeightResult({ type: 'gain', kg: newKg, diff: newKg - w.lastKg, factor, days });
+          setWeightResult({ type: 'band-gain', kg: newKg, upper: bands.upper, lower: bands.lower });
         } else {
-          setWeightResult({ type: 'gain-nobuddy', kg: newKg, diff: newKg - w.lastKg, days });
+          setWeightResult({ type: 'band-gain-nobuddy', kg: newKg, upper: bands.upper });
         }
+      } else {
+        // Within bands — safe daily log
+        setWeightResult({ type: 'band-ok', kg: newKg, lower: bands.lower, upper: bands.upper });
       }
+
       setTimeout(() => setWeightResult(null), 5000);
       return next;
     });
@@ -3150,29 +3279,55 @@ export default function PokemonWalker({ onStop }) {
                       {showWeightPanel && (() => {
                         const w = appState.weight || initWeight();
                         const buddyPoke = appState.buddy ? appState.pokemon.find(p => p.uid === appState.buddy) : null;
+                        const hist = w.history || [];
+                        const bands = calcBollinger(hist);
+                        const daysLogged = hist.length;
+                        const daysToActivate = Math.max(0, 7 - daysLogged);
                         return (
                           <div className="wt-panel">
-                            {w.lastKg !== null && (
-                              <div className="wt-last-row">
-                                <span className="wt-last-label">Last recorded</span>
-                                <span className="wt-last-val">{w.lastKg} kg</span>
-                                <span className="wt-last-date">{w.lastChangeDate}</span>
+                            {/* Current weight hero */}
+                            <div className="wt-hero">
+                              <div className="wt-hero-left">
+                                <div className="wt-hero-label">Current Weight</div>
+                                <div className="wt-hero-value">{w.lastKg !== null ? `${w.lastKg} kg` : '—'}</div>
+                                {w.lastChangeDate && <div className="wt-hero-date">{w.lastChangeDate}</div>}
                               </div>
-                            )}
-                            <div className="wt-rules">
-                              <div className="wt-rule-group wt-rule-good">
-                                <div className="wt-rule-title">↓ Lose 1kg</div>
-                                <div className="wt-rule-row"><span>&lt;7 days</span><span className="records-badge records-badge-vault">epic pack</span></div>
-                                <div className="wt-rule-row"><span>&lt;14 days</span><span className="records-badge records-badge-fasting">rare pack</span></div>
-                                <div className="wt-rule-row"><span>14+ days</span><span className="records-badge records-badge-egg">common pack</span></div>
-                              </div>
-                              <div className="wt-rule-group wt-rule-bad">
-                                <div className="wt-rule-title">↑ Gain 1kg</div>
-                                <div className="wt-rule-row"><span>0–2 days</span><span className="records-badge records-badge-sugar">buddy loses all steps</span></div>
-                                <div className="wt-rule-row"><span>3–7 days</span><span className="records-badge records-badge-sugar">buddy loses 50%</span></div>
-                                <div className="wt-rule-row"><span>7+ days</span><span className="records-badge records-badge-sugar">buddy loses 25%</span></div>
+                              <div className="wt-hero-right">
+                                <div className="wt-hero-label">Days Logged</div>
+                                <div className="wt-hero-days">{daysLogged}</div>
+                                <div className="wt-hero-label">{bands ? '🟢 Bands Active' : `${daysToActivate}d to activate`}</div>
                               </div>
                             </div>
+
+                            {/* Graph */}
+                            <WeightGraph history={hist} />
+
+                            {/* Band stats */}
+                            {bands ? (
+                              <div className="wt-bands">
+                                <div className="wt-band wt-band-upper">
+                                  <div className="wt-band-label">▲ Resistance</div>
+                                  <div className="wt-band-value">{bands.upper} kg</div>
+                                  <div className="wt-band-sub">buddy −50% above</div>
+                                </div>
+                                <div className="wt-band wt-band-mid">
+                                  <div className="wt-band-label">— 7-day avg</div>
+                                  <div className="wt-band-value">{bands.middle} kg</div>
+                                  <div className="wt-band-sub">safe zone</div>
+                                </div>
+                                <div className="wt-band wt-band-lower">
+                                  <div className="wt-band-label">▼ Support</div>
+                                  <div className="wt-band-value">{bands.lower} kg</div>
+                                  <div className="wt-band-sub">epic pack below</div>
+                                </div>
+                              </div>
+                            ) : daysLogged > 0 && (
+                              <div className="wt-bands-pending">
+                                Log {daysToActivate} more day{daysToActivate !== 1 ? 's' : ''} to unlock Bollinger Bands — no penalties until then
+                              </div>
+                            )}
+
+                            {/* Input */}
                             <div className="wt-input-row">
                               <input
                                 className="wt-input"
@@ -3180,7 +3335,7 @@ export default function PokemonWalker({ onStop }) {
                                 step="0.1"
                                 min="30"
                                 max="300"
-                                placeholder="Enter weight (kg)"
+                                placeholder="Today's weight (kg)"
                                 value={weightInput}
                                 onChange={e => setWeightInput(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && handleLogWeight()}
@@ -3188,19 +3343,20 @@ export default function PokemonWalker({ onStop }) {
                               <button className="wt-submit-btn" onClick={handleLogWeight} disabled={!weightInput}>Log</button>
                             </div>
                             {weightInput && !isNaN(parseFloat(weightInput)) && (
-                              <div className="wt-preview">Will record as <strong>{Math.floor(parseFloat(weightInput))} kg</strong></div>
+                              <div className="wt-preview">Recording as <strong>{Math.floor(parseFloat(weightInput))} kg</strong></div>
                             )}
                             {weightResult && (
                               <div className={`wt-result wt-result-${weightResult.type}`}>
-                                {weightResult.type === 'recorded' && `✓ First entry recorded: ${weightResult.kg} kg`}
-                                {weightResult.type === 'nochange' && `↔ No change — still ${weightResult.kg} kg`}
-                                {weightResult.type === 'loss' && `🎉 Lost ${weightResult.diff}kg in ${weightResult.days}d → ${weightResult.tier} pack added!`}
-                                {weightResult.type === 'gain' && `😬 Gained ${weightResult.diff}kg in ${weightResult.days}d → buddy lost ${weightResult.factor === 0 ? 'all' : weightResult.factor === 0.5 ? '50%' : '25%'} steps`}
-                                {weightResult.type === 'gain-nobuddy' && `↑ Gained ${weightResult.diff}kg — no buddy set, no penalty applied`}
+                                {weightResult.type === 'recorded' && weightResult.daysLeft > 0 && `✓ ${weightResult.kg} kg saved — ${weightResult.daysLeft} more day${weightResult.daysLeft !== 1 ? 's' : ''} to activate bands`}
+                                {weightResult.type === 'recorded' && !weightResult.daysLeft && `✓ First entry: ${weightResult.kg} kg`}
+                                {weightResult.type === 'band-ok' && `✓ ${weightResult.kg} kg — safe, within ${weightResult.lower}–${weightResult.upper} kg`}
+                                {weightResult.type === 'band-loss' && `🎉 Below support! ${weightResult.kg} kg < ${weightResult.lower} → epic pack earned!`}
+                                {weightResult.type === 'band-gain' && `😬 Above resistance! ${weightResult.kg} kg > ${weightResult.upper} → buddy lost 50% steps`}
+                                {weightResult.type === 'band-gain-nobuddy' && `⚠ Above resistance — set a buddy to apply penalties`}
                               </div>
                             )}
                             {buddyPoke && (
-                              <div className="wt-buddy-note">Buddy: {buddyPoke.name} · {fmtNum(buddyPoke.buddySteps || 0)} steps</div>
+                              <div className="wt-buddy-note">🐾 {buddyPoke.name} · {fmtNum(buddyPoke.buddySteps || 0)} buddy steps</div>
                             )}
                           </div>
                         );
