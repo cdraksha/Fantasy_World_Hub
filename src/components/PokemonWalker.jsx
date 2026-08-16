@@ -928,7 +928,7 @@ function PokemonDetailPopup({ pokemon, allPokemon, vault, buddy, onClose, onEvol
 
 // ─── Pack Opening Screen ──────────────────────────────────────────────────
 
-function PackOpeningScreen({ tier, onClose, onCatch }) {
+function PackOpeningScreen({ tier, isEgg, onClose, onCatch }) {
   const [phase, setPhase] = useState('facedown'); // facedown | loading | result | error
   const [fetched, setFetched] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -937,7 +937,6 @@ function PackOpeningScreen({ tier, onClose, onCatch }) {
     if (phase !== 'facedown') return;
     setPhase('loading');
     try {
-      // We need owned dex IDs passed in from outside; use a window hack or prop
       const dexId = pickFromPool(tier, window.__pw_owned_dex_ids__ || new Set());
       const data = await fetchPokemonById(dexId);
       setFetched(data);
@@ -961,20 +960,20 @@ function PackOpeningScreen({ tier, onClose, onCatch }) {
       />
       <button className="pw-pack-back-btn" onClick={onClose}>← Back</button>
       <div className="pw-pack-modal">
-        <div className={`pw-pack-tier-label ${tier}`}>{tier} pack</div>
+        <div className={`pw-pack-tier-label ${tier}`}>{isEgg ? '🥚 Egg Hatch' : `${tier} pack`}</div>
 
         {phase === 'facedown' && (
           <>
             <span className="pw-pack-card-face" onClick={handleTap} role="button" tabIndex={0}
               onKeyDown={e => e.key === 'Enter' && handleTap()}>
-              🂠
+              {isEgg ? '🥚' : '🂠'}
             </span>
-            <div className="pw-pack-tap-hint">Tap to open</div>
+            <div className="pw-pack-tap-hint">{isEgg ? 'Tap to hatch' : 'Tap to open'}</div>
           </>
         )}
 
         {phase === 'loading' && (
-          <div className="pw-pack-loading">Catching Pokémon…</div>
+          <div className="pw-pack-loading">{isEgg ? 'Hatching…' : 'Catching Pokémon…'}</div>
         )}
 
         {phase === 'error' && (
@@ -1144,6 +1143,7 @@ export default function PokemonWalker({ onStop }) {
   const [stepInput, setStepInput] = useState('');
   const [deltaFlash, setDeltaFlash] = useState(null);
   const [packOpening, setPackOpening] = useState(null); // tier string or null
+  const [eggOpening, setEggOpening] = useState(null);  // tier string when hatching egg, null otherwise
   const [detailPokemon, setDetailPokemon] = useState(null);
   const [showMidnight, setShowMidnight] = useState(false);
   const [evolving, setEvolving] = useState(null); // uid of Pokémon being evolved
@@ -1311,29 +1311,6 @@ export default function PokemonWalker({ onStop }) {
   }, [appState]);
 
   // ─── Egg hatch (fires when status flips to 'hatching') ──────────────
-  const hatchingTier = appState?.egg?.status === 'hatching' ? appState.egg.tier : null;
-  useEffect(() => {
-    if (!hatchingTier) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const ownedDexIds = new Set((appState?.pokemon || []).map(p => p.dexId));
-        const poke = await fetchBaseFormPokemon(hatchingTier, ownedDexIds);
-        if (cancelled) return;
-        const uid = makeUID();
-        setAppState(prev => ({
-          ...prev,
-          pokemon: [...prev.pokemon, { uid, ...poke, packTier: hatchingTier, onTeam: false, xp: 0, level: 1 }],
-          egg: { ...initEgg(prev.lifetimeVaultDeposits || 0), index: prev.egg.index + 1 },
-          evolutionLog: [{ date: todayString(), from: '🥚 Egg', to: poke.name, method: 'egg' }, ...(prev.evolutionLog || [])],
-          caughtDex: prev.caughtDex?.includes(poke.dexId) ? prev.caughtDex : [...(prev.caughtDex || []), poke.dexId],
-        }));
-        setDeltaFlash(`🥚 Egg hatched! ${poke.name} is yours!`);
-        setTimeout(() => setDeltaFlash(null), 4000);
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, [hatchingTier]);
 
   // Fetch buddy's next evolution whenever buddy changes
   useEffect(() => {
@@ -1689,10 +1666,14 @@ export default function PokemonWalker({ onStop }) {
 
   // ─── Claim egg — instant hatch ───────────────────────────────────────
   const handleClaimEgg = () => {
-    setAppState(prev => {
-      if (prev.egg.status !== 'available') return prev;
-      return { ...prev, egg: { ...prev.egg, status: 'hatching' } };
-    });
+    const egg = appState?.egg;
+    if (egg?.status !== 'available') return;
+    const tier = egg.tier || 'common';
+    setEggOpening(tier);
+    setAppState(prev => ({
+      ...prev,
+      egg: { ...initEgg(prev.lifetimeVaultDeposits || 0), index: (prev.egg.index || 0) + 1 },
+    }));
   };
 
   // ─── Unlock pack ─────────────────────────────────────────────────────
@@ -1741,8 +1722,10 @@ export default function PokemonWalker({ onStop }) {
 
   // ─── Catch Pokémon from pack ─────────────────────────────────────────
   const handleCatch = async (fetched) => {
-    const tier = packOpening || 'common'; // capture before clearing
+    const tier = packOpening || eggOpening || 'common'; // capture before clearing
+    const isEgg = !!eggOpening;
     setPackOpening(null);
+    setEggOpening(null);
     const nextEvoDexId = await fetchEvolution(fetched.dexId).catch(() => null) ?? null;
     setAppState(prev => {
       const newPoke = {
@@ -1768,7 +1751,7 @@ export default function PokemonWalker({ onStop }) {
         ...prev,
         pokemon: newPokemon,
         achievements: newAch,
-        packInventory: { ...prev.packInventory, [newPoke.packTier]: prev.packInventory[newPoke.packTier] - 1 },
+        packInventory: isEgg ? prev.packInventory : { ...prev.packInventory, [newPoke.packTier]: prev.packInventory[newPoke.packTier] - 1 },
         caughtDex: newCaughtDex,
       };
     });
@@ -2444,13 +2427,14 @@ export default function PokemonWalker({ onStop }) {
     );
   }
 
-  // ─── Pack opening overlay ─────────────────────────────────────────────
-  if (packOpening) {
+  // ─── Pack / egg opening overlay ──────────────────────────────────────
+  if (packOpening || eggOpening) {
     return (
       <div className="pw-root">
         <PackOpeningScreen
-          tier={packOpening}
-          onClose={() => setPackOpening(null)}
+          tier={packOpening || eggOpening}
+          isEgg={!!eggOpening}
+          onClose={() => { setPackOpening(null); setEggOpening(null); }}
           onCatch={handleCatch}
         />
       </div>
