@@ -90,72 +90,39 @@ function generateDebtTrap(index, defaultCount) {
 
 function initDebtTrap() { return generateDebtTrap(0, 0); }
 
-// ─── Fasting Challenge Algorithms ─────────────────────────────────────────
+// ─── Fasting Challenge Presets ─────────────────────────────────────────────
+
+const FASTING_PRESETS = {
+  easy: [
+    { hours: 10, days: 10, graceDays: 1,
+      reward: { type: 'pack', packTier: 'common', count: 1, label: '1× Common Pack' },
+      penalty: { type: 'buddyReset', label: 'Buddy steps reset to 0' } },
+    { hours: 8, days: 30, graceDays: 1,
+      reward: { type: 'buddySteps', amount: 5000, label: '+5,000 Buddy Steps' },
+      penalty: { type: 'buddyFreeze', days: 10, label: 'Buddy locked for 10 days' } },
+    { hours: 12, days: 8, graceDays: 1,
+      reward: { type: 'pack', packTier: 'common', count: 1, label: '1× Common Pack' },
+      penalty: { type: 'buddyFreeze', days: 5, label: 'Buddy locked for 5 days' } },
+  ],
+  medium: [
+    { hours: 14, days: 8, graceDays: 1,
+      reward: { type: 'pack', packTier: 'rare', count: 4, label: '4× Rare Packs' },
+      penalty: { type: 'releasePokemon', tier: 'rare', count: 2, label: '2 Rare Pokémon released' } },
+    { hours: 12, days: 15, graceDays: 1,
+      reward: { type: 'pack', packTier: 'epic', count: 2, label: '2× Epic Packs' },
+      penalty: { type: 'releasePokemon', tier: 'common', count: 5, label: '5 Common Pokémon released' } },
+  ],
+  hard: [
+    { hours: 16, days: 30, graceDays: 1,
+      reward: { type: 'pack', packTier: 'legendary', count: 1, label: '1× Legendary Pack' },
+      penalty: { type: 'hardFail', label: 'Buddy loses all steps + Buddy frozen 30 days + 5 Common Pokémon released' },
+      bonusReward: { label: '3× Free Evolutions + 5× Common + 1× Rare + 1× Epic Pack', freeEvolutions: 3, packs: { common: 5, rare: 1, epic: 1 } } },
+  ],
+};
 
 function generateFastingChallenge(tier) {
-  if (tier === 'easy') {
-    const hours = [10, 12][Math.floor(Math.random() * 2)];
-    const days = 7 + Math.floor(Math.random() * 8); // 7–14 day unbroken streak
-    return { hours, days };
-  }
-  if (tier === 'medium') {
-    const hours = [14, 16][Math.floor(Math.random() * 2)];
-    const days = 21 + Math.floor(Math.random() * 10); // 21–30 day unbroken streak
-    return { hours, days };
-  }
-  // Hard: fixed brutal target — no randomness, no mercy
-  return { hours: 18, days: 60 };
-}
-
-function generateFastingReward(tier) {
-  const roll = Math.random();
-  if (tier === 'easy') {
-    const steps = Math.round((2500 + Math.random() * 5000) / 500) * 500;
-    if (roll < 0.40) return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps (choose Pokémon)` };
-    if (roll < 0.65) return { type: 'pack', packTier: 'common', count: 1, label: '1× Common Pack' };
-    if (roll < 0.85) return { type: 'pack', packTier: 'rare', count: 1, label: '1× Rare Pack' };
-    return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps (choose Pokémon)` };
-  }
-  if (tier === 'medium') {
-    if (roll < 0.35) return { type: 'pack', packTier: 'epic', count: 1, label: '1× Epic Pack' };
-    if (roll < 0.60) {
-      const steps = Math.round((8000 + Math.random() * 12000) / 1000) * 1000;
-      return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps (choose Pokémon)` };
-    }
-    if (roll < 0.80) return { type: 'freeEvolution', label: 'Free Evolution (any team Pokémon)' };
-    return { type: 'pack', packTier: 'rare', count: 2, label: '2× Rare Packs' };
-  }
-  if (tier === 'hard') {
-    // 60-day 18hr streak deserves a guaranteed legendary — no RNG
-    return { type: 'combo', parts: ['legendary', 'freeEvolution'], label: '1× Legendary Pack + Free Evolution' };
-  }
-  return { type: 'pack', packTier: 'common', count: 1, label: '1× Common Pack' };
-}
-
-function generateFastingPenalty(tier) {
-  const roll = Math.random();
-  if (tier === 'easy') {
-    const amount = Math.round((1000 + Math.random() * 2000) / 500) * 500;
-    if (roll < 0.55) return { type: 'loseBuddySteps', amount, label: `Buddy loses ${amount.toLocaleString()} steps` };
-    const days = 1 + Math.floor(Math.random() * 2);
-    return { type: 'buddyFreeze', days, label: `Buddy steps frozen for ${days} day${days > 1 ? 's' : ''}` };
-  }
-  if (tier === 'medium') {
-    if (roll < 0.40) {
-      const amount = Math.round((3000 + Math.random() * 5000) / 500) * 500;
-      return { type: 'loseBuddySteps', amount, label: `Buddy loses ${amount.toLocaleString()} steps` };
-    }
-    if (roll < 0.70) {
-      const days = 2 + Math.floor(Math.random() * 3);
-      return { type: 'buddyFreeze', days, label: `Buddy steps frozen for ${days} days` };
-    }
-    return { type: 'buddyReset', label: 'Buddy steps reset to 0' };
-  }
-  if (tier === 'hard') {
-    // Miss one day of a 60-day 18hr challenge — you lose your buddy permanently + vault frozen 7 days
-    return { type: 'hardFail', label: 'Buddy Pokémon removed from collection + Vault frozen 7 days' };
-  }
-  return { type: 'buddyReset', label: 'Buddy steps reset to 0' };
+  const opts = FASTING_PRESETS[tier];
+  return opts[Math.floor(Math.random() * opts.length)];
 }
 
 function applyFastingPenalty(state, penalty) {
@@ -170,12 +137,18 @@ function applyFastingPenalty(state, penalty) {
       const until = addDays(todayString(), p.days);
       return { ...s, fasting: { ...s.fasting, frozenPokemon: { until, reason: 'buddy' } } };
     }
+    if (type === 'releasePokemon') {
+      const eligible = s.pokemon.filter(pk => pk.packTier === p.tier && !pk.onTeam && pk.uid !== s.buddy);
+      const toRemove = new Set(eligible.slice(0, p.count).map(pk => pk.uid));
+      return { ...s, pokemon: s.pokemon.filter(pk => !toRemove.has(pk.uid)) };
+    }
     if (type === 'hardFail') {
       let ns = s;
-      if (ns.buddy) {
-        ns = { ...ns, pokemon: ns.pokemon.filter(pk => pk.uid !== ns.buddy), buddy: null };
-      }
-      ns = { ...ns, vaultFrozenUntil: Date.now() + 7 * 24 * 60 * 60 * 1000 };
+      if (ns.buddy) ns = { ...ns, pokemon: ns.pokemon.map(pk => pk.uid === ns.buddy ? { ...pk, buddySteps: 0 } : pk) };
+      ns = { ...ns, vaultFrozenUntil: Date.now() + 30 * 24 * 60 * 60 * 1000 };
+      const eligible = ns.pokemon.filter(pk => pk.packTier === 'common' && !pk.onTeam && pk.uid !== ns.buddy);
+      const toRemove = new Set(eligible.slice(0, 5).map(pk => pk.uid));
+      ns = { ...ns, pokemon: ns.pokemon.filter(pk => !toRemove.has(pk.uid)) };
       return ns;
     }
     return s;
@@ -238,7 +211,30 @@ function generateSugarReward(tier) {
   return { type: 'pack', packTier: 'common', count: 1, label: '1× Common Pack' };
 }
 
-function generateSugarPenalty(tier) { return generateFastingPenalty(tier); }
+function generateSugarPenalty(tier) {
+  const roll = Math.random();
+  if (tier === 'easy') {
+    const amount = Math.round((1000 + Math.random() * 2000) / 500) * 500;
+    if (roll < 0.55) return { type: 'loseBuddySteps', amount, label: `Buddy loses ${amount.toLocaleString()} steps` };
+    const days = 1 + Math.floor(Math.random() * 2);
+    return { type: 'buddyFreeze', days, label: `Buddy steps frozen for ${days} day${days > 1 ? 's' : ''}` };
+  }
+  if (tier === 'medium') {
+    if (roll < 0.40) {
+      const amount = Math.round((3000 + Math.random() * 5000) / 500) * 500;
+      return { type: 'loseBuddySteps', amount, label: `Buddy loses ${amount.toLocaleString()} steps` };
+    }
+    if (roll < 0.70) {
+      const days = 2 + Math.floor(Math.random() * 3);
+      return { type: 'buddyFreeze', days, label: `Buddy steps frozen for ${days} days` };
+    }
+    return { type: 'buddyReset', label: 'Buddy steps reset to 0' };
+  }
+  if (tier === 'hard') {
+    return { type: 'hardFail', label: 'Buddy Pokémon removed from collection + Vault frozen 7 days' };
+  }
+  return { type: 'buddyReset', label: 'Buddy steps reset to 0' };
+}
 
 function applySugarPenalty(state, penalty) {
   function applyOne(s, type, p) {
@@ -621,6 +617,7 @@ function defaultState(steps) {
     wifeChallenge: initWifeChallenge(),
     weddingChallenge: initWeddingChallenge(),
     challengeLog: [],
+    freeEvolutionCredits: 0,
   };
 }
 
@@ -638,6 +635,13 @@ function loadState() {
     if (saved.vaultFrozenUntil === undefined) saved.vaultFrozenUntil = null;
     if (saved.buddy === undefined) saved.buddy = null;
     if (!saved.fasting) saved.fasting = initFasting();
+    // Migrate active fasting challenge to new format
+    if (saved.fasting?.active && saved.fasting.active.graceDays === undefined) {
+      saved.fasting = {
+        ...saved.fasting,
+        active: { ...saved.fasting.active, graceDays: 1, missedDays: 0, status: 'failed' }
+      };
+    }
     if (!saved.sugar) saved.sugar = initSugar();
     if (!saved.daycare) saved.daycare = initDaycare();
     if (!saved.stepHistory) saved.stepHistory = [];
@@ -656,6 +660,7 @@ function loadState() {
     if (!saved.wifeChallenge.defeatedMonths) saved.wifeChallenge = { ...saved.wifeChallenge, defeatedMonths: [] };
     if (!saved.weddingChallenge) saved.weddingChallenge = initWeddingChallenge();
     if (!saved.challengeLog) saved.challengeLog = [];
+    if (saved.freeEvolutionCredits === undefined) saved.freeEvolutionCredits = 0;
     // Seed caughtDex from existing pokemon on first migration
     if (!saved.caughtDex || saved.caughtDex.length === 0) {
       saved.caughtDex = [...new Set((saved.pokemon || []).map(p => p.dexId))];
@@ -742,14 +747,19 @@ function loadState() {
         saved.streak10k = 0;
         saved.lastStreak10kDate = null;
       }
-      // Fasting streak miss check — if yesterday wasn't logged, streak breaks
+      // Fasting streak miss check — grace days allowed
       if (saved.fasting?.active?.status === 'running') {
         const fa = saved.fasting.active;
         const yesterday = saved.todayDate;
         if (fa.lastLogDate !== yesterday) {
-          saved = applyFastingPenalty(saved, fa.penalty);
-          saved.fasting = { ...saved.fasting, active: { ...fa, status: 'failed' } };
-          saved.challengeLog = [{ date: today, type: 'fasting', tier: fa.tier, outcome: `Failed — missed ${yesterday}` }, ...(saved.challengeLog || [])];
+          const newMissed = (fa.missedDays || 0) + 1;
+          if (newMissed > (fa.graceDays ?? 1)) {
+            saved = applyFastingPenalty(saved, fa.penalty);
+            saved.fasting = { ...saved.fasting, active: { ...fa, status: 'failed' } };
+            saved.challengeLog = [{ date: today, type: 'fasting', tier: fa.tier, outcome: `Failed — exceeded grace days` }, ...(saved.challengeLog || [])];
+          } else {
+            saved.fasting = { ...saved.fasting, active: { ...fa, missedDays: newMissed } };
+          }
         }
       }
       // Expire frozen Pokémon
@@ -1873,9 +1883,7 @@ export default function PokemonWalker({ onStop }) {
   // ─── Fasting Challenge handlers ──────────────────────────────────────
   const handleGenerateFasting = (tier) => {
     const challenge = generateFastingChallenge(tier);
-    const reward = generateFastingReward(tier);
-    const penalty = generateFastingPenalty(tier);
-    setFastingPending({ tier, ...challenge, reward, penalty });
+    setFastingPending({ tier, ...challenge });
     setFastingPickedPoke(null);
   };
 
@@ -1889,6 +1897,7 @@ export default function PokemonWalker({ onStop }) {
           ...fastingPending,
           startDate: todayString(),
           fastsCompleted: 0,
+          missedDays: 0,
           lastLogDate: null,
           status: 'running',
         },
@@ -1918,26 +1927,25 @@ export default function PokemonWalker({ onStop }) {
     setAppState(prev => {
       const fa = prev.fasting?.active;
       if (!fa || fa.status !== 'rewarding') return prev;
-      const reward = fa.reward;
       let next = { ...prev };
 
-      const applyPack = (s, tier, count) => ({
-        ...s,
-        packInventory: { ...s.packInventory, [tier]: (s.packInventory[tier] || 0) + count },
-      });
+      const applyPack = (s, t, count) => ({ ...s, packInventory: { ...s.packInventory, [t]: (s.packInventory[t] || 0) + count } });
 
+      const reward = fa.reward;
       if (reward.type === 'pack') {
         next = applyPack(next, reward.packTier, reward.count);
-      } else if (reward.type === 'buddySteps' && pickedUid) {
-        next = {
-          ...next,
-          buddy: pickedUid,
-          pokemon: next.pokemon.map(p =>
-            p.uid === pickedUid ? { ...p, buddySteps: (p.buddySteps || 0) + reward.amount } : p
-          ),
-        };
-      } else if (reward.type === 'combo') {
-        if (reward.parts.includes('legendary')) next = applyPack(next, 'legendary', 1);
+      } else if (reward.type === 'buddySteps') {
+        const targetUid = pickedUid || next.buddy;
+        if (targetUid) {
+          next = { ...next, buddy: targetUid, pokemon: next.pokemon.map(p => p.uid === targetUid ? { ...p, buddySteps: (p.buddySteps || 0) + reward.amount } : p) };
+        }
+      }
+
+      // Hard tier no-grace bonus
+      if (fa.tier === 'hard' && fa.bonusReward && (fa.missedDays || 0) === 0) {
+        const bonus = fa.bonusReward;
+        Object.entries(bonus.packs).forEach(([t, count]) => { next = applyPack(next, t, count); });
+        next = { ...next, freeEvolutionCredits: (next.freeEvolutionCredits || 0) + bonus.freeEvolutions };
       }
 
       const tier = fa.tier;
@@ -3557,7 +3565,6 @@ export default function PokemonWalker({ onStop }) {
 
                         // Pending preview (generated, not yet accepted)
                         if (fastingPending) {
-                          const needsPicker = fastingPending.reward.type === 'buddySteps' || fastingPending.reward.type === 'freeEvolution' || (fastingPending.reward.type === 'combo' && fastingPending.reward.parts.includes('freeEvolution'));
                           return (
                             <div className="fast-panel fast-preview">
                               <div className="fast-preview-row">
@@ -3566,13 +3573,19 @@ export default function PokemonWalker({ onStop }) {
                               </div>
                               <div className="fast-preview-sub">
                                 {fastingPending.tier === 'hard'
-                                  ? '⚠ Miss ONE day and your buddy is gone forever + vault frozen 7 days'
-                                  : `Unbroken streak required — miss a day and it's over`}
+                                  ? `${fastingPending.graceDays} grace days allowed — exceed them and the penalty hits`
+                                  : `1 grace day — miss more than 1 day and it's over`}
                               </div>
                               <div className="fast-info-row fast-reward-row">
                                 <span className="fast-info-label">🎁 Reward</span>
                                 <span className="fast-info-val">{fastingPending.reward.label}</span>
                               </div>
+                              {fastingPending.tier === 'hard' && fastingPending.bonusReward && (
+                                <div className="fast-info-row" style={{ background: 'rgba(99,102,241,0.06)', borderRadius: 6, padding: '4px 8px' }}>
+                                  <span className="fast-info-label">⭐ No-Grace Bonus</span>
+                                  <span className="fast-info-val">{fastingPending.bonusReward.label}</span>
+                                </div>
+                              )}
                               <div className="fast-info-row fast-penalty-row">
                                 <span className="fast-info-label">⚠ Penalty</span>
                                 <span className="fast-info-val">{fastingPending.penalty.label}</span>
@@ -3587,8 +3600,6 @@ export default function PokemonWalker({ onStop }) {
 
                         // Active running challenge
                         if (fa?.status === 'running') {
-                          const windowEnd = addDays(fa.startDate, fa.window);
-                          const daysLeft = Math.max(0, daysBetween(today, windowEnd));
                           const pct = Math.min(100, (fa.fastsCompleted / fa.days) * 100);
                           const yesterday = addDays(today, -1);
                           const loggedYesterday = fa.lastLogDate === yesterday;
@@ -3602,7 +3613,10 @@ export default function PokemonWalker({ onStop }) {
                                 <div className="loan-bar-fill fast-bar-fill" style={{ width: `${pct}%` }} />
                               </div>
                               <div className="fast-active-detail">⏱ {fa.hours}hr fasts required</div>
-                              <div className="fast-active-detail">📅 {daysLeft} days left in window</div>
+                              <div className="fast-active-detail">🛡 {fa.graceDays - (fa.missedDays || 0)} grace day{fa.graceDays - (fa.missedDays || 0) !== 1 ? 's' : ''} remaining</div>
+                              {fa.tier === 'hard' && fa.bonusReward && (fa.missedDays || 0) === 0 && (
+                                <div className="fast-active-detail" style={{ color: '#6366f1', fontWeight: 700 }}>⭐ No-grace bonus still active!</div>
+                              )}
                               <div className="fast-info-row fast-reward-row">
                                 <span className="fast-info-label">🎁</span>
                                 <span className="fast-info-val">{fa.reward.label}</span>
@@ -3627,18 +3641,21 @@ export default function PokemonWalker({ onStop }) {
                         // Rewarding state (all fasts done)
                         if (fa?.status === 'rewarding') {
                           const reward = fa.reward;
-                          const needsEvoPicker = reward.type === 'freeEvolution' || (reward.type === 'combo' && reward.parts.includes('freeEvolution'));
+                          const needsEvoPicker = false;
                           const needsBuddyPicker = reward.type === 'buddySteps';
-                          const needsPicker = needsEvoPicker || needsBuddyPicker;
+                          const needsPicker = needsBuddyPicker;
                           const pickerPoke = appState.pokemon;
                           return (
                             <div className="fast-panel fast-rewarding">
                               <div className="fast-result-title">🎉 Challenge Complete!</div>
                               <div className="fast-result-reward">{reward.label}</div>
+                              {fa.tier === 'hard' && fa.bonusReward && (fa.missedDays || 0) === 0 && (
+                                <div className="fast-result-reward" style={{ color: '#6366f1' }}>⭐ Bonus: {fa.bonusReward.label}</div>
+                              )}
                               {needsPicker && !fastingPickedPoke && (
                                 <div className="fast-poke-picker">
                                   <div className="fast-picker-label">
-                                    {needsBuddyPicker ? 'Choose which Pokémon gets the buddy steps:' : 'Choose which Pokémon to evolve:'}
+                                    Choose which Pokémon gets the buddy steps:
                                   </div>
                                   {pickerPoke.length === 0 ? (
                                     <div className="fast-no-team">No Pokémon caught yet</div>
@@ -3657,19 +3674,9 @@ export default function PokemonWalker({ onStop }) {
                               {(!needsPicker || fastingPickedPoke) && (
                                 <button
                                   className="fast-claim-btn"
-                                  disabled={freeEvolving}
-                                  onClick={() => {
-                                    if (needsEvoPicker && fastingPickedPoke) {
-                                      handleFreeEvolve(fastingPickedPoke);
-                                      if (reward.type === 'combo' && reward.parts.includes('legendary')) {
-                                        handleClaimFastingReward(fastingPickedPoke);
-                                      }
-                                    } else {
-                                      handleClaimFastingReward(fastingPickedPoke);
-                                    }
-                                  }}
+                                  onClick={() => handleClaimFastingReward(fastingPickedPoke)}
                                 >
-                                  {freeEvolving ? 'Evolving…' : '✨ Claim Reward'}
+                                  ✨ Claim Reward
                                 </button>
                               )}
                             </div>
