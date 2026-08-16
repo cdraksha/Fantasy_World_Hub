@@ -1208,6 +1208,26 @@ export default function PokemonWalker({ onStop }) {
   const midnightChecked = useRef(false);
   const packWarningChecked = useRef({ '9pm': false, '11pm': false });
   const stepsWarningChecked = useRef(false);
+  const evoCheckedUids = useRef(new Set());
+
+  // When Pokémon panel opens, fetch nextEvoDexId for any Pokémon that don't have it yet
+  useEffect(() => {
+    if (!showMyPokemonPanel || !appState) return;
+    const unchecked = appState.pokemon.filter(p => p.nextEvoDexId === undefined && !evoCheckedUids.current.has(p.uid));
+    if (unchecked.length === 0) return;
+    unchecked.forEach(p => evoCheckedUids.current.add(p.uid));
+    Promise.all(
+      unchecked.map(async p => ({ uid: p.uid, nextEvoDexId: (await fetchEvolution(p.dexId).catch(() => null)) ?? null }))
+    ).then(results => {
+      setAppState(prev => ({
+        ...prev,
+        pokemon: prev.pokemon.map(p => {
+          const r = results.find(r => r.uid === p.uid);
+          return r ? { ...p, nextEvoDexId: r.nextEvoDexId } : p;
+        }),
+      }));
+    });
+  }, [showMyPokemonPanel]);
 
   useEffect(() => {
     const tick = () => {
@@ -1720,8 +1740,10 @@ export default function PokemonWalker({ onStop }) {
   };
 
   // ─── Catch Pokémon from pack ─────────────────────────────────────────
-  const handleCatch = (fetched) => {
+  const handleCatch = async (fetched) => {
+    const tier = packOpening || 'common'; // capture before clearing
     setPackOpening(null);
+    const nextEvoDexId = await fetchEvolution(fetched.dexId).catch(() => null) ?? null;
     setAppState(prev => {
       const newPoke = {
         uid: makeUID(),
@@ -1731,10 +1753,11 @@ export default function PokemonWalker({ onStop }) {
         types: fetched.types,
         timesEvolved: 0,
         location: 'Unknown',
-        packTier: packOpening || 'common',
+        packTier: tier,
         caughtDate: todayString(),
         onTeam: false,
         buddySteps: 0,
+        nextEvoDexId,
       };
       const newPokemon = [...prev.pokemon, newPoke];
       const newAch = checkAchievements({ ...prev, pokemon: newPokemon });
@@ -1785,7 +1808,11 @@ export default function PokemonWalker({ onStop }) {
     try {
       const nextId = await fetchEvolution(poke.dexId);
       if (!nextId) { setEvolving(null); return; }
-      const evolved = await fetchPokemonById(nextId);
+      const [evolved, nextNextId] = await Promise.all([
+        fetchPokemonById(nextId),
+        fetchEvolution(nextId).catch(() => null),
+      ]);
+      const nextEvoDexId = nextNextId ?? null;
       setAppState(prev => {
         if (prev.stepVault < cost) return prev;
         return {
@@ -1793,7 +1820,7 @@ export default function PokemonWalker({ onStop }) {
           stepVault: prev.stepVault - cost,
           pokemon: prev.pokemon.map(p =>
             p.uid === uid
-              ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: timesEvolved + 1 }
+              ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: timesEvolved + 1, buddySteps: 0, nextEvoDexId }
               : p
           ),
           evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'vault' }, ...(prev.evolutionLog || [])],
@@ -1801,7 +1828,7 @@ export default function PokemonWalker({ onStop }) {
         };
       });
       setDetailPokemon(prev => prev?.uid === uid
-        ? { ...prev, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: timesEvolved + 1 }
+        ? { ...prev, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: timesEvolved + 1, buddySteps: 0, nextEvoDexId }
         : prev
       );
     } catch { /* silently fail */ }
@@ -2084,14 +2111,18 @@ export default function PokemonWalker({ onStop }) {
         setTimeout(() => setDeltaFlash(null), 3000);
         return;
       }
-      const evolved = await fetchPokemonById(nextId);
+      const [evolved, nextNextIdSugar] = await Promise.all([
+        fetchPokemonById(nextId),
+        fetchEvolution(nextId).catch(() => null),
+      ]);
+      const nextEvoDexIdSugar = nextNextIdSugar ?? null;
       setAppState(prev => {
         const sa = prev.sugar?.active;
         const tierOrder = ['easy', 'medium', 'hard'];
         const nextTierIdx = sa ? tierOrder.indexOf(sa.tier) + 1 : -1;
         return {
           ...prev,
-          pokemon: prev.pokemon.map(p => p.uid === uid ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1 } : p),
+          pokemon: prev.pokemon.map(p => p.uid === uid ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1, buddySteps: 0, nextEvoDexId: nextEvoDexIdSugar } : p),
           evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'sugar' }, ...(prev.evolutionLog || [])],
           caughtDex: prev.caughtDex?.includes(evolved.dexId) ? prev.caughtDex : [...(prev.caughtDex || []), evolved.dexId],
           sugar: {
@@ -2882,7 +2913,7 @@ export default function PokemonWalker({ onStop }) {
                             return (
                               <div key={tier} className="pklist-section" style={{ marginTop: 6 }}>
                                 <button className={`pklist-toggle pklist-toggle-${tier}`} onClick={() => setOpenTiers(p => ({ ...p, [tier]: !p[tier] }))}>
-                                  <span>{tier} · {group.length}</span>
+                                  <span>{tier} · {new Set(group.map(p => p.dexId)).size}{group.length !== new Set(group.map(p => p.dexId)).size ? ` (${group.length} total)` : ''}</span>
                                   <span className="pklist-chevron">{isOpen ? '▲' : '▼'}</span>
                                 </button>
                                 {isOpen && (
@@ -2892,15 +2923,39 @@ export default function PokemonWalker({ onStop }) {
                                       <span className="pklist-col-name">Pokémon</span>
                                       <span className="pklist-col-region">Region</span>
                                       <span className="pklist-col-type">Type</span>
+                                      <span className="pklist-col-evo">Evolve</span>
                                     </div>
-                                    {group.map(p => (
-                                      <div key={p.uid} className="pklist-row" onClick={() => setDetailPokemon(p)}>
-                                        <span className="pklist-col-img">{p.sprite && <img src={p.sprite} alt={p.name} className="pklist-sprite" />}</span>
-                                        <span className="pklist-col-name">{p.name}</span>
-                                        <span className="pklist-col-region">{getRegion(p.dexId)}</span>
-                                        <span className="pklist-col-type">{p.types.map(t => <TypeBadge key={t} type={t} />)}</span>
-                                      </div>
-                                    ))}
+                                    {(() => {
+                                      const seen = new Map();
+                                      group.forEach(p => {
+                                        if (!seen.has(p.dexId)) seen.set(p.dexId, { p, count: 1 });
+                                        else seen.get(p.dexId).count++;
+                                      });
+                                      return [...seen.values()].map(({ p, count }) => (
+                                        <div key={p.uid} className="pklist-row" onClick={() => setDetailPokemon(p)}>
+                                          <span className="pklist-col-img">{p.sprite && <img src={p.sprite} alt={p.name} className="pklist-sprite" />}</span>
+                                          <span className="pklist-col-name">
+                                            {p.name}
+                                            {count > 1 && <span className="pklist-count-badge">×{count}</span>}
+                                          </span>
+                                          <span className="pklist-col-region">{getRegion(p.dexId)}</span>
+                                          <span className="pklist-col-type">{p.types.map(t => <TypeBadge key={t} type={t} />)}</span>
+                                          <span className="pklist-col-evo">{(() => {
+                                            if (p.nextEvoDexId === undefined) return <span className="pklist-evo-checking">…</span>;
+                                            if (p.nextEvoDexId === null) return <span className="pklist-evo-no">Does Not Evolve</span>;
+                                            const cost = (p.timesEvolved || 0) === 0 ? 50000 : 100000;
+                                            const current = p.buddySteps || 0;
+                                            const pct = Math.min(100, (current / cost) * 100);
+                                            return (
+                                              <>
+                                                <span className="pklist-evo-label">{fmtNum(current)}/{fmtNum(cost)}</span>
+                                                <div className="pklist-evo-bar"><div className="pklist-evo-fill" style={{ width: `${pct}%` }} /></div>
+                                              </>
+                                            );
+                                          })()}</span>
+                                        </div>
+                                      ));
+                                    })()}
                                   </div>
                                 )}
                               </div>

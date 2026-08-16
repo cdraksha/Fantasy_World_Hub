@@ -4273,7 +4273,7 @@
 
 .pklist-header-row {
   display: grid;
-  grid-template-columns: 38px 1fr 46px 80px;
+  grid-template-columns: 36px 1fr 40px 56px 72px;
   align-items: center;
   padding: 4px 10px;
   background: #f7f4ef;
@@ -4289,7 +4289,7 @@
 
 .pklist-row {
   display: grid;
-  grid-template-columns: 38px 1fr 46px 80px;
+  grid-template-columns: 36px 1fr 40px 56px 72px;
   align-items: center;
   padding: 5px 10px;
   border-bottom: 1px solid #f0ece4;
@@ -4300,9 +4300,17 @@
 .pklist-row:hover { background: #fffbea; }
 
 .pklist-col-img    { display: flex; align-items: center; }
-.pklist-col-name   { font-size: 10px; font-weight: 700; color: #1a1a2e; text-transform: capitalize; padding-left: 2px; }
+.pklist-col-name   { font-size: 10px; font-weight: 700; color: #1a1a2e; text-transform: capitalize; padding-left: 2px; display: flex; align-items: center; gap: 5px; }
+.pklist-count-badge { font-size: 9px; font-weight: 800; background: #6366f1; color: #fff; border-radius: 10px; padding: 1px 6px; line-height: 1.4; white-space: nowrap; }
 .pklist-col-region { font-size: 8px; color: #999; font-family: 'JetBrains Mono', monospace; }
-.pklist-col-type   { display: flex; gap: 3px; align-items: center; }
+.pklist-col-type   { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; }
+.pklist-col-evo    { display: flex; flex-direction: column; gap: 3px; }
+.pklist-evo-label  { font-size: 8px; font-weight: 700; color: #4b5563; font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+.pklist-evo-max      { font-size: 9px; font-weight: 800; color: #16a34a; }
+.pklist-evo-no       { font-size: 8px; font-weight: 600; color: #9ca3af; }
+.pklist-evo-checking { font-size: 10px; color: #d1d5db; }
+.pklist-evo-bar    { height: 3px; background: #e5e7eb; border-radius: 2px; overflow: hidden; }
+.pklist-evo-fill   { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #6366f1, #8b5cf6); transition: width 0.3s; }
 
 .pklist-sprite { width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; display: block; }
 
