@@ -93,16 +93,18 @@ function initDebtTrap() { return generateDebtTrap(0, 0); }
 // ─── Fasting Challenge Algorithms ─────────────────────────────────────────
 
 function generateFastingChallenge(tier) {
-  const hoursOptions = [8, 10, 12, 14, 16];
-  const hours = hoursOptions[Math.floor(Math.random() * hoursOptions.length)];
-  let effortMin, effortMax;
-  if (tier === 'easy')   { effortMin = 24;  effortMax = 80;  }
-  if (tier === 'medium') { effortMin = 100; effortMax = 200; }
-  if (tier === 'hard')   { effortMin = 240; effortMax = 500; }
-  const effort = effortMin + Math.floor(Math.random() * (effortMax - effortMin + 1));
-  const days = Math.max(1, Math.min(60, Math.round(effort / hours)));
-  const window = days + Math.ceil(days * 0.25);
-  return { hours, days, window };
+  if (tier === 'easy') {
+    const hours = [10, 12][Math.floor(Math.random() * 2)];
+    const days = 7 + Math.floor(Math.random() * 8); // 7–14 day unbroken streak
+    return { hours, days };
+  }
+  if (tier === 'medium') {
+    const hours = [14, 16][Math.floor(Math.random() * 2)];
+    const days = 21 + Math.floor(Math.random() * 10); // 21–30 day unbroken streak
+    return { hours, days };
+  }
+  // Hard: fixed brutal target — no randomness, no mercy
+  return { hours: 18, days: 60 };
 }
 
 function generateFastingReward(tier) {
@@ -124,10 +126,8 @@ function generateFastingReward(tier) {
     return { type: 'pack', packTier: 'rare', count: 2, label: '2× Rare Packs' };
   }
   if (tier === 'hard') {
-    if (roll < 0.30) return { type: 'pack', packTier: 'legendary', count: 1, label: '1× Legendary Pack' };
-    if (roll < 0.55) return { type: 'freeEvolution', label: 'Free Evolution (any team Pokémon)' };
-    if (roll < 0.75) return { type: 'combo', parts: ['legendary', 'freeEvolution'], label: '1× Legendary Pack + Free Evolution' };
-    return { type: 'pack', packTier: 'epic', count: 2, label: '2× Epic Packs' };
+    // 60-day 18hr streak deserves a guaranteed legendary — no RNG
+    return { type: 'combo', parts: ['legendary', 'freeEvolution'], label: '1× Legendary Pack + Free Evolution' };
   }
   return { type: 'pack', packTier: 'common', count: 1, label: '1× Common Pack' };
 }
@@ -152,10 +152,8 @@ function generateFastingPenalty(tier) {
     return { type: 'buddyReset', label: 'Buddy steps reset to 0' };
   }
   if (tier === 'hard') {
-    const freezeDays = 5 + Math.floor(Math.random() * 6);
-    if (roll < 0.35) return { type: 'buddyReset', label: 'Buddy steps reset to 0' };
-    if (roll < 0.65) return { type: 'buddyFreeze', days: freezeDays, label: `Buddy steps frozen for ${freezeDays} days` };
-    return { type: 'combo', parts: ['buddyReset', 'buddyFreeze'], days: freezeDays, label: `Buddy steps reset to 0 + frozen for ${freezeDays} days` };
+    // Miss one day of a 60-day 18hr challenge — you lose your buddy permanently + vault frozen 7 days
+    return { type: 'hardFail', label: 'Buddy Pokémon removed from collection + Vault frozen 7 days' };
   }
   return { type: 'buddyReset', label: 'Buddy steps reset to 0' };
 }
@@ -171,6 +169,14 @@ function applyFastingPenalty(state, penalty) {
     if (type === 'buddyFreeze') {
       const until = addDays(todayString(), p.days);
       return { ...s, fasting: { ...s.fasting, frozenPokemon: { until, reason: 'buddy' } } };
+    }
+    if (type === 'hardFail') {
+      let ns = s;
+      if (ns.buddy) {
+        ns = { ...ns, pokemon: ns.pokemon.filter(pk => pk.uid !== ns.buddy), buddy: null };
+      }
+      ns = { ...ns, vaultFrozenUntil: Date.now() + 7 * 24 * 60 * 60 * 1000 };
+      return ns;
     }
     return s;
   }
@@ -736,14 +742,14 @@ function loadState() {
         saved.streak10k = 0;
         saved.lastStreak10kDate = null;
       }
-      // Check fasting challenge window expiry
+      // Fasting streak miss check — if yesterday wasn't logged, streak breaks
       if (saved.fasting?.active?.status === 'running') {
         const fa = saved.fasting.active;
-        const windowEnd = addDays(fa.startDate, fa.window);
-        if (today > windowEnd) {
+        const yesterday = saved.todayDate;
+        if (fa.lastLogDate !== yesterday) {
           saved = applyFastingPenalty(saved, fa.penalty);
           saved.fasting = { ...saved.fasting, active: { ...fa, status: 'failed' } };
-          saved.challengeLog = [{ date: today, type: 'fasting', tier: fa.tier, outcome: 'Failed — window expired' }, ...(saved.challengeLog || [])];
+          saved.challengeLog = [{ date: today, type: 'fasting', tier: fa.tier, outcome: `Failed — missed ${yesterday}` }, ...(saved.challengeLog || [])];
         }
       }
       // Expire frozen Pokémon
@@ -3558,7 +3564,11 @@ export default function PokemonWalker({ onStop }) {
                                 <span className="fast-preview-tier fast-tier-badge fast-tier-badge-{fastingPending.tier}">{fastingPending.tier.toUpperCase()}</span>
                                 <span className="fast-preview-challenge">{fastingPending.hours}hr fasts × {fastingPending.days} days</span>
                               </div>
-                              <div className="fast-preview-sub">Complete within {fastingPending.window} days of starting</div>
+                              <div className="fast-preview-sub">
+                                {fastingPending.tier === 'hard'
+                                  ? '⚠ Miss ONE day and your buddy is gone forever + vault frozen 7 days'
+                                  : `Unbroken streak required — miss a day and it's over`}
+                              </div>
                               <div className="fast-info-row fast-reward-row">
                                 <span className="fast-info-label">🎁 Reward</span>
                                 <span className="fast-info-val">{fastingPending.reward.label}</span>
