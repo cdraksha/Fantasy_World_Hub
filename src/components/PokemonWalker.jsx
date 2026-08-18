@@ -953,8 +953,10 @@ function PackOpeningScreen({ tier, isEgg, onClose, onCatch }) {
     if (phase !== 'facedown') return;
     setPhase('loading');
     try {
-      const dexId = pickFromPool(tier, window.__pw_owned_dex_ids__ || new Set());
-      const data = await fetchPokemonById(dexId);
+      const ownedIds = window.__pw_owned_dex_ids__ || new Set();
+      const data = isEgg
+        ? await fetchBaseFormPokemon(tier, ownedIds)
+        : await fetchPokemonById(pickFromPool(tier, ownedIds));
       setFetched(data);
       setPhase('result');
     } catch (e) {
