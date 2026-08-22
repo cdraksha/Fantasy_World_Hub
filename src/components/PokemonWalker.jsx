@@ -266,6 +266,10 @@ function initWeight() {
   return { lastKg: null, lastChangeDate: null, history: [] };
 }
 
+function initWater() {
+  return { todayMl: 0, todayDate: null, streak: 0, lastStreakDate: null, pendingReward: null, milestonesCleared: 0 };
+}
+
 function calcBollinger(history, window = 7) {
   if (!history || history.length < window) return null;
   const recent = history.slice(-window).map(e => e.kg);
@@ -296,6 +300,32 @@ const TIMING_MILESTONES = [
   { days: 25, tier: 'epic' },
   { days: 35, tier: 'legendary' },
 ];
+
+// ─── Water Intake ─────────────────────────────────────────────────────────────
+const WATER_GOAL_ML = 3500; // 3.5L/day — recommended for obese adult male
+
+const WATER_MILESTONES = [
+  { days: 5,   reward: { buddySteps: 500 } },
+  { days: 10,  reward: { buddySteps: 5000 } },
+  { days: 20,  reward: { buddySteps: 10000 } },
+  { days: 30,  reward: { buddySteps: 5000,  packs: { common: 3 } } },
+  { days: 40,  reward: { buddySteps: 10000, packs: { common: 3 }, eggs: 3 } },
+  { days: 50,  reward: { buddySteps: 20000, packs: { common: 5 }, freeEvolutions: 5 } },
+  { days: 60,  reward: { buddySteps: 20000, packs: { common: 10, rare: 5 } } },
+  { days: 70,  reward: { buddySteps: 20000, packs: { common: 10, rare: 5,  epic: 5 } } },
+  { days: 80,  reward: { buddySteps: 20000, packs: { common: 10, rare: 10, epic: 10 } } },
+  { days: 90,  reward: { buddySteps: 30000, packs: { common: 10, epic: 5,  legendary: 1 } } },
+  { days: 100, reward: { buddySteps: 50000, packs: { common: 30, legendary: 3 } } },
+];
+
+function waterRewardLabel(r) {
+  const parts = [];
+  if (r.buddySteps) parts.push(`Buddy +${r.buddySteps.toLocaleString()} steps`);
+  if (r.packs) Object.entries(r.packs).forEach(([t, c]) => parts.push(`${c}× ${t}`));
+  if (r.freeEvolutions) parts.push(`${r.freeEvolutions}× free evos`);
+  if (r.eggs) parts.push(`${r.eggs}× starter eggs`);
+  return parts.join(' · ');
+}
 
 const TREADMILL_TIERS = [
   { mins: 5,  buddySteps: 500,  packs: {} },
@@ -618,6 +648,8 @@ function defaultState(steps) {
     weddingChallenge: initWeddingChallenge(),
     challengeLog: [],
     freeEvolutionCredits: 0,
+    water: initWater(),
+    eggQueue: 0,
   };
 }
 
@@ -661,6 +693,9 @@ function loadState() {
     if (!saved.weddingChallenge) saved.weddingChallenge = initWeddingChallenge();
     if (!saved.challengeLog) saved.challengeLog = [];
     if (saved.freeEvolutionCredits === undefined) saved.freeEvolutionCredits = 0;
+    if (!saved.water) saved.water = initWater();
+    if (saved.water.milestonesCleared === undefined) saved.water = { ...saved.water, milestonesCleared: 0 };
+    if (saved.eggQueue === undefined) saved.eggQueue = 0;
     // Seed caughtDex from existing pokemon on first migration
     if (!saved.caughtDex || saved.caughtDex.length === 0) {
       saved.caughtDex = [...new Set((saved.pokemon || []).map(p => p.dexId))];
@@ -782,6 +817,22 @@ function loadState() {
       // Day Care cooldown expiry
       if (saved.daycare?.status === 'cooldown' && saved.daycare.cooldownUntil && today >= saved.daycare.cooldownUntil) {
         saved.daycare = initDaycare();
+      }
+      // Water intake daily streak check
+      {
+        const w = saved.water || initWater();
+        const goalMet = (w.todayMl || 0) >= WATER_GOAL_ML;
+        const wasYesterday = w.todayDate === saved.todayDate; // saved.todayDate is yesterday here
+        if (wasYesterday && goalMet) {
+          const newStreak = (w.streak || 0) + 1;
+          const mc = w.milestonesCleared || 0;
+          const milestone = WATER_MILESTONES.find(m => m.days > mc && m.days <= newStreak);
+          saved.water = { ...w, todayMl: 0, todayDate: today, streak: newStreak, lastStreakDate: w.todayDate, pendingReward: milestone ? milestone.days : w.pendingReward };
+        } else if (wasYesterday && !goalMet) {
+          saved.water = { ...initWater(), todayDate: today };
+        } else {
+          saved.water = { ...w, todayMl: 0, todayDate: today };
+        }
       }
       // Timing streak — if yesterday wasn't logged, reset streak
       if (saved.timing?.streak > 0 && saved.timing.lastLogDate !== saved.todayDate) {
@@ -1207,6 +1258,8 @@ export default function PokemonWalker({ onStop }) {
   const [showWeightPanel, setShowWeightPanel] = useState(false);
   const [weightInput, setWeightInput] = useState('');
   const [weightResult, setWeightResult] = useState(null);
+  const [showWaterPanel, setShowWaterPanel] = useState(false);
+  const [waterInput, setWaterInput] = useState('');
   const [showWifeChallengePanel, setShowWifeChallengePanel] = useState(false);
   const [wifeChallengeInput, setWifeChallengeInput] = useState('');
   const [claimingVictory, setClaimingVictory] = useState(false);
@@ -2317,6 +2370,49 @@ export default function PokemonWalker({ onStop }) {
     });
   };
 
+  // ─── Water Intake handlers ────────────────────────────────────────────
+  const handleLogWater = (ml) => {
+    setAppState(prev => {
+      const today = todayString();
+      const w = prev.water || initWater();
+      const base = w.todayDate === today ? w.todayMl : 0;
+      return { ...prev, water: { ...w, todayMl: base + ml, todayDate: today } };
+    });
+  };
+
+  const handleClaimWaterReward = () => {
+    setAppState(prev => {
+      const w = prev.water || initWater();
+      const milestoneDay = w.pendingReward;
+      if (!milestoneDay) return prev;
+      const milestone = WATER_MILESTONES.find(m => m.days === milestoneDay);
+      if (!milestone) return prev;
+      let ns = { ...prev };
+      const r = milestone.reward;
+      if (r.buddySteps && ns.buddy) {
+        ns = { ...ns, pokemon: ns.pokemon.map(p => p.uid === ns.buddy ? { ...p, buddySteps: (p.buddySteps || 0) + r.buddySteps } : p) };
+      }
+      if (r.packs) {
+        const pi = { ...ns.packInventory };
+        Object.entries(r.packs).forEach(([t, c]) => { pi[t] = (pi[t] || 0) + c; });
+        ns = { ...ns, packInventory: pi };
+      }
+      if (r.freeEvolutions) ns = { ...ns, freeEvolutionCredits: (ns.freeEvolutionCredits || 0) + r.freeEvolutions };
+      if (r.eggs) ns = { ...ns, eggQueue: (ns.eggQueue || 0) + r.eggs };
+      const newStreak = Math.max(0, w.streak - milestoneDay);
+      ns = { ...ns, water: { ...w, streak: newStreak, pendingReward: null, milestonesCleared: 0 }, challengeLog: [{ date: todayString(), type: 'water', tier: null, outcome: `Claimed ${milestoneDay}-day water streak reward` }, ...(ns.challengeLog || [])] };
+      return ns;
+    });
+  };
+
+  const handleContinueWaterStreak = () => {
+    setAppState(prev => {
+      const w = prev.water || initWater();
+      if (!w.pendingReward) return prev;
+      return { ...prev, water: { ...w, pendingReward: null, milestonesCleared: w.pendingReward } };
+    });
+  };
+
   const handleClaimTreadmill = (tier) => {
     setAppState(prev => {
       let next = { ...prev };
@@ -3137,6 +3233,20 @@ export default function PokemonWalker({ onStop }) {
                       })()}
                     </div>
 
+                    {/* Bonus Egg Queue (water streak reward) */}
+                    {(appState.eggQueue || 0) > 0 && (
+                      <div className="gba-section">
+                        <div className="egg-panel egg-avail">
+                          <div className="egg-visual"><span className="egg-icon egg-glow">🥚</span></div>
+                          <div className="egg-avail-title">Bonus Egg × {appState.eggQueue}</div>
+                          <button className="egg-claim-btn" onClick={() => {
+                            setEggOpening('common');
+                            setAppState(prev => ({ ...prev, eggQueue: Math.max(0, (prev.eggQueue || 0) - 1) }));
+                          }}>🤲 Hatch Bonus Egg</button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Debt Trap Challenge */}
                     <div className="gba-section">
                       <button className="dt-challenge-btn" onClick={() => setShowChallengePanel(p => !p)}>
@@ -3417,6 +3527,96 @@ export default function PokemonWalker({ onStop }) {
                             {buddyPoke && (
                               <div className="wt-buddy-note">🐾 {buddyPoke.name} · {fmtNum(buddyPoke.buddySteps || 0)} buddy steps</div>
                             )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Water Intake */}
+                    <div className="gba-section">
+                      <button className="water-toggle-btn" onClick={() => setShowWaterPanel(p => !p)}>
+                        💧 Water Intake
+                        {(() => {
+                          const w = appState.water;
+                          const today = todayString();
+                          if (w?.pendingReward) return <span className="obj-active-badge">🎉 Reward!</span>;
+                          if (w?.todayDate === today && (w.todayMl || 0) >= WATER_GOAL_ML) return <span className="obj-updated-badge">Goal Met ✓</span>;
+                          if ((w?.streak || 0) > 0) return <span className="obj-pending-badge">{w.streak}d streak</span>;
+                          return null;
+                        })()}
+                      </button>
+                      {showWaterPanel && (() => {
+                        const w = appState.water || initWater();
+                        const today = todayString();
+                        const todayMl = w.todayDate === today ? (w.todayMl || 0) : 0;
+                        const pct = Math.min(100, (todayMl / WATER_GOAL_ML) * 100);
+                        const goalMet = todayMl >= WATER_GOAL_ML;
+                        const pendingMilestone = w.pendingReward ? WATER_MILESTONES.find(m => m.days === w.pendingReward) : null;
+                        const nextMilestone = WATER_MILESTONES.find(m => m.days > (w.milestonesCleared || 0) && m.days > w.streak);
+                        return (
+                          <div className="water-panel">
+                            {/* Streak + next milestone */}
+                            <div className="water-streak-row">
+                              <span className="water-streak-count">💧 {w.streak} day streak</span>
+                              {nextMilestone && <span className="water-next-ms">Next: day {nextMilestone.days}</span>}
+                            </div>
+
+                            {/* Pending reward banner */}
+                            {pendingMilestone && (
+                              <div className="water-milestone-banner">
+                                <div className="water-ms-title">🎉 {w.pendingReward}-Day Streak!</div>
+                                <div className="water-ms-reward-label">{waterRewardLabel(pendingMilestone.reward)}</div>
+                                <div className="water-ms-actions">
+                                  <button className="fast-claim-btn" onClick={handleClaimWaterReward}>Claim (streak → {w.streak - w.pendingReward}d)</button>
+                                  <button className="fast-skip-btn" onClick={handleContinueWaterStreak}>Continue Streak</button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Today's progress */}
+                            <div className="water-goal-label">Today: {todayMl} ml / {WATER_GOAL_ML} ml</div>
+                            <div className="water-bar-wrap">
+                              <div className="water-bar">
+                                <div className="water-bar-fill" style={{ width: `${pct}%` }} />
+                              </div>
+                              {goalMet && <span className="water-bar-check">✓</span>}
+                            </div>
+
+                            {/* Quick-add buttons */}
+                            <div className="water-quick-row">
+                              {[250, 300, 500, 750].map(ml => (
+                                <button key={ml} className="water-quick-btn" onClick={() => handleLogWater(ml)}>+{ml}ml</button>
+                              ))}
+                            </div>
+
+                            {/* Custom amount */}
+                            <div className="water-custom-row">
+                              <input
+                                className="wt-input"
+                                type="number"
+                                placeholder="Custom ml"
+                                value={waterInput}
+                                onChange={e => setWaterInput(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') { const ml = parseInt(waterInput, 10); if (!isNaN(ml) && ml > 0) { handleLogWater(ml); setWaterInput(''); } } }}
+                              />
+                              <button className="wt-submit-btn" onClick={() => { const ml = parseInt(waterInput, 10); if (!isNaN(ml) && ml > 0) { handleLogWater(ml); setWaterInput(''); } }} disabled={!waterInput}>Log</button>
+                            </div>
+
+                            {/* Milestones list */}
+                            <div className="water-ms-list">
+                              {WATER_MILESTONES.map(m => {
+                                const isPending = w.pendingReward === m.days;
+                                const isClearedOrPassed = (w.milestonesCleared || 0) >= m.days && !isPending;
+                                return (
+                                  <div key={m.days} className={`water-ms-row${isPending ? ' water-ms-pending' : isClearedOrPassed ? ' water-ms-done' : ''}`}>
+                                    <span className="water-ms-day">{m.days}d</span>
+                                    <span className="water-ms-lbl">{waterRewardLabel(m.reward)}</span>
+                                    {isPending && <span className="water-ms-badge">Claim!</span>}
+                                    {isClearedOrPassed && <span className="water-ms-badge water-ms-done-badge">✓</span>}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         );
                       })()}
