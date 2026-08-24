@@ -2482,7 +2482,7 @@ export default function PokemonWalker({ onStop }) {
   const handleLogWeight = () => {
     const raw = parseFloat(weightInput);
     if (isNaN(raw) || raw <= 0) return;
-    const newKg = Math.floor(raw);
+    const newKg = Math.round(raw * 10) / 10;
     setWeightInput('');
     setAppState(prev => {
       const w = prev.weight || initWeight();
@@ -3560,7 +3560,7 @@ export default function PokemonWalker({ onStop }) {
                               <button className="wt-submit-btn" onClick={handleLogWeight} disabled={!weightInput}>Log</button>
                             </div>
                             {weightInput && !isNaN(parseFloat(weightInput)) && (
-                              <div className="wt-preview">Recording as <strong>{Math.floor(parseFloat(weightInput))} kg</strong></div>
+                              <div className="wt-preview">Recording as <strong>{Math.round(parseFloat(weightInput) * 10) / 10} kg</strong></div>
                             )}
                             {weightResult && (
                               <div className={`wt-result wt-result-${weightResult.type}`}>
