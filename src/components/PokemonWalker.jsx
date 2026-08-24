@@ -783,10 +783,13 @@ function loadState() {
         saved.lastStreak10kDate = null;
       }
       // Fasting streak miss check — grace days allowed
+      // User logs the fast the NEXT morning, so give a full day before counting a miss.
+      // Only penalise if gap > 1 day (last log was 2+ days ago).
       if (saved.fasting?.active?.status === 'running') {
         const fa = saved.fasting.active;
-        const yesterday = saved.todayDate;
-        if (fa.lastLogDate !== yesterday) {
+        const yesterday = saved.todayDate; // saved.todayDate is yesterday at this point
+        const lastRef = fa.lastLogDate || addDays(fa.startDate, -1);
+        if (daysBetween(lastRef, yesterday) > 1) {
           const newMissed = (fa.missedDays || 0) + 1;
           if (newMissed > (fa.graceDays ?? 1)) {
             saved = applyFastingPenalty(saved, fa.penalty);
