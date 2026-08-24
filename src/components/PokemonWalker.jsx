@@ -4691,6 +4691,8 @@ export default function PokemonWalker({ onStop }) {
                               wifeChallenge: '🏅 Wife Challenge',
                               debtTrap: '🏦 Debt Trap',
                               wedding: '💍 Wedding Challenge',
+                              rnChallenge: '🤝 Rakshit & Neha',
+                              water: '💧 Water Intake',
                             }[entry.type] || entry.type;
                             const tierColor = { common: '#7a7a8a', rare: '#1a6fb5', epic: '#7c3aed', legendary: '#b8860b' }[entry.tier] || '#444';
                             const isLoss = /failed|broke|lost|defaulted/i.test(entry.outcome);
