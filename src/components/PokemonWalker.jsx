@@ -4160,8 +4160,8 @@ export default function PokemonWalker({ onStop }) {
                     {/* ── Surprise Challenges ── */}
                     <div className="obj-category-label" style={{ marginTop: 10 }}>Surprise Challenges</div>
 
-                    {/* Wife Challenge */}
-                    <div className="gba-section">
+                    {/* Wife Challenge — August 2026 only */}
+                    {todayString().startsWith('2026-08') && <div className="gba-section">
                       <button className="wc-toggle-btn" onClick={() => setShowWifeChallengePanel(p => !p)}>
                         🏅 Vishnupriya's Challenge
                         {(() => {
@@ -4338,7 +4338,7 @@ export default function PokemonWalker({ onStop }) {
                           </div>
                         );
                       })()}
-                    </div>
+                    </div>}
 
                     {/* Prashant's Wedding Challenge */}
                     {!(appState.weddingChallenge?.claimedReward || appState.weddingChallenge?.penaltyApplied) && <div className="gba-section">
@@ -4562,7 +4562,7 @@ export default function PokemonWalker({ onStop }) {
                             <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
                               <div style={{ flex: 1, background: '#fef3c7', borderRadius: 6, padding: '6px 8px', border: '1px solid #fcd34d' }}>
                                 <div style={{ fontSize: 8, color: '#92400e', fontWeight: 700 }}>GOAL</div>
-                                <div style={{ fontSize: 13, fontWeight: 900, color: '#78350f' }}>≤ {RN_GOAL_KG} kg</div>
+                                <div style={{ fontSize: 13, fontWeight: 900, color: '#78350f' }}>below 98 kg</div>
                                 <div style={{ fontSize: 8, color: '#b45309' }}>by Aug 29, 2026</div>
                               </div>
                               <div style={{ flex: 1, background: goalReached ? '#dcfce7' : '#fef2f2', borderRadius: 6, padding: '6px 8px', border: `1px solid ${goalReached ? '#86efac' : '#fca5a5'}` }}>
