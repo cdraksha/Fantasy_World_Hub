@@ -4341,7 +4341,7 @@ export default function PokemonWalker({ onStop }) {
                     </div>
 
                     {/* Prashant's Wedding Challenge */}
-                    <div className="gba-section">
+                    {!(appState.weddingChallenge?.claimedReward || appState.weddingChallenge?.penaltyApplied) && <div className="gba-section">
                       <button className="wc-toggle-btn" onClick={() => setShowWeddingPanel(p => !p)}>
                         💍 Prashant's Wedding
                         {(() => {
@@ -4515,10 +4515,10 @@ export default function PokemonWalker({ onStop }) {
                           </div>
                         );
                       })()}
-                    </div>
+                    </div>}
 
                     {/* Rakshit & Neha Challenge */}
-                    <div className="gba-section">
+                    {!(appState.rnChallenge?.claimedReward || appState.rnChallenge?.penaltyApplied) && <div className="gba-section">
                       <button className="wc-toggle-btn" onClick={() => setShowRNPanel(p => !p)}>
                         🤝 Rakshit &amp; Neha Meet
                         {(() => {
@@ -4618,7 +4618,7 @@ export default function PokemonWalker({ onStop }) {
                           </div>
                         );
                       })()}
-                    </div>
+                    </div>}
 
                   </div>
                 </div>
