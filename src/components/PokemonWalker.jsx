@@ -291,6 +291,9 @@ const RN_GOAL_KG = 97;
 const PRUDHVI_DATE = '2026-09-05';
 const PRUDHVI_GOAL_KG = 97;
 
+const PRUDHVI_WEDDING_DATE = '2026-11-14';
+const PRUDHVI_WEDDING_GOAL_KG = 94;
+
 function initWeddingChallenge() {
   return {
     startDate: null,
@@ -658,6 +661,7 @@ function defaultState(steps) {
     eggQueue: 0,
     rnChallenge: { claimedReward: false, penaltyApplied: false },
     prudhviChallenge: { claimedReward: false, penaltyApplied: false },
+    prudhviWeddingChallenge: { claimedReward: false, penaltyApplied: false },
   };
 }
 
@@ -704,6 +708,7 @@ function loadState() {
     if (!saved.water) saved.water = initWater();
     if (!saved.rnChallenge) saved.rnChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.prudhviChallenge) saved.prudhviChallenge = { claimedReward: false, penaltyApplied: false };
+    if (!saved.prudhviWeddingChallenge) saved.prudhviWeddingChallenge = { claimedReward: false, penaltyApplied: false };
     if (saved.water.milestonesCleared === undefined) saved.water = { ...saved.water, milestonesCleared: 0 };
     if (saved.eggQueue === undefined) saved.eggQueue = 0;
     // Seed caughtDex from existing pokemon on first migration
@@ -1280,6 +1285,7 @@ export default function PokemonWalker({ onStop }) {
   const [showWeddingPanel, setShowWeddingPanel] = useState(false);
   const [showRNPanel, setShowRNPanel] = useState(false);
   const [showPrudhviPanel, setShowPrudhviPanel] = useState(false);
+  const [showPrudhviWeddingPanel, setShowPrudhviWeddingPanel] = useState(false);
   const [generatingWeddingImage, setGeneratingWeddingImage] = useState(false);
   const [weddingImage, setWeddingImage] = useState(null);
   const [claimingWeddingReward, setClaimingWeddingReward] = useState(false);
@@ -2406,6 +2412,38 @@ export default function PokemonWalker({ onStop }) {
         pokemon: prev.pokemon.filter(p => !removeUids.has(p.uid)),
         prudhviChallenge: { ...prev.prudhviChallenge, penaltyApplied: true },
         challengeLog: [{ date: todayString(), type: 'prudhviChallenge', tier: 'common', outcome: `Lost Prudhvi's Engagement challenge — ${toRemove.length} common Pokémon released: ${toRemove.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+      };
+    });
+  };
+
+  const handleClaimPrudhviWeddingReward = async () => {
+    const LEGENDARY_IDS = [144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 380, 381, 382, 383, 384, 385];
+    const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
+    const pool = LEGENDARY_IDS.filter(id => !ownedDexIds.has(id));
+    const src = pool.length >= 1 ? pool : LEGENDARY_IDS;
+    const id = src[Math.floor(Math.random() * src.length)];
+    const poke = await fetchPokemonById(id);
+    setAppState(prev => ({
+      ...prev,
+      pokemon: [...prev.pokemon, { uid: makeUID(), ...poke, packTier: 'legendary', buddySteps: 0, caughtDate: todayString(), onTeam: false }],
+      caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId])],
+      prudhviWeddingChallenge: { ...prev.prudhviWeddingChallenge, claimedReward: true },
+      challengeLog: [{ date: todayString(), type: 'prudhviWeddingChallenge', tier: 'legendary', outcome: `Won Prudhvi's Wedding challenge — 1 Legendary Pokémon claimed!` }, ...(prev.challengeLog || [])],
+    }));
+    setDeltaFlash("🎉 Prudhvi's Wedding challenge won! 1 Legendary Pokémon claimed!");
+    setTimeout(() => setDeltaFlash(null), 5000);
+  };
+
+  const handleApplyPrudhviWeddingPenalty = () => {
+    setAppState(prev => {
+      const rares = prev.pokemon.filter(p => p.packTier === 'rare' && !p.isDTCollateral && !p.isDTLoan && !p.isLoan && p.uid !== prev.buddy);
+      const toRemove = [...rares].sort(() => Math.random() - 0.5).slice(0, 2);
+      const removeUids = new Set(toRemove.map(p => p.uid));
+      return {
+        ...prev,
+        pokemon: prev.pokemon.filter(p => !removeUids.has(p.uid)),
+        prudhviWeddingChallenge: { ...prev.prudhviWeddingChallenge, penaltyApplied: true },
+        challengeLog: [{ date: todayString(), type: 'prudhviWeddingChallenge', tier: 'rare', outcome: `Lost Prudhvi's Wedding challenge — ${toRemove.length} rare Pokémon released: ${toRemove.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
       };
     });
   };
@@ -4647,6 +4685,89 @@ export default function PokemonWalker({ onStop }) {
                       })()}
                     </div>}
 
+                    {!(appState.prudhviWeddingChallenge?.claimedReward || appState.prudhviWeddingChallenge?.penaltyApplied) && <div className="gba-section">
+                      <button className="wc-toggle-btn" onClick={() => setShowPrudhviWeddingPanel(p => !p)}>
+                        💒 Prudhvi's Wedding
+                        {(() => {
+                          const today = todayString();
+                          const cw = appState.weight?.lastKg ?? null;
+                          if (today > PRUDHVI_WEDDING_DATE) {
+                            return cw !== null && cw < PRUDHVI_WEDDING_GOAL_KG
+                              ? <span className="obj-updated-badge">Claim!</span>
+                              : <span className="obj-pending-badge">Penalty Due</span>;
+                          }
+                          return cw !== null && cw < PRUDHVI_WEDDING_GOAL_KG
+                            ? <span className="obj-updated-badge">Goal Reached!</span>
+                            : <span className="obj-active-badge">Active</span>;
+                        })()}
+                      </button>
+                      {showPrudhviWeddingPanel && (() => {
+                        const today = todayString();
+                        const currentWeight = appState.weight?.lastKg ?? null;
+                        const daysLeft = Math.max(0, daysBetween(today, PRUDHVI_WEDDING_DATE));
+                        const postDeadline = today > PRUDHVI_WEDDING_DATE;
+                        const goalReached = currentWeight !== null && currentWeight < PRUDHVI_WEDDING_GOAL_KG;
+                        return (
+                          <div style={{ padding: '4px 0' }}>
+                            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                              <div style={{ flex: 1, background: '#fef3c7', borderRadius: 6, padding: '6px 8px', border: '1px solid #fcd34d' }}>
+                                <div style={{ fontSize: 8, color: '#92400e', fontWeight: 700 }}>GOAL</div>
+                                <div style={{ fontSize: 13, fontWeight: 900, color: '#78350f' }}>below 94 kg</div>
+                                <div style={{ fontSize: 8, color: '#b45309' }}>by Nov 14, 2026</div>
+                              </div>
+                              <div style={{ flex: 1, background: goalReached ? '#dcfce7' : '#fef2f2', borderRadius: 6, padding: '6px 8px', border: `1px solid ${goalReached ? '#86efac' : '#fca5a5'}` }}>
+                                <div style={{ fontSize: 8, color: '#374151', fontWeight: 700 }}>CURRENT</div>
+                                <div style={{ fontSize: 13, fontWeight: 900, color: goalReached ? '#15803d' : '#dc2626' }}>
+                                  {currentWeight !== null ? `${currentWeight} kg` : 'Not logged'}
+                                </div>
+                                <div style={{ fontSize: 8, color: '#6b7280' }}>
+                                  {currentWeight !== null ? (goalReached ? '✓ Goal hit!' : `${(currentWeight - PRUDHVI_WEDDING_GOAL_KG + 0.1).toFixed(1)} kg to go`) : 'Log under Weight Loss'}
+                                </div>
+                              </div>
+                              <div style={{ flex: 1, background: '#f0f9ff', borderRadius: 6, padding: '6px 8px', border: '1px solid #bae6fd' }}>
+                                <div style={{ fontSize: 8, color: '#0369a1', fontWeight: 700 }}>DEADLINE</div>
+                                <div style={{ fontSize: 13, fontWeight: 900, color: postDeadline ? '#dc2626' : '#0369a1' }}>{postDeadline ? 'PASSED' : `${daysLeft}d`}</div>
+                                <div style={{ fontSize: 8, color: '#6b7280' }}>Nov 14, 2026</div>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                              <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 6, padding: '6px 8px', border: '1px solid #bbf7d0' }}>
+                                <div style={{ fontSize: 8, color: '#166534', fontWeight: 700 }}>🏆 WIN</div>
+                                <div style={{ fontSize: 9, color: '#374151', fontWeight: 600 }}>1 Legendary Pokémon</div>
+                              </div>
+                              <div style={{ flex: 1, background: '#fef2f2', borderRadius: 6, padding: '6px 8px', border: '1px solid #fca5a5' }}>
+                                <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 700 }}>💀 LOSE</div>
+                                <div style={{ fontSize: 9, color: '#374151', fontWeight: 600 }}>2 Rare Pokémon released</div>
+                              </div>
+                            </div>
+                            {goalReached && !postDeadline && (
+                              <button style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
+                                onClick={handleClaimPrudhviWeddingReward}>
+                                🏆 Claim Early — 1 Legendary!
+                              </button>
+                            )}
+                            {postDeadline && goalReached && (
+                              <button style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
+                                onClick={handleClaimPrudhviWeddingReward}>
+                                🏆 You won! Claim 1 Legendary
+                              </button>
+                            )}
+                            {postDeadline && !goalReached && (
+                              <button style={{ width: '100%', padding: '8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
+                                onClick={handleApplyPrudhviWeddingPenalty}>
+                                💀 Apply Penalty (release 2 rares)
+                              </button>
+                            )}
+                            {currentWeight === null && (
+                              <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center', marginTop: 8 }}>
+                                Log your weight under Weight Loss to track progress
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>}
+
                     {!(appState.rnChallenge?.claimedReward || appState.rnChallenge?.penaltyApplied) && <div className="gba-section">
                       <button className="wc-toggle-btn" onClick={() => setShowRNPanel(p => !p)}>
                         🤝 Rakshit &amp; Neha Meet
@@ -4822,6 +4943,7 @@ export default function PokemonWalker({ onStop }) {
                               wedding: '💍 Wedding Challenge',
                               rnChallenge: '🤝 Rakshit & Neha',
                               prudhviChallenge: '💍 Prudhvi\'s Engagement',
+                              prudhviWeddingChallenge: '💒 Prudhvi\'s Wedding',
                               water: '💧 Water Intake',
                             }[entry.type] || entry.type;
                             const tierColor = { common: '#7a7a8a', rare: '#1a6fb5', epic: '#7c3aed', legendary: '#b8860b' }[entry.tier] || '#444';
