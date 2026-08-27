@@ -1929,7 +1929,8 @@ export default function PokemonWalker({ onStop }) {
   const handleBuddyEvolve = async () => {
     if (!appState?.buddy || evolving) return;
     const poke = appState.pokemon.find(p => p.uid === appState.buddy);
-    if (!poke || (poke.buddySteps || 0) < 50000) return;
+    const evolveCost = (poke.timesEvolved || 0) === 0 ? 50000 : 100000;
+    if (!poke || (poke.buddySteps || 0) < evolveCost) return;
     setEvolving(appState.buddy);
     try {
       const nextId = await fetchEvolution(poke.dexId);
@@ -1944,7 +1945,7 @@ export default function PokemonWalker({ onStop }) {
         ...prev,
         pokemon: prev.pokemon.map(p =>
           p.uid === prev.buddy
-            ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1, buddySteps: (p.buddySteps || 0) - 50000 }
+            ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1, buddySteps: (p.buddySteps || 0) - evolveCost }
             : p
         ),
         evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'buddy' }, ...(prev.evolutionLog || [])],
@@ -2809,7 +2810,8 @@ export default function PokemonWalker({ onStop }) {
                 {(() => {
                   const buddyPoke = appState.buddy ? appState.pokemon.find(p => p.uid === appState.buddy) : null;
                   const buddySteps = buddyPoke?.buddySteps || 0;
-                  const buddyPct = Math.min(100, (buddySteps / 50000) * 100);
+                  const buddyEvolveCost = (buddyPoke?.timesEvolved || 0) === 0 ? 50000 : 100000;
+                  const buddyPct = Math.min(100, (buddySteps / buddyEvolveCost) * 100);
                   const ringColor = buddyPct >= 100 ? '#16a34a' : buddyPct >= 50 ? '#FFCB05' : '#9ca3af';
                   const ringGradient = buddyPoke
                     ? `conic-gradient(from -90deg, ${ringColor} ${buddyPct.toFixed(1)}%, rgba(0,0,0,0.10) ${buddyPct.toFixed(1)}%)`
@@ -2855,7 +2857,7 @@ export default function PokemonWalker({ onStop }) {
                             <div className="pw-buddy-popup-name">{buddyPoke.name}</div>
                             <div className="pw-buddy-popup-progress-row">
                               <span className="pw-buddy-popup-done">{fmtFull(buddySteps)}</span>
-                              <span className="pw-buddy-popup-max">/ 50,000</span>
+                              <span className="pw-buddy-popup-max">/ {buddyEvolveCost.toLocaleString()}</span>
                             </div>
                             <div className="pw-buddy-popup-bar">
                               <div className="pw-buddy-popup-bar-fill" style={{ width: `${buddyPct.toFixed(1)}%`, background: ringColor }} />
@@ -2865,7 +2867,7 @@ export default function PokemonWalker({ onStop }) {
                               const canEvolve = buddyNextEvoId !== null && timesEvolved < 2;
                               if (buddyNextEvoId === undefined) return <div className="pw-buddy-popup-left">Checking evolution…</div>;
                               if (!canEvolve) return <div className="pw-buddy-popup-left">Max Evolution</div>;
-                              if (buddySteps >= 50000) return (
+                              if (buddySteps >= buddyEvolveCost) return (
                                 <button
                                   className="pw-buddy-popup-evolve"
                                   onClick={e => { e.stopPropagation(); handleBuddyEvolve(); }}
@@ -2874,7 +2876,7 @@ export default function PokemonWalker({ onStop }) {
                                   {evolving === appState.buddy ? 'Evolving…' : '✨ Ready to Evolve!'}
                                 </button>
                               );
-                              return <div className="pw-buddy-popup-left">{fmtFull(50000 - buddySteps)} steps left to evolve</div>;
+                              return <div className="pw-buddy-popup-left">{fmtFull(buddyEvolveCost - buddySteps)} steps left to evolve</div>;
                             })()}
                           </div>
                           </>
