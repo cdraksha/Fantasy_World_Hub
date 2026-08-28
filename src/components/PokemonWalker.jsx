@@ -4453,7 +4453,7 @@ export default function PokemonWalker({ onStop }) {
                         const startWeight = wc.startWeight || currentWeight || WEDDING_GOAL_KG + 5;
                         const totalDays = Math.max(1, daysBetween(startDate, WEDDING_DATE));
                         const daysElapsed = Math.max(0, daysBetween(startDate, today));
-                        const daysLeft = Math.max(0, daysBetween(today, WEDDING_DATE));
+                        const daysLeft = Math.max(0, daysBetween(today, WEDDING_DATE) + 1);
                         const timePct = Math.min(100, (daysElapsed / totalDays) * 100);
                         const weightToLose = Math.max(0, startWeight - WEDDING_GOAL_KG);
                         const weightLost = currentWeight !== null ? Math.max(0, startWeight - currentWeight) : 0;
@@ -4623,7 +4623,7 @@ export default function PokemonWalker({ onStop }) {
                       {showPrudhviPanel && (() => {
                         const today = todayString();
                         const currentWeight = appState.weight?.lastKg ?? null;
-                        const daysLeft = Math.max(0, daysBetween(today, PRUDHVI_DATE));
+                        const daysLeft = Math.max(0, daysBetween(today, PRUDHVI_DATE) + 1);
                         const postDeadline = today > PRUDHVI_DATE;
                         const goalReached = currentWeight !== null && currentWeight < PRUDHVI_GOAL_KG;
                         return (
@@ -4706,7 +4706,7 @@ export default function PokemonWalker({ onStop }) {
                       {showPrudhviWeddingPanel && (() => {
                         const today = todayString();
                         const currentWeight = appState.weight?.lastKg ?? null;
-                        const daysLeft = Math.max(0, daysBetween(today, PRUDHVI_WEDDING_DATE));
+                        const daysLeft = Math.max(0, daysBetween(today, PRUDHVI_WEDDING_DATE) + 1);
                         const postDeadline = today > PRUDHVI_WEDDING_DATE;
                         const goalReached = currentWeight !== null && currentWeight < PRUDHVI_WEDDING_GOAL_KG;
                         return (
@@ -4793,7 +4793,7 @@ export default function PokemonWalker({ onStop }) {
                         const today = todayString();
                         const rn = appState.rnChallenge || { claimedReward: false, penaltyApplied: false };
                         const currentWeight = appState.weight?.lastKg ?? null;
-                        const daysLeft = Math.max(0, daysBetween(today, RN_DATE));
+                        const daysLeft = Math.max(0, daysBetween(today, RN_DATE) + 1);
                         const postDeadline = today > RN_DATE;
                         const goalReached = currentWeight !== null && currentWeight <= RN_GOAL_KG;
 
