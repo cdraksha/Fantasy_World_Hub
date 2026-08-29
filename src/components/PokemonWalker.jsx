@@ -286,7 +286,7 @@ const WEDDING_DATE = '2027-01-18';
 const WEDDING_GOAL_KG = 88;
 
 const RN_DATE = '2026-08-29';
-const RN_GOAL_KG = 97;
+const RN_GOAL_KG = 98;
 
 const PRUDHVI_DATE = '2026-09-05';
 const PRUDHVI_GOAL_KG = 97;
@@ -4780,11 +4780,11 @@ export default function PokemonWalker({ onStop }) {
                           if (rn.claimedReward) return <span className="obj-updated-badge">Won!</span>;
                           if (rn.penaltyApplied) return <span className="obj-pending-badge">Lost</span>;
                           if (today > RN_DATE) {
-                            return cw !== null && cw <= RN_GOAL_KG
+                            return cw !== null && cw < RN_GOAL_KG
                               ? <span className="obj-updated-badge">Claim!</span>
                               : <span className="obj-pending-badge">Penalty Due</span>;
                           }
-                          return cw !== null && cw <= RN_GOAL_KG
+                          return cw !== null && cw < RN_GOAL_KG
                             ? <span className="obj-updated-badge">Goal Reached!</span>
                             : <span className="obj-active-badge">Active</span>;
                         })()}
@@ -4795,7 +4795,7 @@ export default function PokemonWalker({ onStop }) {
                         const currentWeight = appState.weight?.lastKg ?? null;
                         const daysLeft = Math.max(0, daysBetween(today, RN_DATE) + 1);
                         const postDeadline = today > RN_DATE;
-                        const goalReached = currentWeight !== null && currentWeight <= RN_GOAL_KG;
+                        const goalReached = currentWeight !== null && currentWeight < RN_GOAL_KG;
 
                         if (rn.claimedReward) return (
                           <div className="fast-panel fast-done">
@@ -4823,7 +4823,7 @@ export default function PokemonWalker({ onStop }) {
                                   {currentWeight !== null ? `${currentWeight} kg` : 'Not logged'}
                                 </div>
                                 <div style={{ fontSize: 8, color: '#6b7280' }}>
-                                  {currentWeight !== null ? (goalReached ? '✓ Goal hit!' : `${currentWeight - RN_GOAL_KG} kg to go`) : 'Log under Weight Loss'}
+                                  {currentWeight !== null ? (goalReached ? '✓ Goal hit!' : `${(currentWeight - RN_GOAL_KG + 0.1).toFixed(1)} kg to go`) : 'Log under Weight Loss'}
                                 </div>
                               </div>
                               <div style={{ flex: 1, background: '#f0f9ff', borderRadius: 6, padding: '6px 8px', border: '1px solid #bae6fd' }}>
