@@ -673,8 +673,7 @@ function defaultState(steps) {
     freeEvolutionCredits: 0,
     water: initWater(),
     eggQueue: 0,
-    nextVaultMilestoneIdx: 0,
-    pendingStarters: [],
+    claimedStarterRegions: [],
     rnChallenge: { claimedReward: false, penaltyApplied: false },
     prudhviChallenge: { claimedReward: false, penaltyApplied: false },
     prudhviWeddingChallenge: { claimedReward: false, penaltyApplied: false },
@@ -727,8 +726,10 @@ function loadState() {
     if (!saved.prudhviWeddingChallenge) saved.prudhviWeddingChallenge = { claimedReward: false, penaltyApplied: false };
     if (saved.water.milestonesCleared === undefined) saved.water = { ...saved.water, milestonesCleared: 0 };
     if (saved.eggQueue === undefined) saved.eggQueue = 0;
-    if (saved.nextVaultMilestoneIdx === undefined) saved.nextVaultMilestoneIdx = 0;
-    if (!saved.pendingStarters) saved.pendingStarters = [];
+    if (!saved.claimedStarterRegions) saved.claimedStarterRegions = [];
+    // Clean up old sequential milestone state if present
+    delete saved.nextVaultMilestoneIdx;
+    delete saved.pendingStarters;
     // Seed caughtDex from existing pokemon on first migration
     if (!saved.caughtDex || saved.caughtDex.length === 0) {
       saved.caughtDex = [...new Set((saved.pokemon || []).map(p => p.dexId))];
@@ -1807,7 +1808,6 @@ export default function PokemonWalker({ onStop }) {
       const deposit = prev.spendableSteps;
       const newVault = prev.stepVault + deposit;
       const newLifetime = prev.lifetimeVaultDeposits + deposit;
-      const { newPacks, resetVault, newPendingStarters, newIdx } = checkVaultMilestones(newVault, prev.packInventory, prev.pendingStarters || [], prev.nextVaultMilestoneIdx || 0);
       // Check if vault milestone crossed for egg
       let newEgg = prev.egg;
       if (newEgg.status === 'waiting' && newLifetime - (newEgg.vaultBaseline || 0) >= EGG_BASE) {
@@ -1816,37 +1816,39 @@ export default function PokemonWalker({ onStop }) {
       return {
         ...prev,
         spendableSteps: 0,
-        stepVault: resetVault,
+        stepVault: newVault,
         lifetimeVaultDeposits: newLifetime,
-        packInventory: newPacks,
-        pendingStarters: newPendingStarters,
-        nextVaultMilestoneIdx: newIdx,
         egg: newEgg,
-        challengeLog: newIdx !== (prev.nextVaultMilestoneIdx || 0)
-          ? [{ date: todayString(), type: 'milestone', tier: null, outcome: VAULT_MILESTONES[(prev.nextVaultMilestoneIdx || 0)]?.reward === 'starter' ? `Unlocked ${VAULT_MILESTONES[(prev.nextVaultMilestoneIdx || 0)]?.region?.charAt(0).toUpperCase() + VAULT_MILESTONES[(prev.nextVaultMilestoneIdx || 0)]?.region?.slice(1)} Starter Pokémon` : `Earned Legendary Pack (${fmtFull(VAULT_MILESTONES[(prev.nextVaultMilestoneIdx || 0)]?.threshold)} step vault milestone)` }, ...(prev.challengeLog || [])]
-          : (prev.challengeLog || []),
       };
     });
   };
 
-  // ─── Claim regional starter from vault milestone ──────────────────────
-  const handleClaimStarter = async () => {
-    const region = (appState.pendingStarters || [])[0];
-    if (!region) return;
-    const ids = STARTER_IDS[region];
-    const id = ids[Math.floor(Math.random() * ids.length)];
-    const poke = await fetchPokemonById(id);
-    setAppState(prev => {
-      const [, ...rest] = prev.pendingStarters || [];
-      return {
+  // ─── Claim a vault milestone reward ──────────────────────────────────
+  const handleClaimVaultMilestone = async (ms) => {
+    if ((appState.stepVault || 0) < ms.threshold) return;
+    if (ms.reward === 'starter') {
+      if ((appState.claimedStarterRegions || []).includes(ms.region)) return;
+      const ids = STARTER_IDS[ms.region];
+      const id = ids[Math.floor(Math.random() * ids.length)];
+      const poke = await fetchPokemonById(id);
+      setAppState(prev => ({
         ...prev,
+        stepVault: (prev.stepVault || 0) - ms.threshold,
+        claimedStarterRegions: [...(prev.claimedStarterRegions || []), ms.region],
         pokemon: [...prev.pokemon, { uid: makeUID(), ...poke, packTier: 'common', buddySteps: 0, caughtDate: todayString(), onTeam: false }],
         caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId])],
-        pendingStarters: rest,
-        challengeLog: [{ date: todayString(), type: 'milestone', tier: 'common', outcome: `Claimed ${region.charAt(0).toUpperCase() + region.slice(1)} starter: ${poke.name}` }, ...(prev.challengeLog || [])],
-      };
-    });
-    setDeltaFlash(`✨ ${poke.name} (${region} starter) joined your team!`);
+        challengeLog: [{ date: todayString(), type: 'milestone', tier: 'common', outcome: `Claimed ${ms.label}: ${poke.name}` }, ...(prev.challengeLog || [])],
+      }));
+      setDeltaFlash(`✨ ${poke.name} (${ms.label}) joined your team!`);
+    } else {
+      setAppState(prev => ({
+        ...prev,
+        stepVault: (prev.stepVault || 0) - ms.threshold,
+        packInventory: { ...prev.packInventory, [ms.reward]: (prev.packInventory[ms.reward] || 0) + 1 },
+        challengeLog: [{ date: todayString(), type: 'milestone', tier: ms.reward, outcome: `Earned ${ms.label} (${fmtFull(ms.threshold)} steps spent from vault)` }, ...(prev.challengeLog || [])],
+      }));
+      setDeltaFlash(`🎉 ${ms.label} earned from vault!`);
+    }
     setTimeout(() => setDeltaFlash(null), 4000);
   };
 
@@ -3083,46 +3085,32 @@ export default function PokemonWalker({ onStop }) {
                         )}
                         {vaultFrozen && <div className="pw-panel-frozen">Vault frozen — challenge penalty active</div>}
                       </div>
-                      {(appState.pendingStarters || []).length > 0 && (
-                        <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: '10px 12px', marginBottom: 10 }}>
-                          <div style={{ fontSize: 10, fontWeight: 800, color: '#15803d', marginBottom: 4 }}>
-                            🎉 {appState.pendingStarters[0].charAt(0).toUpperCase() + appState.pendingStarters[0].slice(1)} Starter Unlocked!
-                          </div>
-                          <button
-                            style={{ width: '100%', padding: '7px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer' }}
-                            onClick={handleClaimStarter}
-                          >
-                            Claim {appState.pendingStarters[0].charAt(0).toUpperCase() + appState.pendingStarters[0].slice(1)} Starter Pokémon
-                          </button>
-                        </div>
-                      )}
-                      <div className="pw-panel-section-title">Milestones</div>
-                      {(() => {
-                        const idx = appState.nextVaultMilestoneIdx || 0;
-                        return VAULT_MILESTONES.map((ms, i) => {
-                          const done = i < idx;
-                          const current = i === idx;
-                          const pct = current ? Math.min(100, (appState.stepVault / ms.threshold) * 100) : done ? 100 : 0;
-                          return (
-                            <div className="pw-panel-milestone" key={i} style={{ opacity: done ? 0.5 : 1 }}>
-                              <div className="pw-panel-milestone-row">
-                                <span className="pw-panel-milestone-label">
-                                  {done ? '✓ ' : current ? '▶ ' : ''}{ms.label || `${ms.reward} pack`}
-                                </span>
-                                <span className="pw-panel-milestone-pct">{done ? 'Done' : `${Math.round(pct)}%`}</span>
-                              </div>
-                              {current && (
-                                <>
-                                  <div className="gba-milestone-bar">
-                                    <div className="gba-milestone-fill" style={{ width: `${pct}%` }} />
-                                  </div>
-                                  <div className="pw-panel-milestone-sub">{fmtFull(appState.stepVault)} / {fmtFull(ms.threshold)}</div>
-                                </>
-                              )}
+                      <div className="pw-panel-section-title">Milestones — spend from vault</div>
+                      {VAULT_MILESTONES.map((ms, i) => {
+                        const vault = appState.stepVault || 0;
+                        const canAfford = vault >= ms.threshold;
+                        const alreadyClaimed = ms.reward === 'starter' && (appState.claimedStarterRegions || []).includes(ms.region);
+                        const pct = Math.min(100, (vault / ms.threshold) * 100);
+                        return (
+                          <div className="pw-panel-milestone" key={i}>
+                            <div className="pw-panel-milestone-row">
+                              <span className="pw-panel-milestone-label">{ms.label}</span>
+                              <span className="pw-panel-milestone-pct" style={{ color: canAfford ? '#15803d' : undefined }}>{fmtFull(ms.threshold)} steps</span>
                             </div>
-                          );
-                        });
-                      })()}
+                            <div className="gba-milestone-bar">
+                              <div className="gba-milestone-fill" style={{ width: `${pct}%`, background: canAfford ? '#16a34a' : undefined }} />
+                            </div>
+                            {alreadyClaimed
+                              ? <div className="pw-panel-milestone-sub" style={{ color: '#15803d' }}>✓ Claimed</div>
+                              : canAfford
+                                ? <button style={{ marginTop: 4, width: '100%', padding: '5px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 5, fontWeight: 800, fontSize: 9, cursor: 'pointer' }} onClick={() => handleClaimVaultMilestone(ms)}>
+                                    Claim — spend {fmtFull(ms.threshold)} steps
+                                  </button>
+                                : <div className="pw-panel-milestone-sub">{fmtFull(vault)} / {fmtFull(ms.threshold)}</div>
+                            }
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
