@@ -1822,6 +1822,9 @@ export default function PokemonWalker({ onStop }) {
         pendingStarters: newPendingStarters,
         nextVaultMilestoneIdx: newIdx,
         egg: newEgg,
+        challengeLog: newIdx !== (prev.nextVaultMilestoneIdx || 0)
+          ? [{ date: todayString(), type: 'milestone', tier: null, outcome: VAULT_MILESTONES[(prev.nextVaultMilestoneIdx || 0)]?.reward === 'starter' ? `Unlocked ${VAULT_MILESTONES[(prev.nextVaultMilestoneIdx || 0)]?.region?.charAt(0).toUpperCase() + VAULT_MILESTONES[(prev.nextVaultMilestoneIdx || 0)]?.region?.slice(1)} Starter Pokémon` : `Earned Legendary Pack (${fmtFull(VAULT_MILESTONES[(prev.nextVaultMilestoneIdx || 0)]?.threshold)} step vault milestone)` }, ...(prev.challengeLog || [])]
+          : (prev.challengeLog || []),
       };
     });
   };
@@ -1840,6 +1843,7 @@ export default function PokemonWalker({ onStop }) {
         pokemon: [...prev.pokemon, { uid: makeUID(), ...poke, packTier: 'common', buddySteps: 0, caughtDate: todayString(), onTeam: false }],
         caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId])],
         pendingStarters: rest,
+        challengeLog: [{ date: todayString(), type: 'milestone', tier: 'common', outcome: `Claimed ${region.charAt(0).toUpperCase() + region.slice(1)} starter: ${poke.name}` }, ...(prev.challengeLog || [])],
       };
     });
     setDeltaFlash(`✨ ${poke.name} (${region} starter) joined your team!`);
@@ -5011,6 +5015,7 @@ export default function PokemonWalker({ onStop }) {
                               prudhviChallenge: '💍 Prudhvi\'s Engagement',
                               prudhviWeddingChallenge: '💒 Prudhvi\'s Wedding',
                               water: '💧 Water Intake',
+                              milestone: '🏆 Milestone',
                             }[entry.type] || entry.type;
                             const tierColor = { common: '#7a7a8a', rare: '#1a6fb5', epic: '#7c3aed', legendary: '#b8860b' }[entry.tier] || '#444';
                             const isLoss = /failed|broke|lost|defaulted/i.test(entry.outcome);
