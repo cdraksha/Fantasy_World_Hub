@@ -2430,7 +2430,7 @@ export default function PokemonWalker({ onStop }) {
         pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'legendary', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
         caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
         weddingChallenge: { ...prev.weddingChallenge, claimedReward: true },
-        challengeLog: [{ date: todayString(), type: 'wedding', tier: 'legendary', outcome: `Won Prashant's Wedding Challenge — 2 Legendaries: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+        challengeLog: [{ date: todayString(), type: 'wedding', tier: 'legendary', outcome: `Won Prashast's Wedding Challenge — 2 Legendaries: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
       }));
       setDeltaFlash(`🎊 Wedding challenge won! ${pokes.map(p => p.name).join(' & ')} are yours!`);
       setTimeout(() => setDeltaFlash(null), 5000);
@@ -2447,7 +2447,7 @@ export default function PokemonWalker({ onStop }) {
         ...prev,
         pokemon: prev.pokemon.filter(p => !removeUids.has(p.uid)),
         weddingChallenge: { ...prev.weddingChallenge, penaltyApplied: true },
-        challengeLog: [{ date: todayString(), type: 'wedding', tier: 'epic', outcome: `Lost Prashant's Wedding Challenge — forfeited ${toRemove.length} epic Pokémon: ${toRemove.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+        challengeLog: [{ date: todayString(), type: 'wedding', tier: 'epic', outcome: `Lost Prashast's Wedding Challenge — forfeited ${toRemove.length} epic Pokémon: ${toRemove.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
       };
     });
   };
@@ -4577,10 +4577,10 @@ export default function PokemonWalker({ onStop }) {
                       })()}
                     </div>}
 
-                    {/* Prashant's Wedding Challenge */}
+                    {/* Prashast's Wedding Challenge */}
                     {!(appState.weddingChallenge?.claimedReward || appState.weddingChallenge?.penaltyApplied) && <div className="gba-section">
                       <button className="wc-toggle-btn" onClick={() => setShowWeddingPanel(p => !p)}>
-                        💍 Prashant's Wedding
+                        💍 Prashast's Wedding
                         {(() => {
                           const wc = appState.weddingChallenge || {};
                           const today = todayString();
@@ -4615,7 +4615,7 @@ export default function PokemonWalker({ onStop }) {
 
                         const motivations = [
                           "You are dancing at your closest friend's wedding. YOU WANT TO LOOK HOT.",
-                          "Prashant deserves to see you at your absolute best. Make it happen.",
+                          "Prashast deserves to see you at your absolute best. Make it happen.",
                           "Every step today is a step closer to that dance floor. MAKE IT COUNT.",
                           "The wedding photos are forever. You will thank yourself on Jan 18th.",
                           "Champion mindset — one meal, one walk, one day at a time.",
@@ -4627,7 +4627,7 @@ export default function PokemonWalker({ onStop }) {
                           return (
                             <div className="fast-panel fast-done">
                               <div className="fast-result-title">🎊 Challenge Won!</div>
-                              <div className="fast-result-sub">You looked incredible at Prashant's wedding.</div>
+                              <div className="fast-result-sub">You looked incredible at Prashast's wedding.</div>
                             </div>
                           );
                         }
