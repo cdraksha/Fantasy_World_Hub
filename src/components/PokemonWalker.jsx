@@ -368,9 +368,23 @@ function initLoan() {
   };
 }
 
+const STARTER_IDS = {
+  kanto:  [1, 4, 7],
+  johto:  [152, 155, 158],
+  hoenn:  [252, 255, 258],
+  sinnoh: [387, 390, 393],
+  unova:  [495, 498, 501],
+  kalos:  [650, 653, 656],
+};
+
 const VAULT_MILESTONES = [
-  { threshold: 200000, reward: 'epic' },
-  { threshold: 500000, reward: 'legendary' },
+  { threshold: 50000,  reward: 'starter', region: 'kanto',  label: 'Kanto Starter' },
+  { threshold: 50000,  reward: 'starter', region: 'hoenn',  label: 'Hoenn Starter' },
+  { threshold: 50000,  reward: 'starter', region: 'johto',  label: 'Johto Starter' },
+  { threshold: 200000, reward: 'legendary',                  label: 'Legendary Pack' },
+  { threshold: 50000,  reward: 'starter', region: 'sinnoh', label: 'Sinnoh Starter' },
+  { threshold: 50000,  reward: 'starter', region: 'unova',  label: 'Unova Starter' },
+  { threshold: 50000,  reward: 'starter', region: 'kalos',  label: 'Kalos Starter' },
 ];
 
 const TYPE_COLORS = {
@@ -659,6 +673,8 @@ function defaultState(steps) {
     freeEvolutionCredits: 0,
     water: initWater(),
     eggQueue: 0,
+    nextVaultMilestoneIdx: 0,
+    pendingStarters: [],
     rnChallenge: { claimedReward: false, penaltyApplied: false },
     prudhviChallenge: { claimedReward: false, penaltyApplied: false },
     prudhviWeddingChallenge: { claimedReward: false, penaltyApplied: false },
@@ -711,6 +727,8 @@ function loadState() {
     if (!saved.prudhviWeddingChallenge) saved.prudhviWeddingChallenge = { claimedReward: false, penaltyApplied: false };
     if (saved.water.milestonesCleared === undefined) saved.water = { ...saved.water, milestonesCleared: 0 };
     if (saved.eggQueue === undefined) saved.eggQueue = 0;
+    if (saved.nextVaultMilestoneIdx === undefined) saved.nextVaultMilestoneIdx = 0;
+    if (!saved.pendingStarters) saved.pendingStarters = [];
     // Seed caughtDex from existing pokemon on first migration
     if (!saved.caughtDex || saved.caughtDex.length === 0) {
       saved.caughtDex = [...new Set((saved.pokemon || []).map(p => p.dexId))];
@@ -1433,20 +1451,20 @@ export default function PokemonWalker({ onStop }) {
   // ─── Level helpers ──────────────────────────────────────────────────
   const collectorLevel = appState ? getCollectorLevel(appState.totalStepsWalked) : 1;
 
-  // ─── Check vault milestones (repeating — resets vault to 0 on unlock) ──
-  const checkVaultMilestones = useCallback((vaultBalance, packInventory) => {
-    let newPacks = { ...packInventory };
-    let resetVault = vaultBalance;
-    // Check highest threshold first so legendary takes priority over epic
-    const sorted = [...VAULT_MILESTONES].sort((a, b) => b.threshold - a.threshold);
-    for (const ms of sorted) {
-      if (vaultBalance >= ms.threshold) {
-        newPacks = { ...newPacks, [ms.reward]: (newPacks[ms.reward] || 0) + 1 };
-        resetVault = 0;
-        break;
-      }
+  // ─── Check vault milestones (sequential — advances through list, resets vault on each claim) ──
+  const checkVaultMilestones = useCallback((vaultBalance, packInventory, pendingStarters, idx) => {
+    const ms = VAULT_MILESTONES[idx];
+    if (!ms || vaultBalance < ms.threshold) {
+      return { newPacks: packInventory, resetVault: vaultBalance, newPendingStarters: pendingStarters, newIdx: idx };
     }
-    return { newPacks, resetVault };
+    let newPacks = { ...packInventory };
+    let newPendingStarters = [...(pendingStarters || [])];
+    if (ms.reward === 'starter') {
+      newPendingStarters = [...newPendingStarters, ms.region];
+    } else {
+      newPacks = { ...newPacks, [ms.reward]: (newPacks[ms.reward] || 0) + 1 };
+    }
+    return { newPacks, resetVault: 0, newPendingStarters, newIdx: Math.min(idx + 1, VAULT_MILESTONES.length) };
   }, []);
 
   // ─── Check achievements ─────────────────────────────────────────────
@@ -1789,7 +1807,7 @@ export default function PokemonWalker({ onStop }) {
       const deposit = prev.spendableSteps;
       const newVault = prev.stepVault + deposit;
       const newLifetime = prev.lifetimeVaultDeposits + deposit;
-      const { newPacks, resetVault } = checkVaultMilestones(newVault, prev.packInventory);
+      const { newPacks, resetVault, newPendingStarters, newIdx } = checkVaultMilestones(newVault, prev.packInventory, prev.pendingStarters || [], prev.nextVaultMilestoneIdx || 0);
       // Check if vault milestone crossed for egg
       let newEgg = prev.egg;
       if (newEgg.status === 'waiting' && newLifetime - (newEgg.vaultBaseline || 0) >= EGG_BASE) {
@@ -1801,9 +1819,31 @@ export default function PokemonWalker({ onStop }) {
         stepVault: resetVault,
         lifetimeVaultDeposits: newLifetime,
         packInventory: newPacks,
+        pendingStarters: newPendingStarters,
+        nextVaultMilestoneIdx: newIdx,
         egg: newEgg,
       };
     });
+  };
+
+  // ─── Claim regional starter from vault milestone ──────────────────────
+  const handleClaimStarter = async () => {
+    const region = (appState.pendingStarters || [])[0];
+    if (!region) return;
+    const ids = STARTER_IDS[region];
+    const id = ids[Math.floor(Math.random() * ids.length)];
+    const poke = await fetchPokemonById(id);
+    setAppState(prev => {
+      const [, ...rest] = prev.pendingStarters || [];
+      return {
+        ...prev,
+        pokemon: [...prev.pokemon, { uid: makeUID(), ...poke, packTier: 'common', buddySteps: 0, caughtDate: todayString(), onTeam: false }],
+        caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId])],
+        pendingStarters: rest,
+      };
+    });
+    setDeltaFlash(`✨ ${poke.name} (${region} starter) joined your team!`);
+    setTimeout(() => setDeltaFlash(null), 4000);
   };
 
   // ─── Open pack (start pack screen) ───────────────────────────────────
@@ -3039,22 +3079,46 @@ export default function PokemonWalker({ onStop }) {
                         )}
                         {vaultFrozen && <div className="pw-panel-frozen">Vault frozen — challenge penalty active</div>}
                       </div>
-                      <div className="pw-panel-section-title">Milestones</div>
-                      {upcomingMilestones.map(ms => {
-                        const pct = Math.min(100, (appState.stepVault / ms.threshold) * 100);
-                        return (
-                          <div className="pw-panel-milestone" key={ms.threshold}>
-                            <div className="pw-panel-milestone-row">
-                              <span className="pw-panel-milestone-label">{ms.reward} pack</span>
-                              <span className="pw-panel-milestone-pct">{Math.round(pct)}%</span>
-                            </div>
-                            <div className="gba-milestone-bar">
-                              <div className="gba-milestone-fill" style={{ width: `${pct}%` }} />
-                            </div>
-                            <div className="pw-panel-milestone-sub">{fmtFull(appState.stepVault)} / {fmtFull(ms.threshold)}</div>
+                      {(appState.pendingStarters || []).length > 0 && (
+                        <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: '10px 12px', marginBottom: 10 }}>
+                          <div style={{ fontSize: 10, fontWeight: 800, color: '#15803d', marginBottom: 4 }}>
+                            🎉 {appState.pendingStarters[0].charAt(0).toUpperCase() + appState.pendingStarters[0].slice(1)} Starter Unlocked!
                           </div>
-                        );
-                      })}
+                          <button
+                            style={{ width: '100%', padding: '7px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer' }}
+                            onClick={handleClaimStarter}
+                          >
+                            Claim {appState.pendingStarters[0].charAt(0).toUpperCase() + appState.pendingStarters[0].slice(1)} Starter Pokémon
+                          </button>
+                        </div>
+                      )}
+                      <div className="pw-panel-section-title">Milestones</div>
+                      {(() => {
+                        const idx = appState.nextVaultMilestoneIdx || 0;
+                        return VAULT_MILESTONES.map((ms, i) => {
+                          const done = i < idx;
+                          const current = i === idx;
+                          const pct = current ? Math.min(100, (appState.stepVault / ms.threshold) * 100) : done ? 100 : 0;
+                          return (
+                            <div className="pw-panel-milestone" key={i} style={{ opacity: done ? 0.5 : 1 }}>
+                              <div className="pw-panel-milestone-row">
+                                <span className="pw-panel-milestone-label">
+                                  {done ? '✓ ' : current ? '▶ ' : ''}{ms.label || `${ms.reward} pack`}
+                                </span>
+                                <span className="pw-panel-milestone-pct">{done ? 'Done' : `${Math.round(pct)}%`}</span>
+                              </div>
+                              {current && (
+                                <>
+                                  <div className="gba-milestone-bar">
+                                    <div className="gba-milestone-fill" style={{ width: `${pct}%` }} />
+                                  </div>
+                                  <div className="pw-panel-milestone-sub">{fmtFull(appState.stepVault)} / {fmtFull(ms.threshold)}</div>
+                                </>
+                              )}
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
                 );
