@@ -387,6 +387,51 @@ const VAULT_MILESTONES = [
   { threshold: 50000,  reward: 'starter', region: 'kalos',  label: 'Kalos Starter' },
 ];
 
+const TRAINER_MILESTONES = [
+  { trainer: 'Lorelei',       threshold: 500000, tier: 'epic',      team: ['dewgong','cloyster','slowbro','jynx','lapras'] },
+  { trainer: 'Bruno (Kanto)', threshold: 550000, tier: 'epic',      team: ['onix','hitmonchan','hitmonlee','onix','machamp'] },
+  { trainer: 'Agatha',        threshold: 550000, tier: 'epic',      team: ['gengar','golbat','haunter','arbok','gengar'] },
+  { trainer: 'Lance (E4)',    threshold: 600000, tier: 'epic',      team: ['gyarados','dragonair','dragonite','aerodactyl','dragonite'] },
+  { trainer: 'Blue',          threshold: 650000, tier: 'legendary', team: ['pidgeot','alakazam','rhydon','gyarados','exeggutor','charizard'] },
+  { trainer: 'Will',          threshold: 550000, tier: 'epic',      team: ['xatu','jynx','exeggutor','slowbro','xatu'] },
+  { trainer: 'Koga',          threshold: 550000, tier: 'epic',      team: ['ariados','venomoth','forretress','crobat'] },
+  { trainer: 'Bruno (Johto)', threshold: 550000, tier: 'epic',      team: ['hitmontop','hitmonlee','hitmonchan','onix','machamp'] },
+  { trainer: 'Karen',         threshold: 600000, tier: 'epic',      team: ['umbreon','vileplume','gengar','murkrow','houndoom'] },
+  { trainer: 'Lance',         threshold: 650000, tier: 'legendary', team: ['gyarados','dragonite','dragonite','aerodactyl','charizard','dragonite'] },
+  { trainer: 'Sidney',        threshold: 550000, tier: 'epic',      team: ['mightyena','shiftry','cacturne','crawdaunt','absol'] },
+  { trainer: 'Phoebe',        threshold: 600000, tier: 'epic',      team: ['dusclops','banette','sableye','banette','dusclops'] },
+  { trainer: 'Glacia',        threshold: 600000, tier: 'epic',      team: ['glalie','sealeo','sealeo','glalie','walrein'] },
+  { trainer: 'Drake',         threshold: 650000, tier: 'epic',      team: ['shelgon','altaria','flygon','flygon','salamence'] },
+  { trainer: 'Steven',        threshold: 700000, tier: 'legendary', team: ['skarmory','armaldo','aggron','claydol','cradily','metagross'] },
+  { trainer: 'Aaron',         threshold: 550000, tier: 'epic',      team: ['dustox','drapion','beautifly','vespiquen','heracross'] },
+  { trainer: 'Bertha',        threshold: 600000, tier: 'epic',      team: ['whiscash','gliscor','golem','rhyperior','hippowdon'] },
+  { trainer: 'Flint',         threshold: 600000, tier: 'epic',      team: ['houndoom','rapidash','flareon','infernape','magmortar'] },
+  { trainer: 'Lucian',        threshold: 650000, tier: 'epic',      team: ['mr-mime','girafarig','medicham','alakazam','bronzong'] },
+  { trainer: 'Cynthia',       threshold: 750000, tier: 'legendary', team: ['spiritomb','roserade','togekiss','lucario','milotic','garchomp'] },
+  { trainer: 'Shauntal',      threshold: 600000, tier: 'epic',      team: ['cofagrigus','jellicent','golurk','chandelure'] },
+  { trainer: 'Grimsley',      threshold: 600000, tier: 'epic',      team: ['liepard','scrafty','krookodile','bisharp'] },
+  { trainer: 'Caitlin',       threshold: 650000, tier: 'epic',      team: ['musharna','sigilyph','reuniclus','gothitelle'] },
+  { trainer: 'Marshal',       threshold: 650000, tier: 'epic',      team: ['throh','sawk','mienshao','conkeldurr'] },
+  { trainer: 'Alder',         threshold: 700000, tier: 'legendary', team: ['accelgor','escavalier','bouffalant','druddigon','volcarona'] },
+  { trainer: 'Iris',          threshold: 750000, tier: 'legendary', team: ['hydreigon','druddigon','aggron','lapras','archeops','haxorus'] },
+  { trainer: 'Malva',         threshold: 550000, tier: 'epic',      team: ['pyroar','torkoal','chandelure','talonflame'] },
+  { trainer: 'Wikstrom',      threshold: 600000, tier: 'epic',      team: ['klefki','probopass','scizor','aegislash'] },
+  { trainer: 'Drasna',        threshold: 600000, tier: 'epic',      team: ['dragalge','druddigon','altaria','noivern'] },
+  { trainer: 'Siebold',       threshold: 600000, tier: 'epic',      team: ['clawitzer','gyarados','starmie','barbaracle'] },
+  { trainer: 'Diantha',       threshold: 650000, tier: 'legendary', team: ['hawlucha','tyrantrum','aurorus','gourgeist','goodra','gardevoir'] },
+  { trainer: 'Hala',          threshold: 550000, tier: 'epic',      team: ['hariyama','primeape','bewear','poliwrath'] },
+  { trainer: 'Olivia',        threshold: 550000, tier: 'epic',      team: ['relicanth','carbink','lycanroc'] },
+  { trainer: 'Acerola',       threshold: 600000, tier: 'epic',      team: ['sableye','drifblim','dhelmise','froslass'] },
+  { trainer: 'Kahili',        threshold: 600000, tier: 'epic',      team: ['skarmory','crobat','oricorio','mandibuzz'] },
+  { trainer: 'Kukui',         threshold: 700000, tier: 'legendary', team: ['lycanroc','ninetales','braviary','magnezone','snorlax','incineroar'] },
+  { trainer: 'Leon',          threshold: 750000, tier: 'legendary', team: ['aegislash','dragapult','haxorus','seismitoad','rillaboom','charizard'] },
+  { trainer: 'Rika',          threshold: 600000, tier: 'epic',      team: ['whiscash','camerupt','donphan','dugtrio','clodsire'] },
+  { trainer: 'Poppy',         threshold: 600000, tier: 'epic',      team: ['copperajah','corviknight','bronzong','tinkaton'] },
+  { trainer: 'Larry',         threshold: 650000, tier: 'epic',      team: ['tropius','staraptor','altaria','oricorio','flamigo'] },
+  { trainer: 'Hassel',        threshold: 700000, tier: 'epic',      team: ['noivern','dragalge','haxorus','flapple','baxcalibur'] },
+  { trainer: 'Geeta',         threshold: 700000, tier: 'legendary', team: ['espathra','gogoat','veluza','avalugg','kingambit','glimmora'] },
+];
+
 const TYPE_COLORS = {
   fire: '#f08030', water: '#6890f0', grass: '#78c850', electric: '#f8d030',
   psychic: '#f85888', ice: '#98d8d8', dragon: '#7038f8', dark: '#705848',
@@ -674,6 +719,7 @@ function defaultState(steps) {
     water: initWater(),
     eggQueue: 0,
     claimedStarterRegions: [],
+    claimedTrainers: [],
     rnChallenge: { claimedReward: false, penaltyApplied: false },
     prudhviChallenge: { claimedReward: false, penaltyApplied: false },
     prudhviWeddingChallenge: { claimedReward: false, penaltyApplied: false },
@@ -727,6 +773,7 @@ function loadState() {
     if (saved.water.milestonesCleared === undefined) saved.water = { ...saved.water, milestonesCleared: 0 };
     if (saved.eggQueue === undefined) saved.eggQueue = 0;
     if (!saved.claimedStarterRegions) saved.claimedStarterRegions = [];
+    if (!saved.claimedTrainers) saved.claimedTrainers = [];
     // Clean up old sequential milestone state if present
     delete saved.nextVaultMilestoneIdx;
     delete saved.pendingStarters;
@@ -1308,6 +1355,7 @@ export default function PokemonWalker({ onStop }) {
   const [generatingWeddingImage, setGeneratingWeddingImage] = useState(false);
   const [weddingImage, setWeddingImage] = useState(null);
   const [claimingWeddingReward, setClaimingWeddingReward] = useState(false);
+  const [claimingTrainer, setClaimingTrainer] = useState(null);
   const [showLogStepsDropdown, setShowLogStepsDropdown] = useState(false);
   const [showLogChallengesDropdown, setShowLogChallengesDropdown] = useState(false);
   const [mysteryIds] = useState(() => ({
@@ -1840,6 +1888,25 @@ export default function PokemonWalker({ onStop }) {
         challengeLog: [{ date: todayString(), type: 'milestone', tier: 'common', outcome: `Claimed ${ms.label}: ${poke.name}` }, ...(prev.challengeLog || [])],
       }));
       setDeltaFlash(`✨ ${poke.name} (${ms.label}) joined your team!`);
+    } else if (ms.reward === 'team') {
+      if ((appState.claimedTrainers || []).includes(ms.trainer)) return;
+      setClaimingTrainer(ms.trainer);
+      try {
+        const uniqueNames = [...new Set(ms.team)];
+        const fetched = {};
+        await Promise.all(uniqueNames.map(async name => { fetched[name] = await fetchPokemonById(name); }));
+        const teamPokes = ms.team.map(name => ({ uid: makeUID(), ...fetched[name], packTier: ms.tier, buddySteps: 0, caughtDate: todayString(), onTeam: false }));
+        setAppState(prev => ({
+          ...prev,
+          stepVault: (prev.stepVault || 0) - ms.threshold,
+          claimedTrainers: [...(prev.claimedTrainers || []), ms.trainer],
+          pokemon: [...prev.pokemon, ...teamPokes],
+          caughtDex: [...new Set([...(prev.caughtDex || []), ...teamPokes.map(p => p.dexId)])],
+          challengeLog: [{ date: todayString(), type: 'milestone', tier: ms.tier, outcome: `Claimed Team ${ms.trainer} — ${teamPokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+        }));
+        setDeltaFlash(`🏆 Team ${ms.trainer} claimed! ${teamPokes.length} Pokémon added!`);
+      } catch { setDeltaFlash('❌ Failed to fetch team. Try again.'); }
+      setClaimingTrainer(null);
     } else {
       setAppState(prev => ({
         ...prev,
@@ -3107,6 +3174,35 @@ export default function PokemonWalker({ onStop }) {
                                     Claim — spend {fmtFull(ms.threshold)} steps
                                   </button>
                                 : <div className="pw-panel-milestone-sub">{fmtFull(vault)} / {fmtFull(ms.threshold)}</div>
+                            }
+                          </div>
+                        );
+                      })}
+                      <div className="pw-panel-section-title" style={{ marginTop: 12 }}>Elite Four &amp; Champions</div>
+                      {TRAINER_MILESTONES.map((ms, i) => {
+                        const vault = appState.stepVault || 0;
+                        const canAfford = vault >= ms.threshold;
+                        const claimed = (appState.claimedTrainers || []).includes(ms.trainer);
+                        const loading = claimingTrainer === ms.trainer;
+                        const tierColor = ms.tier === 'legendary' ? '#b8860b' : '#7c3aed';
+                        return (
+                          <div key={i} style={{ border: `1px solid ${ms.tier === 'legendary' ? '#fcd34d' : '#e9d5ff'}`, borderRadius: 8, padding: '8px 10px', marginBottom: 6, background: claimed ? '#f9fafb' : ms.tier === 'legendary' ? '#fffbeb' : '#faf5ff', opacity: claimed ? 0.6 : 1 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                              <span style={{ fontWeight: 800, fontSize: 11, color: tierColor }}>Team {ms.trainer}</span>
+                              <span style={{ fontSize: 9, fontWeight: 700, color: canAfford && !claimed ? '#15803d' : '#6b7280' }}>{fmtFull(ms.threshold)} steps</span>
+                            </div>
+                            <div style={{ fontSize: 8, color: '#6b7280', marginBottom: 5, lineHeight: 1.4 }}>
+                              {[...new Set(ms.team)].join(', ')}
+                            </div>
+                            {claimed
+                              ? <div style={{ fontSize: 8, color: '#15803d', fontWeight: 700 }}>✓ Claimed</div>
+                              : <button
+                                  style={{ width: '100%', padding: '5px', background: canAfford ? tierColor : '#e5e7eb', color: canAfford ? '#fff' : '#9ca3af', border: 'none', borderRadius: 5, fontWeight: 800, fontSize: 9, cursor: canAfford ? 'pointer' : 'default' }}
+                                  disabled={!canAfford || loading}
+                                  onClick={() => canAfford && handleClaimVaultMilestone({ ...ms, reward: 'team' })}
+                                >
+                                  {loading ? 'Claiming…' : canAfford ? `Claim Team ${ms.trainer}` : `Need ${fmtFull(ms.threshold - vault)} more steps`}
+                                </button>
                             }
                           </div>
                         );
