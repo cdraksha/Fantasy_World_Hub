@@ -3065,6 +3065,381 @@
   margin-top: 2px;
 }
 
+/* ── Milestone Table Sections ── */
+.ms-section {
+  margin-bottom: 16px;
+}
+
+.ms-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1a1a2e;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 5px;
+  margin-bottom: 4px;
+}
+
+.ms-header-sub {
+  font-size: 8px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.ms-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.ms-thead-row {
+  background: #f8fafc;
+}
+
+.ms-th {
+  font-size: 8px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 4px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ms-th-right { text-align: right; }
+.ms-th-name { width: 35%; }
+
+.ms-row {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ms-row.ms-locked {
+  color: #6b7280;
+}
+
+.ms-row.ms-locked .ms-name {
+  color: #6b7280;
+}
+
+.ms-row.ms-ready:hover {
+  background: #f8fafc;
+}
+
+.ms-td {
+  padding: 5px 4px;
+  vertical-align: middle;
+}
+
+.ms-td-name {
+  max-width: 0;
+  overflow: hidden;
+}
+
+.ms-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ms-team {
+  font-size: 7px;
+  color: #9ca3af;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ms-td-region {
+  font-size: 8px;
+  color: #4b5563;
+  white-space: nowrap;
+  width: 22%;
+}
+
+.ms-td-reward {
+  font-size: 8px;
+  font-weight: 700;
+  color: #1a6fb5;
+  white-space: nowrap;
+  width: 18%;
+}
+
+.ms-td-steps {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: #374151;
+  text-align: right;
+  white-space: nowrap;
+  width: 18%;
+}
+
+.ms-td-action {
+  text-align: right;
+  width: 14%;
+}
+
+.ms-claim-btn {
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ms-claim-btn:hover {
+  background: #15803d;
+}
+
+.ms-need {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.ms-row.ms-claimed {
+  background: #f9fafb;
+}
+
+.ms-row.ms-claimed .ms-name,
+.ms-row.ms-claimed .ms-td-region,
+.ms-row.ms-claimed .ms-td-reward,
+.ms-row.ms-claimed .ms-td-steps {
+  color: #9ca3af;
+}
+
+.ms-claimed-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+/* ── Vault Milestone Shop Grid ── */
+.vm-shop-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.vm-shop-card {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  opacity: 0.65;
+}
+
+.vm-shop-card.affordable {
+  background: #f0fdf4;
+  border-color: #86efac;
+  opacity: 1;
+}
+
+.vm-card-icon {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.vm-card-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 2px;
+}
+
+.vm-card-cost {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: #7a7a8a;
+  margin-bottom: 6px;
+}
+
+.vm-card-btn {
+  width: 100%;
+  padding: 5px 0;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.vm-card-btn:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: default;
+}
+
+/* ── Vault Pack Reward Row ── */
+.vm-pack-reward {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fefce8;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  opacity: 0.65;
+}
+
+.vm-pack-reward.affordable {
+  opacity: 1;
+}
+
+.vm-pack-reward-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vm-pack-reward-icon {
+  font-size: 22px;
+}
+
+.vm-pack-reward-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: #92400e;
+}
+
+.vm-pack-reward-cost {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: #a16207;
+  margin-top: 1px;
+}
+
+.vm-pack-reward-btn {
+  padding: 6px 14px;
+  background: #b8860b;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 9px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vm-pack-reward-btn:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: default;
+}
+
+/* ── Vault Trainer Milestones ── */
+.vm-trainer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vm-trainer-card {
+  background: #faf5ff;
+  border: 1px solid #e9d5ff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  opacity: 0.65;
+}
+
+.vm-trainer-card.affordable {
+  opacity: 1;
+}
+
+.vm-trainer-card.legendary {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+.vm-trainer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+}
+
+.vm-trainer-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: #7c3aed;
+}
+
+.vm-trainer-card.legendary .vm-trainer-name {
+  color: #b8860b;
+}
+
+.vm-trainer-tier {
+  font-size: 8px;
+  font-weight: 700;
+  color: #7c3aed;
+}
+
+.vm-trainer-tier.legendary {
+  color: #b8860b;
+}
+
+.vm-trainer-team {
+  font-size: 8px;
+  color: #6b7280;
+  margin-bottom: 6px;
+  line-height: 1.5;
+  text-transform: capitalize;
+}
+
+.vm-trainer-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.vm-trainer-cost {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.vm-trainer-btn {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-weight: 800;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.vm-trainer-card.legendary .vm-trainer-btn {
+  background: #b8860b;
+}
+
+.vm-trainer-btn.locked,
+.vm-trainer-btn:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: default;
+}
+
 .pw-ip-body {
   flex: 1;
   overflow-y: auto;

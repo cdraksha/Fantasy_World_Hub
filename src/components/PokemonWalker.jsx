@@ -368,68 +368,158 @@ function initLoan() {
   };
 }
 
-const STARTER_IDS = {
-  kanto:  [1, 4, 7],
-  johto:  [152, 155, 158],
-  hoenn:  [252, 255, 258],
-  sinnoh: [387, 390, 393],
-  unova:  [495, 498, 501],
-  kalos:  [650, 653, 656],
-};
-
-const VAULT_MILESTONES = [
-  { threshold: 50000,  reward: 'starter', region: 'kanto',  label: 'Kanto Starter' },
-  { threshold: 50000,  reward: 'starter', region: 'hoenn',  label: 'Hoenn Starter' },
-  { threshold: 50000,  reward: 'starter', region: 'johto',  label: 'Johto Starter' },
-  { threshold: 200000, reward: 'legendary',                  label: 'Legendary Pack' },
-  { threshold: 50000,  reward: 'starter', region: 'sinnoh', label: 'Sinnoh Starter' },
-  { threshold: 50000,  reward: 'starter', region: 'unova',  label: 'Unova Starter' },
-  { threshold: 50000,  reward: 'starter', region: 'kalos',  label: 'Kalos Starter' },
+const STARTER_MILESTONES = [
+  { starter: 'Chikorita',  type: 'Grass',        region: 'Johto',  threshold: 1000,  reward: 'starter' },
+  { starter: 'Snivy',      type: 'Grass',        region: 'Unova',  threshold: 2900,  reward: 'starter' },
+  { starter: 'Oshawott',   type: 'Water',        region: 'Unova',  threshold: 4800,  reward: 'starter' },
+  { starter: 'Popplio',    type: 'Water',        region: 'Alola',  threshold: 6700,  reward: 'starter' },
+  { starter: 'Chespin',    type: 'Grass',        region: 'Kalos',  threshold: 8500,  reward: 'starter' },
+  { starter: 'Quaxly',     type: 'Water',        region: 'Paldea', threshold: 10400, reward: 'starter' },
+  { starter: 'Sobble',     type: 'Water',        region: 'Galar',  threshold: 12300, reward: 'starter' },
+  { starter: 'Tepig',      type: 'Fire',         region: 'Unova',  threshold: 14200, reward: 'starter' },
+  { starter: 'Rowlet',     type: 'Grass/Flying', region: 'Alola',  threshold: 16100, reward: 'starter' },
+  { starter: 'Treecko',    type: 'Grass',        region: 'Hoenn',  threshold: 18000, reward: 'starter' },
+  { starter: 'Cyndaquil',  type: 'Fire',         region: 'Johto',  threshold: 19800, reward: 'starter' },
+  { starter: 'Fennekin',   type: 'Fire',         region: 'Kalos',  threshold: 21700, reward: 'starter' },
+  { starter: 'Grookey',    type: 'Grass',        region: 'Galar',  threshold: 23600, reward: 'starter' },
+  { starter: 'Sprigatito', type: 'Grass',        region: 'Paldea', threshold: 25500, reward: 'starter' },
+  { starter: 'Totodile',   type: 'Water',        region: 'Johto',  threshold: 27400, reward: 'starter' },
+  { starter: 'Litten',     type: 'Fire',         region: 'Alola',  threshold: 29300, reward: 'starter' },
+  { starter: 'Turtwig',    type: 'Grass',        region: 'Sinnoh', threshold: 31200, reward: 'starter' },
+  { starter: 'Squirtle',   type: 'Water',        region: 'Kanto',  threshold: 33000, reward: 'starter' },
+  { starter: 'Froakie',    type: 'Water',        region: 'Kalos',  threshold: 34900, reward: 'starter' },
+  { starter: 'Scorbunny',  type: 'Fire',         region: 'Galar',  threshold: 36800, reward: 'starter' },
+  { starter: 'Bulbasaur',  type: 'Grass/Poison', region: 'Kanto',  threshold: 38700, reward: 'starter' },
+  { starter: 'Piplup',     type: 'Water',        region: 'Sinnoh', threshold: 40600, reward: 'starter' },
+  { starter: 'Torchic',    type: 'Fire',         region: 'Hoenn',  threshold: 42500, reward: 'starter' },
+  { starter: 'Charmander', type: 'Fire',         region: 'Kanto',  threshold: 44300, reward: 'starter' },
+  { starter: 'Mudkip',     type: 'Water',        region: 'Hoenn',  threshold: 46200, reward: 'starter' },
+  { starter: 'Fuecoco',    type: 'Fire',         region: 'Paldea', threshold: 48100, reward: 'starter' },
+  { starter: 'Chimchar',   type: 'Fire',         region: 'Sinnoh', threshold: 50000, reward: 'starter' },
 ];
 
 const TRAINER_MILESTONES = [
-  { trainer: 'Lorelei',       threshold: 500000, tier: 'epic',      team: ['dewgong','cloyster','slowbro','jynx','lapras'] },
-  { trainer: 'Bruno (Kanto)', threshold: 550000, tier: 'epic',      team: ['onix','hitmonchan','hitmonlee','onix','machamp'] },
-  { trainer: 'Agatha',        threshold: 550000, tier: 'epic',      team: ['gengar','golbat','haunter','arbok','gengar'] },
-  { trainer: 'Lance (E4)',    threshold: 600000, tier: 'epic',      team: ['gyarados','dragonair','dragonite','aerodactyl','dragonite'] },
-  { trainer: 'Blue',          threshold: 650000, tier: 'legendary', team: ['pidgeot','alakazam','rhydon','gyarados','exeggutor','charizard'] },
-  { trainer: 'Will',          threshold: 550000, tier: 'epic',      team: ['xatu','jynx','exeggutor','slowbro','xatu'] },
-  { trainer: 'Koga',          threshold: 550000, tier: 'epic',      team: ['ariados','venomoth','forretress','crobat'] },
-  { trainer: 'Bruno (Johto)', threshold: 550000, tier: 'epic',      team: ['hitmontop','hitmonlee','hitmonchan','onix','machamp'] },
-  { trainer: 'Karen',         threshold: 600000, tier: 'epic',      team: ['umbreon','vileplume','gengar','murkrow','houndoom'] },
-  { trainer: 'Lance',         threshold: 650000, tier: 'legendary', team: ['gyarados','dragonite','dragonite','aerodactyl','charizard','dragonite'] },
-  { trainer: 'Sidney',        threshold: 550000, tier: 'epic',      team: ['mightyena','shiftry','cacturne','crawdaunt','absol'] },
-  { trainer: 'Phoebe',        threshold: 600000, tier: 'epic',      team: ['dusclops','banette','sableye','banette','dusclops'] },
-  { trainer: 'Glacia',        threshold: 600000, tier: 'epic',      team: ['glalie','sealeo','sealeo','glalie','walrein'] },
-  { trainer: 'Drake',         threshold: 650000, tier: 'epic',      team: ['shelgon','altaria','flygon','flygon','salamence'] },
-  { trainer: 'Steven',        threshold: 700000, tier: 'legendary', team: ['skarmory','armaldo','aggron','claydol','cradily','metagross'] },
-  { trainer: 'Aaron',         threshold: 550000, tier: 'epic',      team: ['dustox','drapion','beautifly','vespiquen','heracross'] },
-  { trainer: 'Bertha',        threshold: 600000, tier: 'epic',      team: ['whiscash','gliscor','golem','rhyperior','hippowdon'] },
-  { trainer: 'Flint',         threshold: 600000, tier: 'epic',      team: ['houndoom','rapidash','flareon','infernape','magmortar'] },
-  { trainer: 'Lucian',        threshold: 650000, tier: 'epic',      team: ['mr-mime','girafarig','medicham','alakazam','bronzong'] },
-  { trainer: 'Cynthia',       threshold: 750000, tier: 'legendary', team: ['spiritomb','roserade','togekiss','lucario','milotic','garchomp'] },
-  { trainer: 'Shauntal',      threshold: 600000, tier: 'epic',      team: ['cofagrigus','jellicent','golurk','chandelure'] },
-  { trainer: 'Grimsley',      threshold: 600000, tier: 'epic',      team: ['liepard','scrafty','krookodile','bisharp'] },
-  { trainer: 'Caitlin',       threshold: 650000, tier: 'epic',      team: ['musharna','sigilyph','reuniclus','gothitelle'] },
-  { trainer: 'Marshal',       threshold: 650000, tier: 'epic',      team: ['throh','sawk','mienshao','conkeldurr'] },
-  { trainer: 'Alder',         threshold: 700000, tier: 'legendary', team: ['accelgor','escavalier','bouffalant','druddigon','volcarona'] },
-  { trainer: 'Iris',          threshold: 750000, tier: 'legendary', team: ['hydreigon','druddigon','aggron','lapras','archeops','haxorus'] },
-  { trainer: 'Malva',         threshold: 550000, tier: 'epic',      team: ['pyroar','torkoal','chandelure','talonflame'] },
-  { trainer: 'Wikstrom',      threshold: 600000, tier: 'epic',      team: ['klefki','probopass','scizor','aegislash'] },
-  { trainer: 'Drasna',        threshold: 600000, tier: 'epic',      team: ['dragalge','druddigon','altaria','noivern'] },
-  { trainer: 'Siebold',       threshold: 600000, tier: 'epic',      team: ['clawitzer','gyarados','starmie','barbaracle'] },
-  { trainer: 'Diantha',       threshold: 650000, tier: 'legendary', team: ['hawlucha','tyrantrum','aurorus','gourgeist','goodra','gardevoir'] },
-  { trainer: 'Hala',          threshold: 550000, tier: 'epic',      team: ['hariyama','primeape','bewear','poliwrath'] },
-  { trainer: 'Olivia',        threshold: 550000, tier: 'epic',      team: ['relicanth','carbink','lycanroc'] },
-  { trainer: 'Acerola',       threshold: 600000, tier: 'epic',      team: ['sableye','drifblim','dhelmise','froslass'] },
-  { trainer: 'Kahili',        threshold: 600000, tier: 'epic',      team: ['skarmory','crobat','oricorio','mandibuzz'] },
-  { trainer: 'Kukui',         threshold: 700000, tier: 'legendary', team: ['lycanroc','ninetales','braviary','magnezone','snorlax','incineroar'] },
-  { trainer: 'Leon',          threshold: 750000, tier: 'legendary', team: ['aegislash','dragapult','haxorus','seismitoad','rillaboom','charizard'] },
-  { trainer: 'Rika',          threshold: 600000, tier: 'epic',      team: ['whiscash','camerupt','donphan','dugtrio','clodsire'] },
-  { trainer: 'Poppy',         threshold: 600000, tier: 'epic',      team: ['copperajah','corviknight','bronzong','tinkaton'] },
-  { trainer: 'Larry',         threshold: 650000, tier: 'epic',      team: ['tropius','staraptor','altaria','oricorio','flamigo'] },
-  { trainer: 'Hassel',        threshold: 700000, tier: 'epic',      team: ['noivern','dragalge','haxorus','flapple','baxcalibur'] },
-  { trainer: 'Geeta',         threshold: 700000, tier: 'legendary', team: ['espathra','gogoat','veluza','avalugg','kingambit','glimmora'] },
+  // Kanto
+  { trainer: 'Lorelei',       region: 'Kanto',  role: 'elite4',   threshold: 500000, reward: 'elite', team: ['Dewgong','Cloyster','Slowbro','Jynx','Lapras'] },
+  { trainer: 'Bruno (Kanto)', region: 'Kanto',  role: 'elite4',   threshold: 550000, reward: 'elite', team: ['Onix','Hitmonchan','Hitmonlee','Onix','Machamp'] },
+  { trainer: 'Agatha',        region: 'Kanto',  role: 'elite4',   threshold: 550000, reward: 'elite', team: ['Gengar','Golbat','Haunter','Arbok','Gengar'] },
+  { trainer: 'Lance (E4)',    region: 'Kanto',  role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Gyarados','Dragonair','Dragonite','Aerodactyl','Dragonite'] },
+  { trainer: 'Blue',          region: 'Kanto',  role: 'champion', threshold: 650000, reward: 'elite', team: ['Pidgeot','Alakazam','Rhydon','Gyarados','Exeggutor','Charizard'] },
+  // Johto
+  { trainer: 'Will',          region: 'Johto',  role: 'elite4',   threshold: 550000, reward: 'elite', team: ['Xatu','Jynx','Exeggutor','Slowbro','Xatu'] },
+  { trainer: 'Koga',          region: 'Johto',  role: 'elite4',   threshold: 550000, reward: 'elite', team: ['Ariados','Venomoth','Forretress','Crobat'] },
+  { trainer: 'Bruno (Johto)', region: 'Johto',  role: 'elite4',   threshold: 550000, reward: 'elite', team: ['Hitmontop','Hitmonlee','Hitmonchan','Onix','Machamp'] },
+  { trainer: 'Karen',         region: 'Johto',  role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Umbreon','Vileplume','Gengar','Murkrow','Houndoom'] },
+  { trainer: 'Lance',         region: 'Johto',  role: 'champion', threshold: 650000, reward: 'elite', team: ['Gyarados','Dragonite','Dragonite','Aerodactyl','Charizard','Dragonite'] },
+  // Hoenn
+  { trainer: 'Sidney',        region: 'Hoenn',  role: 'elite4',   threshold: 550000, reward: 'elite', team: ['Mightyena','Shiftry','Cacturne','Crawdaunt','Absol'] },
+  { trainer: 'Phoebe',        region: 'Hoenn',  role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Dusclops','Banette','Sableye','Banette','Dusclops'] },
+  { trainer: 'Glacia',        region: 'Hoenn',  role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Glalie','Sealeo','Sealeo','Glalie','Walrein'] },
+  { trainer: 'Drake',         region: 'Hoenn',  role: 'elite4',   threshold: 650000, reward: 'elite', team: ['Shelgon','Altaria','Flygon','Flygon','Salamence'] },
+  { trainer: 'Steven',        region: 'Hoenn',  role: 'champion', threshold: 700000, reward: 'elite', team: ['Skarmory','Armaldo','Aggron','Claydol','Cradily','Metagross'] },
+  // Sinnoh
+  { trainer: 'Aaron',         region: 'Sinnoh', role: 'elite4',   threshold: 550000, reward: 'elite', team: ['Dustox','Drapion','Beautifly','Vespiquen','Heracross'] },
+  { trainer: 'Bertha',        region: 'Sinnoh', role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Whiscash','Gliscor','Golem','Rhyperior','Hippowdon'] },
+  { trainer: 'Flint',         region: 'Sinnoh', role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Houndoom','Rapidash','Flareon','Infernape','Magmortar'] },
+  { trainer: 'Lucian',        region: 'Sinnoh', role: 'elite4',   threshold: 650000, reward: 'elite', team: ['Mr. Mime','Girafarig','Medicham','Alakazam','Bronzong'] },
+  { trainer: 'Cynthia',       region: 'Sinnoh', role: 'champion', threshold: 750000, reward: 'elite', team: ['Spiritomb','Roserade','Togekiss','Lucario','Milotic','Garchomp'] },
+  // Unova
+  { trainer: 'Shauntal',      region: 'Unova',  role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Cofagrigus','Jellicent','Golurk','Chandelure'] },
+  { trainer: 'Grimsley',      region: 'Unova',  role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Liepard','Scrafty','Krookodile','Bisharp'] },
+  { trainer: 'Caitlin',       region: 'Unova',  role: 'elite4',   threshold: 650000, reward: 'elite', team: ['Musharna','Sigilyph','Reuniclus','Gothitelle'] },
+  { trainer: 'Marshal',       region: 'Unova',  role: 'elite4',   threshold: 650000, reward: 'elite', team: ['Throh','Sawk','Mienshao','Conkeldurr'] },
+  { trainer: 'Alder',         region: 'Unova',  role: 'champion', threshold: 700000, reward: 'elite', team: ['Accelgor','Escavalier','Bouffalant','Druddigon','Volcarona'] },
+  { trainer: 'Iris',          region: 'Unova',  role: 'champion', threshold: 750000, reward: 'elite', team: ['Hydreigon','Druddigon','Aggron','Lapras','Archeops','Haxorus'] },
+  // Kalos
+  { trainer: 'Malva',         region: 'Kalos',  role: 'elite4',   threshold: 550000, reward: 'elite', team: ['Pyroar','Torkoal','Chandelure','Talonflame'] },
+  { trainer: 'Wikstrom',      region: 'Kalos',  role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Klefki','Probopass','Scizor','Aegislash'] },
+  { trainer: 'Drasna',        region: 'Kalos',  role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Dragalge','Druddigon','Altaria','Noivern'] },
+  { trainer: 'Siebold',       region: 'Kalos',  role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Clawitzer','Gyarados','Starmie','Barbaracle'] },
+  { trainer: 'Diantha',       region: 'Kalos',  role: 'champion', threshold: 650000, reward: 'elite', team: ['Hawlucha','Tyrantrum','Aurorus','Gourgeist','Goodra','Gardevoir'] },
+  // Alola
+  { trainer: 'Hala',          region: 'Alola',  role: 'elite4',   threshold: 550000, reward: 'elite', team: ['Hariyama','Primeape','Bewear','Poliwrath'] },
+  { trainer: 'Olivia',        region: 'Alola',  role: 'elite4',   threshold: 550000, reward: 'elite', team: ['Relicanth','Carbink','Lycanroc'] },
+  { trainer: 'Acerola',       region: 'Alola',  role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Sableye','Drifblim','Dhelmise','Froslass'] },
+  { trainer: 'Kahili',        region: 'Alola',  role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Skarmory','Crobat','Oricorio','Mandibuzz'] },
+  { trainer: 'Kukui',         region: 'Alola',  role: 'champion', threshold: 700000, reward: 'elite', team: ['Lycanroc','Ninetales','Braviary','Magnezone','Snorlax','Incineroar'] },
+  // Galar
+  { trainer: 'Leon',          region: 'Galar',  role: 'champion', threshold: 750000, reward: 'elite', team: ['Aegislash','Dragapult','Haxorus','Seismitoad','Rillaboom','Charizard'] },
+  // Paldea
+  { trainer: 'Rika',          region: 'Paldea', role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Whiscash','Camerupt','Donphan','Dugtrio','Clodsire'] },
+  { trainer: 'Poppy',         region: 'Paldea', role: 'elite4',   threshold: 600000, reward: 'elite', team: ['Copperajah','Corviknight','Bronzong','Tinkaton'] },
+  { trainer: 'Larry',         region: 'Paldea', role: 'elite4',   threshold: 650000, reward: 'elite', team: ['Tropius','Staraptor','Altaria','Oricorio','Flamigo'] },
+  { trainer: 'Hassel',        region: 'Paldea', role: 'elite4',   threshold: 700000, reward: 'elite', team: ['Noivern','Dragalge','Haxorus','Flapple','Baxcalibur'] },
+  { trainer: 'Geeta',         region: 'Paldea', role: 'champion', threshold: 700000, reward: 'elite', team: ['Espathra','Gogoat','Veluza','Avalugg','Kingambit','Glimmora'] },
+];
+
+const GYM_LEADER_MILESTONES = [
+  { trainer: 'Brock',        region: 'Kanto',  team: ['Geodude','Onix'],                                              threshold: 55000,  reward: 'gym' },
+  { trainer: 'Falkner',      region: 'Johto',  team: ['Pidgey','Pidgeotto'],                                          threshold: 61500,  reward: 'gym' },
+  { trainer: 'Cilan',        region: 'Unova',  team: ['Lillipup','Pansage'],                                          threshold: 68500,  reward: 'gym' },
+  { trainer: 'Milo',         region: 'Galar',  team: ['Gossifleur','Eldegoss'],                                       threshold: 75000,  reward: 'gym' },
+  { trainer: 'Roxanne',      region: 'Hoenn',  team: ['Geodude','Nosepass'],                                          threshold: 81500,  reward: 'gym' },
+  { trainer: 'Bugsy',        region: 'Johto',  team: ['Scyther','Metapod','Kakuna'],                                  threshold: 88500,  reward: 'gym' },
+  { trainer: 'Viola',        region: 'Kalos',  team: ['Surskit','Vivillon'],                                          threshold: 95000,  reward: 'gym' },
+  { trainer: 'Hala',         region: 'Alola',  team: ['Machop','Makuhita','Crabrawler'],                              threshold: 101500, reward: 'gym' },
+  { trainer: 'Misty',        region: 'Kanto',  team: ['Staryu','Starmie'],                                            threshold: 108500, reward: 'gym' },
+  { trainer: 'Lenora',       region: 'Unova',  team: ['Herdier','Watchog'],                                           threshold: 115000, reward: 'gym' },
+  { trainer: 'Roark',        region: 'Sinnoh', team: ['Geodude','Onix','Cranidos'],                                   threshold: 121500, reward: 'gym' },
+  { trainer: 'Katy',         region: 'Paldea', team: ['Nymble','Tarountula','Teddiursa'],                             threshold: 128500, reward: 'gym' },
+  { trainer: 'Brassius',     region: 'Paldea', team: ['Petilil','Smoliv','Sudowoodo'],                                threshold: 135000, reward: 'gym' },
+  { trainer: 'Brawly',       region: 'Hoenn',  team: ['Machop','Makuhita'],                                           threshold: 141500, reward: 'gym' },
+  { trainer: 'Lt. Surge',    region: 'Kanto',  team: ['Voltorb','Pikachu','Raichu'],                                  threshold: 148500, reward: 'gym' },
+  { trainer: 'Gardenia',     region: 'Sinnoh', team: ['Cherubi','Turtwig','Roserade'],                                threshold: 155000, reward: 'gym' },
+  { trainer: 'Flannery',     region: 'Hoenn',  team: ['Slugma','Torkoal'],                                            threshold: 161500, reward: 'gym' },
+  { trainer: 'Koga',         region: 'Kanto',  team: ['Koffing','Muk','Koffing','Weezing'],                           threshold: 168500, reward: 'gym' },
+  { trainer: 'Nessa',        region: 'Galar',  team: ['Goldeen','Arrokuda','Drednaw'],                                threshold: 175000, reward: 'gym' },
+  { trainer: 'Wattson',      region: 'Hoenn',  team: ['Magnemite','Voltorb','Magneton'],                              threshold: 181500, reward: 'gym' },
+  { trainer: 'Ramos',        region: 'Kalos',  team: ['Jumpluff','Weepinbell','Gogoat'],                              threshold: 188500, reward: 'gym' },
+  { trainer: 'Blaine',       region: 'Kanto',  team: ['Growlithe','Ponyta','Rapidash','Arcanine'],                    threshold: 195000, reward: 'gym' },
+  { trainer: 'Erika',        region: 'Kanto',  team: ['Victreebel','Tangela','Vileplume'],                            threshold: 201500, reward: 'gym' },
+  { trainer: 'Whitney',      region: 'Johto',  team: ['Clefairy','Miltank'],                                          threshold: 208500, reward: 'gym' },
+  { trainer: 'Chuck',        region: 'Johto',  team: ['Primeape','Poliwrath'],                                        threshold: 215000, reward: 'gym' },
+  { trainer: 'Maylene',      region: 'Sinnoh', team: ['Meditite','Machoke','Lucario'],                                threshold: 221500, reward: 'gym' },
+  { trainer: 'Norman',       region: 'Hoenn',  team: ['Slaking','Vigoroth','Slaking'],                                threshold: 228500, reward: 'gym' },
+  { trainer: 'Crasher Wake', region: 'Sinnoh', team: ['Gyarados','Quagsire','Floatzel'],                              threshold: 235000, reward: 'gym' },
+  { trainer: 'Korrina',      region: 'Kalos',  team: ['Mienfoo','Machoke','Hawlucha'],                                threshold: 241500, reward: 'gym' },
+  { trainer: 'Elesa',        region: 'Unova',  team: ['Emolga','Emolga','Zebstrika'],                                 threshold: 248500, reward: 'gym' },
+  { trainer: 'Volkner',      region: 'Sinnoh', team: ['Raichu','Ambipom','Octillery','Luxray'],                       threshold: 255000, reward: 'gym' },
+  { trainer: 'Wulfric',      region: 'Kalos',  team: ['Cryogonal','Abomasnow','Avalugg'],                             threshold: 261500, reward: 'gym' },
+  { trainer: 'Candice',      region: 'Sinnoh', team: ['Snover','Sneasel','Medicham','Abomasnow'],                     threshold: 268500, reward: 'gym' },
+  { trainer: 'Morty',        region: 'Johto',  team: ['Gastly','Haunter','Gengar','Haunter'],                         threshold: 275000, reward: 'gym' },
+  { trainer: 'Jasmine',      region: 'Johto',  team: ['Magnemite','Magnemite','Steelix'],                             threshold: 281500, reward: 'gym' },
+  { trainer: 'Pryce',        region: 'Johto',  team: ['Seel','Dewgong','Piloswine'],                                  threshold: 288500, reward: 'gym' },
+  { trainer: 'Clair',        region: 'Johto',  team: ['Dragonair','Dragonair','Kingdra'],                             threshold: 295000, reward: 'gym' },
+  { trainer: 'Winona',       region: 'Hoenn',  team: ['Swellow','Pelipper','Skarmory','Altaria'],                     threshold: 301500, reward: 'gym' },
+  { trainer: 'Fantina',      region: 'Sinnoh', team: ['Drifblim','Gengar','Mismagius'],                               threshold: 308500, reward: 'gym' },
+  { trainer: 'Byron',        region: 'Sinnoh', team: ['Bronzor','Steelix','Bastiodon'],                               threshold: 315000, reward: 'gym' },
+  { trainer: 'Wallace',      region: 'Hoenn',  team: ['Luvdisc','Sealeo','Seaking','Whiscash','Milotic'],             threshold: 321500, reward: 'gym' },
+  { trainer: 'Giovanni',     region: 'Kanto',  team: ['Dugtrio','Nidoqueen','Nidoking','Rhyhorn'],                    threshold: 328500, reward: 'gym' },
+  { trainer: 'Olivia',       region: 'Alola',  team: ['Omanyte','Boldore','Lycanroc'],                                threshold: 335000, reward: 'gym' },
+  { trainer: 'Nanu',         region: 'Alola',  team: ['Sableye','Krokorok','Persian'],                                threshold: 341500, reward: 'gym' },
+  { trainer: 'Acerola',      region: 'Alola',  team: ['Sableye','Drifblim','Froslass'],                               threshold: 348500, reward: 'gym' },
+  { trainer: 'Grant',        region: 'Kalos',  team: ['Amaura','Tyrunt'],                                             threshold: 355000, reward: 'gym' },
+  { trainer: 'Clemont',      region: 'Kalos',  team: ['Emolga','Magneton','Heliolisk'],                               threshold: 361500, reward: 'gym' },
+  { trainer: 'Valerie',      region: 'Kalos',  team: ['Mawile','Mr. Mime','Sylveon'],                                 threshold: 368500, reward: 'gym' },
+  { trainer: 'Olympia',      region: 'Kalos',  team: ['Sigilyph','Slowking','Meowstic'],                              threshold: 375000, reward: 'gym' },
+  { trainer: 'Skyla',        region: 'Unova',  team: ['Swoobat','Unfezant','Swanna'],                                 threshold: 381500, reward: 'gym' },
+  { trainer: 'Brycen',       region: 'Unova',  team: ['Cryogonal','Beartic','Vanilluxe'],                             threshold: 388500, reward: 'gym' },
+  { trainer: 'Drayden',      region: 'Unova',  team: ['Druddigon','Flygon','Haxorus'],                                threshold: 395000, reward: 'gym' },
+  { trainer: 'Burgh',        region: 'Unova',  team: ['Whirlipede','Dwebble','Leavanny'],                             threshold: 401500, reward: 'gym' },
+  { trainer: 'Clay',         region: 'Unova',  team: ['Krokorok','Palpitoad','Excadrill'],                            threshold: 408500, reward: 'gym' },
+  { trainer: 'Bea',          region: 'Galar',  team: ['Hitmontop','Pangoro',"Sirfetch'd",'Machamp'],                  threshold: 415000, reward: 'gym' },
+  { trainer: 'Allister',     region: 'Galar',  team: ['Yamask','Mimikyu','Cursola','Gengar'],                         threshold: 421500, reward: 'gym' },
+  { trainer: 'Opal',         region: 'Galar',  team: ['Weezing','Mawile','Togekiss','Alcremie'],                      threshold: 428500, reward: 'gym' },
+  { trainer: 'Piers',        region: 'Galar',  team: ['Scrafty','Malamar','Skuntank','Obstagoon'],                    threshold: 435000, reward: 'gym' },
+  { trainer: 'Gordie',       region: 'Galar',  team: ['Barbaracle','Shuckle','Stonjourner','Coalossal'],              threshold: 441500, reward: 'gym' },
+  { trainer: 'Melony',       region: 'Galar',  team: ['Frosmoth','Darmanitan','Eiscue','Lapras'],                     threshold: 448500, reward: 'gym' },
+  { trainer: 'Raihan',       region: 'Galar',  team: ['Gigalith','Flygon','Sandaconda','Duraludon'],                  threshold: 455000, reward: 'gym' },
+  { trainer: 'Iono',         region: 'Paldea', team: ['Wattrel','Bellibolt','Luxio','Mismagius'],                     threshold: 461500, reward: 'gym' },
+  { trainer: 'Kofu',         region: 'Paldea', team: ['Veluza','Wugtrio','Crabominable'],                             threshold: 468500, reward: 'gym' },
+  { trainer: 'Larry',        region: 'Paldea', team: ['Komala','Dudunsparce','Staraptor'],                            threshold: 475000, reward: 'gym' },
+  { trainer: 'Ryme',         region: 'Paldea', team: ['Mimikyu','Banette','Houndstone','Toxtricity'],                 threshold: 481500, reward: 'gym' },
+  { trainer: 'Tulip',        region: 'Paldea', team: ['Farigiraf','Gardevoir','Espathra','Florges'],                  threshold: 488500, reward: 'gym' },
+  { trainer: 'Grusha',       region: 'Paldea', team: ['Frosmoth','Beartic','Cetitan','Altaria'],                      threshold: 495000, reward: 'gym' },
 ];
 
 const TYPE_COLORS = {
@@ -720,6 +810,7 @@ function defaultState(steps) {
     eggQueue: 0,
     claimedStarterRegions: [],
     claimedTrainers: [],
+    claimedVaultMilestones: [],
     rnChallenge: { claimedReward: false, penaltyApplied: false },
     prudhviChallenge: { claimedReward: false, penaltyApplied: false },
     prudhviWeddingChallenge: { claimedReward: false, penaltyApplied: false },
@@ -774,6 +865,7 @@ function loadState() {
     if (saved.eggQueue === undefined) saved.eggQueue = 0;
     if (!saved.claimedStarterRegions) saved.claimedStarterRegions = [];
     if (!saved.claimedTrainers) saved.claimedTrainers = [];
+    if (!saved.claimedVaultMilestones) saved.claimedVaultMilestones = [];
     // Clean up old sequential milestone state if present
     delete saved.nextVaultMilestoneIdx;
     delete saved.pendingStarters;
@@ -1357,6 +1449,7 @@ export default function PokemonWalker({ onStop }) {
   const [claimingWeddingReward, setClaimingWeddingReward] = useState(false);
   const [claimingTrainer, setClaimingTrainer] = useState(null);
   const [showLogStepsDropdown, setShowLogStepsDropdown] = useState(false);
+  const [showLogMilestonesDropdown, setShowLogMilestonesDropdown] = useState(false);
   const [showLogChallengesDropdown, setShowLogChallengesDropdown] = useState(false);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
@@ -1502,7 +1595,7 @@ export default function PokemonWalker({ onStop }) {
 
   // ─── Check vault milestones (sequential — advances through list, resets vault on each claim) ──
   const checkVaultMilestones = useCallback((vaultBalance, packInventory, pendingStarters, idx) => {
-    const ms = VAULT_MILESTONES[idx];
+    const ms = STARTER_MILESTONES[idx];
     if (!ms || vaultBalance < ms.threshold) {
       return { newPacks: packInventory, resetVault: vaultBalance, newPendingStarters: pendingStarters, newIdx: idx };
     }
@@ -1513,7 +1606,7 @@ export default function PokemonWalker({ onStop }) {
     } else {
       newPacks = { ...newPacks, [ms.reward]: (newPacks[ms.reward] || 0) + 1 };
     }
-    return { newPacks, resetVault: 0, newPendingStarters, newIdx: Math.min(idx + 1, VAULT_MILESTONES.length) };
+    return { newPacks, resetVault: 0, newPendingStarters, newIdx: Math.min(idx + 1, STARTER_MILESTONES.length) };
   }, []);
 
   // ─── Check achievements ─────────────────────────────────────────────
@@ -1874,47 +1967,42 @@ export default function PokemonWalker({ onStop }) {
   // ─── Claim a vault milestone reward ──────────────────────────────────
   const handleClaimVaultMilestone = async (ms) => {
     if ((appState.stepVault || 0) < ms.threshold) return;
+    const milestoneKey = ms.reward === 'starter' ? `starter:${ms.starter}`
+      : ms.reward === 'gym' ? `gym:${ms.trainer}`
+      : `elite:${ms.trainer}`;
+    if ((appState.claimedVaultMilestones || []).includes(milestoneKey)) return;
+
     if (ms.reward === 'starter') {
-      if ((appState.claimedStarterRegions || []).includes(ms.region)) return;
-      const ids = STARTER_IDS[ms.region];
-      const id = ids[Math.floor(Math.random() * ids.length)];
-      const poke = await fetchPokemonById(id);
+      const poke = await fetchPokemonById(ms.starter.toLowerCase());
       setAppState(prev => ({
         ...prev,
         stepVault: (prev.stepVault || 0) - ms.threshold,
-        claimedStarterRegions: [...(prev.claimedStarterRegions || []), ms.region],
+        claimedVaultMilestones: [...(prev.claimedVaultMilestones || []), milestoneKey],
         pokemon: [...prev.pokemon, { uid: makeUID(), ...poke, packTier: 'common', buddySteps: 0, caughtDate: todayString(), onTeam: false }],
         caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId])],
-        challengeLog: [{ date: todayString(), type: 'milestone', tier: 'common', outcome: `Claimed ${ms.label}: ${poke.name}` }, ...(prev.challengeLog || [])],
+        challengeLog: [{ date: todayString(), type: 'milestone', tier: 'common', outcome: `Claimed ${ms.starter} (${ms.region} starter)` }, ...(prev.challengeLog || [])],
       }));
-      setDeltaFlash(`✨ ${poke.name} (${ms.label}) joined your team!`);
-    } else if (ms.reward === 'team') {
-      if ((appState.claimedTrainers || []).includes(ms.trainer)) return;
-      setClaimingTrainer(ms.trainer);
-      try {
-        const uniqueNames = [...new Set(ms.team)];
-        const fetched = {};
-        await Promise.all(uniqueNames.map(async name => { fetched[name] = await fetchPokemonById(name); }));
-        const teamPokes = ms.team.map(name => ({ uid: makeUID(), ...fetched[name], packTier: ms.tier, buddySteps: 0, caughtDate: todayString(), onTeam: false }));
-        setAppState(prev => ({
-          ...prev,
-          stepVault: (prev.stepVault || 0) - ms.threshold,
-          claimedTrainers: [...(prev.claimedTrainers || []), ms.trainer],
-          pokemon: [...prev.pokemon, ...teamPokes],
-          caughtDex: [...new Set([...(prev.caughtDex || []), ...teamPokes.map(p => p.dexId)])],
-          challengeLog: [{ date: todayString(), type: 'milestone', tier: ms.tier, outcome: `Claimed Team ${ms.trainer} — ${teamPokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
-        }));
-        setDeltaFlash(`🏆 Team ${ms.trainer} claimed! ${teamPokes.length} Pokémon added!`);
-      } catch { setDeltaFlash('❌ Failed to fetch team. Try again.'); }
-      setClaimingTrainer(null);
-    } else {
+      setDeltaFlash(`${ms.starter} joined your team!`);
+    } else if (ms.reward === 'gym') {
+      const count = ms.team.length;
       setAppState(prev => ({
         ...prev,
         stepVault: (prev.stepVault || 0) - ms.threshold,
-        packInventory: { ...prev.packInventory, [ms.reward]: (prev.packInventory[ms.reward] || 0) + 1 },
-        challengeLog: [{ date: todayString(), type: 'milestone', tier: ms.reward, outcome: `Earned ${ms.label} (${fmtFull(ms.threshold)} steps spent from vault)` }, ...(prev.challengeLog || [])],
+        claimedVaultMilestones: [...(prev.claimedVaultMilestones || []), milestoneKey],
+        packInventory: { ...prev.packInventory, rare: (prev.packInventory.rare || 0) + count },
+        challengeLog: [{ date: todayString(), type: 'milestone', tier: 'rare', outcome: `Beat ${ms.trainer} — ${count}x rare packs earned` }, ...(prev.challengeLog || [])],
       }));
-      setDeltaFlash(`🎉 ${ms.label} earned from vault!`);
+      setDeltaFlash(`${count}x rare packs from ${ms.trainer}!`);
+    } else {
+      const count = ms.team.length;
+      setAppState(prev => ({
+        ...prev,
+        stepVault: (prev.stepVault || 0) - ms.threshold,
+        claimedVaultMilestones: [...(prev.claimedVaultMilestones || []), milestoneKey],
+        packInventory: { ...prev.packInventory, epic: (prev.packInventory.epic || 0) + count },
+        challengeLog: [{ date: todayString(), type: 'milestone', tier: 'epic', outcome: `Beat ${ms.trainer} — ${count}x epic packs earned` }, ...(prev.challengeLog || [])],
+      }));
+      setDeltaFlash(`${count}x epic packs from ${ms.trainer}!`);
     }
     setTimeout(() => setDeltaFlash(null), 4000);
   };
@@ -2799,7 +2887,7 @@ export default function PokemonWalker({ onStop }) {
   }
 
   // ─── Helpers for vault milestone bars ────────────────────────────────
-  const upcomingMilestones = VAULT_MILESTONES;
+  const upcomingMilestones = STARTER_MILESTONES;
 
   // ─── Total pack count for sticky bar ────────────────────────────────
   const totalPacks = Object.values(appState.packInventory).reduce((a, b) => a + b, 0);
@@ -3152,61 +3240,102 @@ export default function PokemonWalker({ onStop }) {
                         )}
                         {vaultFrozen && <div className="pw-panel-frozen">Vault frozen — challenge penalty active</div>}
                       </div>
-                      <div className="pw-panel-section-title">Milestones — spend from vault</div>
-                      {VAULT_MILESTONES.map((ms, i) => {
+                      {(() => {
                         const vault = appState.stepVault || 0;
-                        const canAfford = vault >= ms.threshold;
-                        const alreadyClaimed = ms.reward === 'starter' && (appState.claimedStarterRegions || []).includes(ms.region);
-                        const pct = Math.min(100, (vault / ms.threshold) * 100);
-                        return (
-                          <div className="pw-panel-milestone" key={i}>
-                            <div className="pw-panel-milestone-row">
-                              <span className="pw-panel-milestone-label">{ms.label}</span>
-                              <span className="pw-panel-milestone-pct" style={{ color: canAfford ? '#15803d' : undefined }}>{fmtFull(ms.threshold)} steps</span>
-                            </div>
-                            <div className="gba-milestone-bar">
-                              <div className="gba-milestone-fill" style={{ width: `${pct}%`, background: canAfford ? '#16a34a' : undefined }} />
-                            </div>
-                            {alreadyClaimed
-                              ? <div className="pw-panel-milestone-sub" style={{ color: '#15803d' }}>✓ Claimed</div>
-                              : canAfford
-                                ? <button style={{ marginTop: 4, width: '100%', padding: '5px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 5, fontWeight: 800, fontSize: 9, cursor: 'pointer' }} onClick={() => handleClaimVaultMilestone(ms)}>
-                                    Claim — spend {fmtFull(ms.threshold)} steps
-                                  </button>
-                                : <div className="pw-panel-milestone-sub">{fmtFull(vault)} / {fmtFull(ms.threshold)}</div>
-                            }
-                          </div>
+                        const claimed = new Set(appState.claimedVaultMilestones || []);
+                        const renderTable = (items, getKey, getReward, onClaim) => (
+                          <table className="ms-table">
+                            <thead>
+                              <tr className="ms-thead-row">
+                                <th className="ms-th ms-th-name">Name</th>
+                                <th className="ms-th">Region</th>
+                                <th className="ms-th">Reward</th>
+                                <th className="ms-th ms-th-right">Steps</th>
+                                <th className="ms-th ms-th-right">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {items.map((ms, i) => {
+                                const key = getKey(ms);
+                                const isClaimed = claimed.has(key);
+                                const canAfford = !isClaimed && vault >= ms.threshold;
+                                return (
+                                  <tr className={`ms-row${isClaimed ? ' ms-claimed' : canAfford ? ' ms-ready' : ' ms-locked'}`} key={i}>
+                                    <td className="ms-td ms-td-name">
+                                      <div className="ms-name">{ms.starter || ms.trainer}</div>
+                                      {ms.team && <div className="ms-team">{[...new Set(ms.team)].join(', ')}</div>}
+                                      {ms.type && <div className="ms-team">{ms.type}</div>}
+                                    </td>
+                                    <td className="ms-td ms-td-region">{ms.region}</td>
+                                    <td className="ms-td ms-td-reward">{getReward(ms)}</td>
+                                    <td className="ms-td ms-td-steps">{fmtFull(ms.threshold)}</td>
+                                    <td className="ms-td ms-td-action">
+                                      {isClaimed
+                                        ? <span className="ms-claimed-label">Claimed</span>
+                                        : canAfford
+                                          ? <button className="ms-claim-btn" onClick={() => onClaim(ms)}>Claim</button>
+                                          : <span className="ms-need">{fmtFull(ms.threshold - vault)} left</span>
+                                      }
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         );
-                      })}
-                      <div className="pw-panel-section-title" style={{ marginTop: 12 }}>Elite Four &amp; Champions</div>
-                      {TRAINER_MILESTONES.map((ms, i) => {
-                        const vault = appState.stepVault || 0;
-                        const canAfford = vault >= ms.threshold;
-                        const claimed = (appState.claimedTrainers || []).includes(ms.trainer);
-                        const loading = claimingTrainer === ms.trainer;
-                        const tierColor = ms.tier === 'legendary' ? '#b8860b' : '#7c3aed';
                         return (
-                          <div key={i} style={{ border: `1px solid ${ms.tier === 'legendary' ? '#fcd34d' : '#e9d5ff'}`, borderRadius: 8, padding: '8px 10px', marginBottom: 6, background: claimed ? '#f9fafb' : ms.tier === 'legendary' ? '#fffbeb' : '#faf5ff', opacity: claimed ? 0.6 : 1 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                              <span style={{ fontWeight: 800, fontSize: 11, color: tierColor }}>Team {ms.trainer}</span>
-                              <span style={{ fontSize: 9, fontWeight: 700, color: canAfford && !claimed ? '#15803d' : '#6b7280' }}>{fmtFull(ms.threshold)} steps</span>
+                          <>
+                            <div className="ms-section">
+                              <div className="ms-section-header">
+                                <span>Starters</span>
+                                <span className="ms-header-sub">1x Common Pokemon · one-time each</span>
+                              </div>
+                              {renderTable(
+                                STARTER_MILESTONES,
+                                (ms) => `starter:${ms.starter}`,
+                                () => '1x Common Pokemon',
+                                (ms) => handleClaimVaultMilestone(ms)
+                              )}
                             </div>
-                            <div style={{ fontSize: 8, color: '#6b7280', marginBottom: 5, lineHeight: 1.4 }}>
-                              {[...new Set(ms.team)].join(', ')}
+                            <div className="ms-section">
+                              <div className="ms-section-header">
+                                <span>Gym Leaders</span>
+                                <span className="ms-header-sub">N× Rare packs</span>
+                              </div>
+                              {renderTable(
+                                GYM_LEADER_MILESTONES,
+                                (ms) => `gym:${ms.trainer}`,
+                                (ms) => `${ms.team.length}x Rare`,
+                                (ms) => handleClaimVaultMilestone(ms)
+                              )}
                             </div>
-                            {claimed
-                              ? <div style={{ fontSize: 8, color: '#15803d', fontWeight: 700 }}>✓ Claimed</div>
-                              : <button
-                                  style={{ width: '100%', padding: '5px', background: canAfford ? tierColor : '#e5e7eb', color: canAfford ? '#fff' : '#9ca3af', border: 'none', borderRadius: 5, fontWeight: 800, fontSize: 9, cursor: canAfford ? 'pointer' : 'default' }}
-                                  disabled={!canAfford || loading}
-                                  onClick={() => canAfford && handleClaimVaultMilestone({ ...ms, reward: 'team' })}
-                                >
-                                  {loading ? 'Claiming…' : canAfford ? `Claim Team ${ms.trainer}` : `Need ${fmtFull(ms.threshold - vault)} more steps`}
-                                </button>
-                            }
-                          </div>
+                            <div className="ms-section">
+                              <div className="ms-section-header">
+                                <span>Elite Four</span>
+                                <span className="ms-header-sub">N× Epic packs</span>
+                              </div>
+                              {renderTable(
+                                TRAINER_MILESTONES.filter(m => m.role === 'elite4'),
+                                (ms) => `elite:${ms.trainer}`,
+                                (ms) => `${ms.team.length}x Epic`,
+                                (ms) => handleClaimVaultMilestone(ms)
+                              )}
+                            </div>
+                            <div className="ms-section">
+                              <div className="ms-section-header">
+                                <span>Champions</span>
+                                <span className="ms-header-sub">N× Epic packs</span>
+                              </div>
+                              {renderTable(
+                                TRAINER_MILESTONES.filter(m => m.role === 'champion'),
+                                (ms) => `elite:${ms.trainer}`,
+                                (ms) => `${ms.team.length}x Epic`,
+                                (ms) => handleClaimVaultMilestone(ms)
+                              )}
+                            </div>
+                          </>
                         );
-                      })}
+                      })()}
                     </div>
                   </div>
                 );
@@ -5078,46 +5207,59 @@ export default function PokemonWalker({ onStop }) {
                     )}
 
                     {/* Completed challenges dropdown */}
-                    <button className="log-section-toggle" style={{ marginTop: 8 }} onClick={() => setShowLogChallengesDropdown(p => !p)}>
-                      🏆 Challenges · {(appState.challengeLog || []).length}
-                      <span className="log-section-chevron">{showLogChallengesDropdown ? '▲' : '▼'}</span>
-                    </button>
-                    {showLogChallengesDropdown && (
-                      (appState.challengeLog || []).length === 0 ? (
-                        <div className="sh-empty">No challenges completed yet.</div>
-                      ) : (
-                        <div className="clog-list">
-                          {(appState.challengeLog || []).map((entry, i) => {
-                            const typeLabel = {
-                              fasting: '🍽️ Fasting',
-                              sugar: '🍬 Sugar Control',
-                              timing: '🕗 Timing',
-                              wifeChallenge: '🏅 Wife Challenge',
-                              debtTrap: '🏦 Debt Trap',
-                              wedding: '💍 Wedding Challenge',
-                              rnChallenge: '🤝 Rakshit & Neha',
-                              prudhviChallenge: '💍 Prudhvi\'s Engagement',
-                              prudhviWeddingChallenge: '💒 Prudhvi\'s Wedding',
-                              water: '💧 Water Intake',
-                              milestone: '🏆 Milestone',
-                            }[entry.type] || entry.type;
-                            const tierColor = { common: '#7a7a8a', rare: '#1a6fb5', epic: '#7c3aed', legendary: '#b8860b' }[entry.tier] || '#444';
-                            const isLoss = /failed|broke|lost|defaulted/i.test(entry.outcome);
-                            const outcomeColor = isLoss ? '#dc2626' : '#15803d';
-                            return (
-                              <div key={i} className="clog-row">
-                                <div className="clog-row-top">
-                                  <span className="clog-type">{typeLabel}</span>
-                                  <span className="clog-tier" style={{ color: tierColor }}>{entry.tier}</span>
-                                  <span className="clog-date">{entry.date}</span>
-                                </div>
-                                <div className="clog-outcome" style={{ color: outcomeColor }}>{entry.outcome}</div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )
-                    )}
+                    {(() => {
+                      const typeLabel = {
+                        fasting: '🍽️ Fasting',
+                        sugar: '🍬 Sugar Control',
+                        timing: '🕗 Timing',
+                        wifeChallenge: '🏅 Wife Challenge',
+                        debtTrap: '🏦 Debt Trap',
+                        wedding: '💍 Wedding Challenge',
+                        rnChallenge: '🤝 Rakshit & Neha',
+                        prudhviChallenge: '💍 Prudhvi\'s Engagement',
+                        prudhviWeddingChallenge: '💒 Prudhvi\'s Wedding',
+                        water: '💧 Water Intake',
+                      };
+                      const allLog = appState.challengeLog || [];
+                      const challengeEntries = allLog.filter(e => e.type !== 'milestone');
+                      const milestoneEntries = allLog.filter(e => e.type === 'milestone');
+                      const tierColor = t => ({ common: '#7a7a8a', rare: '#1a6fb5', epic: '#7c3aed', legendary: '#b8860b' }[t] || '#444');
+                      const renderRow = (entry, i) => {
+                        const isLoss = /failed|broke|lost|defaulted/i.test(entry.outcome);
+                        return (
+                          <div key={i} className="clog-row">
+                            <div className="clog-row-top">
+                              <span className="clog-type">{typeLabel[entry.type] || entry.type}</span>
+                              <span className="clog-tier" style={{ color: tierColor(entry.tier) }}>{entry.tier}</span>
+                              <span className="clog-date">{entry.date}</span>
+                            </div>
+                            <div className="clog-outcome" style={{ color: isLoss ? '#dc2626' : '#15803d' }}>{entry.outcome}</div>
+                          </div>
+                        );
+                      };
+                      return (
+                        <>
+                          <button className="log-section-toggle" style={{ marginTop: 8 }} onClick={() => setShowLogChallengesDropdown(p => !p)}>
+                            🏆 Challenges · {challengeEntries.length}
+                            <span className="log-section-chevron">{showLogChallengesDropdown ? '▲' : '▼'}</span>
+                          </button>
+                          {showLogChallengesDropdown && (
+                            challengeEntries.length === 0
+                              ? <div className="sh-empty">No challenges completed yet.</div>
+                              : <div className="clog-list">{challengeEntries.map(renderRow)}</div>
+                          )}
+                          <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowLogMilestonesDropdown(p => !p)}>
+                            🎯 Milestones · {milestoneEntries.length}
+                            <span className="log-section-chevron">{showLogMilestonesDropdown ? '▲' : '▼'}</span>
+                          </button>
+                          {showLogMilestonesDropdown && (
+                            milestoneEntries.length === 0
+                              ? <div className="sh-empty">No milestones claimed yet.</div>
+                              : <div className="clog-list">{milestoneEntries.map(renderRow)}</div>
+                          )}
+                        </>
+                      );
+                    })()}
 
                   </div>
                 </div>
