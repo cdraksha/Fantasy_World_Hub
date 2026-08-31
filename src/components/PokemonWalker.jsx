@@ -1388,6 +1388,7 @@ export default function PokemonWalker({ onStop }) {
   const [stepInput, setStepInput] = useState('');
   const [deltaFlash, setDeltaFlash] = useState(null);
   const [packOpening, setPackOpening] = useState(null); // tier string or null
+  const [milestoneReveal, setMilestoneReveal] = useState(null);
   const [eggOpening, setEggOpening] = useState(null);  // tier string when hatching egg, null otherwise
   const [detailPokemon, setDetailPokemon] = useState(null);
   const [showMidnight, setShowMidnight] = useState(false);
@@ -1983,27 +1984,44 @@ export default function PokemonWalker({ onStop }) {
         challengeLog: [{ date: todayString(), type: 'milestone', tier: 'common', outcome: `Claimed ${ms.starter} (${ms.region} starter)` }, ...(prev.challengeLog || [])],
       }));
       setDeltaFlash(`${ms.starter} joined your team!`);
-    } else if (ms.reward === 'gym') {
-      const count = ms.team.length;
-      setAppState(prev => ({
-        ...prev,
-        stepVault: (prev.stepVault || 0) - ms.threshold,
-        claimedVaultMilestones: [...(prev.claimedVaultMilestones || []), milestoneKey],
-        packInventory: { ...prev.packInventory, rare: (prev.packInventory.rare || 0) + count },
-        challengeLog: [{ date: todayString(), type: 'milestone', tier: 'rare', outcome: `Beat ${ms.trainer} — ${count}x rare packs earned` }, ...(prev.challengeLog || [])],
-      }));
-      setDeltaFlash(`${count}x rare packs from ${ms.trainer}!`);
     } else {
-      const count = ms.team.length;
-      setAppState(prev => ({
-        ...prev,
-        stepVault: (prev.stepVault || 0) - ms.threshold,
-        claimedVaultMilestones: [...(prev.claimedVaultMilestones || []), milestoneKey],
-        packInventory: { ...prev.packInventory, epic: (prev.packInventory.epic || 0) + count },
-        challengeLog: [{ date: todayString(), type: 'milestone', tier: 'epic', outcome: `Beat ${ms.trainer} — ${count}x epic packs earned` }, ...(prev.challengeLog || [])],
-      }));
-      setDeltaFlash(`${count}x epic packs from ${ms.trainer}!`);
+      const packTier = ms.reward === 'gym' ? 'rare' : 'epic';
+      try {
+        const toSlug = name => name.toLowerCase().replace(/['.]/g, '').replace(/ /g, '-');
+        const uniqueNames = [...new Set(ms.team)];
+        const fetched = {};
+        await Promise.all(uniqueNames.map(async name => { fetched[name] = await fetchPokemonById(toSlug(name)); }));
+        const fetchedTeam = ms.team.map(name => fetched[name]).filter(Boolean);
+        setMilestoneReveal({
+          trainer: ms.trainer,
+          region: ms.region,
+          role: ms.role,
+          fetchedTeam,
+          packTier,
+          milestoneKey,
+          threshold: ms.threshold,
+        });
+      } catch { setDeltaFlash('Failed to fetch team. Try again.'); setTimeout(() => setDeltaFlash(null), 3000); }
+      return;
     }
+    setTimeout(() => setDeltaFlash(null), 4000);
+  };
+
+  // ─── Confirm milestone team reveal → add Pokémon to collection ───────
+  const handleConfirmMilestoneReveal = () => {
+    if (!milestoneReveal) return;
+    const { fetchedTeam, packTier, milestoneKey, threshold, trainer } = milestoneReveal;
+    const newPokes = fetchedTeam.map(p => ({ uid: makeUID(), ...p, packTier, buddySteps: 0, caughtDate: todayString(), onTeam: false }));
+    setAppState(prev => ({
+      ...prev,
+      stepVault: (prev.stepVault || 0) - threshold,
+      claimedVaultMilestones: [...(prev.claimedVaultMilestones || []), milestoneKey],
+      pokemon: [...prev.pokemon, ...newPokes],
+      caughtDex: [...new Set([...(prev.caughtDex || []), ...newPokes.map(p => p.dexId)])],
+      challengeLog: [{ date: todayString(), type: 'milestone', tier: packTier, outcome: `Claimed Team ${trainer} — ${newPokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+    }));
+    setMilestoneReveal(null);
+    setDeltaFlash(`Team ${trainer} added to your collection!`);
     setTimeout(() => setDeltaFlash(null), 4000);
   };
 
@@ -2873,6 +2891,39 @@ export default function PokemonWalker({ onStop }) {
   }
 
   // ─── Pack / egg opening overlay ──────────────────────────────────────
+  if (milestoneReveal) {
+    const { trainer, region, role, fetchedTeam, packTier } = milestoneReveal;
+    const tierLabel = packTier === 'rare' ? 'Rare' : 'Epic';
+    return (
+      <div className="pw-root">
+        <div className="ms-reveal-screen">
+          <div className="ms-reveal-header">
+            <div className="ms-reveal-role">{role === 'champion' ? 'Champion' : role === 'elite4' ? 'Elite Four' : 'Gym Leader'}</div>
+            <div className="ms-reveal-trainer">{trainer}</div>
+            <div className="ms-reveal-region">{region}</div>
+          </div>
+          <div className="ms-reveal-team-grid">
+            {fetchedTeam.map((p, i) => (
+              <div className="ms-reveal-card" key={i} style={{ animationDelay: `${i * 0.08}s` }}>
+                <img src={p.sprite} alt={p.name} className="ms-reveal-sprite" />
+                <div className="ms-reveal-card-name">{p.name}</div>
+              </div>
+            ))}
+          </div>
+          <div className="ms-reveal-reward-row">
+            <span className={`ms-reveal-reward-badge ${packTier}`}>
+              {fetchedTeam.length} {tierLabel}-tier Pokemon
+            </span>
+          </div>
+          <button className={`ms-reveal-confirm ms-reveal-confirm-${packTier}`} onClick={handleConfirmMilestoneReveal}>
+            Add Team to Collection
+          </button>
+          <button className="ms-reveal-cancel" onClick={() => setMilestoneReveal(null)}>Cancel</button>
+        </div>
+      </div>
+    );
+  }
+
   if (packOpening || eggOpening) {
     return (
       <div className="pw-root">
@@ -3243,46 +3294,46 @@ export default function PokemonWalker({ onStop }) {
                       {(() => {
                         const vault = appState.stepVault || 0;
                         const claimed = new Set(appState.claimedVaultMilestones || []);
-                        const renderTable = (items, getKey, getReward, onClaim) => (
-                          <table className="ms-table">
-                            <thead>
-                              <tr className="ms-thead-row">
-                                <th className="ms-th ms-th-name">Name</th>
-                                <th className="ms-th">Region</th>
-                                <th className="ms-th">Reward</th>
-                                <th className="ms-th ms-th-right">Steps</th>
-                                <th className="ms-th ms-th-right">Status</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {items.map((ms, i) => {
-                                const key = getKey(ms);
-                                const isClaimed = claimed.has(key);
-                                const canAfford = !isClaimed && vault >= ms.threshold;
-                                return (
-                                  <tr className={`ms-row${isClaimed ? ' ms-claimed' : canAfford ? ' ms-ready' : ' ms-locked'}`} key={i}>
-                                    <td className="ms-td ms-td-name">
-                                      <div className="ms-name">{ms.starter || ms.trainer}</div>
-                                      {ms.team && <div className="ms-team">{[...new Set(ms.team)].join(', ')}</div>}
-                                      {ms.type && <div className="ms-team">{ms.type}</div>}
-                                    </td>
-                                    <td className="ms-td ms-td-region">{ms.region}</td>
-                                    <td className="ms-td ms-td-reward">{getReward(ms)}</td>
-                                    <td className="ms-td ms-td-steps">{fmtFull(ms.threshold)}</td>
-                                    <td className="ms-td ms-td-action">
-                                      {isClaimed
-                                        ? <span className="ms-claimed-label">Claimed</span>
-                                        : canAfford
+                        const renderTable = (items, getKey, getReward, onClaim) => {
+                          const visible = items.filter(ms => !claimed.has(getKey(ms)));
+                          if (visible.length === 0) return <div className="sh-empty">All claimed.</div>;
+                          return (
+                            <table className="ms-table">
+                              <thead>
+                                <tr className="ms-thead-row">
+                                  <th className="ms-th ms-th-name">Name</th>
+                                  <th className="ms-th">Region</th>
+                                  <th className="ms-th">Reward</th>
+                                  <th className="ms-th ms-th-right">Steps</th>
+                                  <th className="ms-th ms-th-right">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {visible.map((ms, i) => {
+                                  const canAfford = vault >= ms.threshold;
+                                  return (
+                                    <tr className={`ms-row${canAfford ? ' ms-ready' : ' ms-locked'}`} key={i}>
+                                      <td className="ms-td ms-td-name">
+                                        <div className="ms-name">{ms.starter || ms.trainer}</div>
+                                        {ms.team && <div className="ms-team">{[...new Set(ms.team)].join(', ')}</div>}
+                                        {ms.type && <div className="ms-team">{ms.type}</div>}
+                                      </td>
+                                      <td className="ms-td ms-td-region">{ms.region}</td>
+                                      <td className="ms-td ms-td-reward">{getReward(ms)}</td>
+                                      <td className="ms-td ms-td-steps">{fmtFull(ms.threshold)}</td>
+                                      <td className="ms-td ms-td-action">
+                                        {canAfford
                                           ? <button className="ms-claim-btn" onClick={() => onClaim(ms)}>Claim</button>
                                           : <span className="ms-need">{fmtFull(ms.threshold - vault)} left</span>
-                                      }
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        );
+                                        }
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          );
+                        };
                         return (
                           <>
                             <div className="ms-section">

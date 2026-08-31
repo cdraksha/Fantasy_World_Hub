@@ -5145,3 +5145,141 @@
 .water-ms-lbl { flex: 1; color: #374151; font-weight: 600; }
 .water-ms-badge { font-size: 9px; font-weight: 800; background: #fbbf24; color: #78350f; border-radius: 5px; padding: 1px 6px; }
 .water-ms-done-badge { background: #bbf7d0; color: #166534; }
+
+/* ── Milestone Team Reveal Screen ── */
+@keyframes ms-card-appear {
+  from { opacity: 0; transform: translateY(20px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ms-reveal-screen {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  gap: 20px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.ms-reveal-header {
+  text-align: center;
+}
+
+.ms-reveal-role {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.ms-reveal-trainer {
+  font-size: 26px;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: 0.02em;
+}
+
+.ms-reveal-region {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+  letter-spacing: 0.08em;
+}
+
+.ms-reveal-team-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  max-width: 380px;
+}
+
+.ms-reveal-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 14px 16px;
+  min-width: 80px;
+  text-align: center;
+  opacity: 0;
+  animation: ms-card-appear 0.35s ease forwards;
+}
+
+.ms-reveal-sprite {
+  width: 56px;
+  height: 56px;
+  image-rendering: pixelated;
+  margin-bottom: 4px;
+}
+
+.ms-reveal-card-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: #e2e8f0;
+  text-transform: capitalize;
+}
+
+.ms-reveal-reward-row {
+  display: flex;
+  justify-content: center;
+}
+
+.ms-reveal-reward-badge {
+  font-size: 16px;
+  font-weight: 800;
+  padding: 8px 22px;
+  border-radius: 30px;
+  letter-spacing: 0.04em;
+}
+
+.ms-reveal-reward-badge.rare {
+  background: rgba(26, 111, 181, 0.2);
+  color: #60a5fa;
+  border: 1.5px solid #1a6fb5;
+}
+
+.ms-reveal-reward-badge.epic {
+  background: rgba(124, 58, 237, 0.2);
+  color: #c084fc;
+  border: 1.5px solid #7c3aed;
+}
+
+.ms-reveal-confirm {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: filter 0.15s;
+}
+
+.ms-reveal-confirm:hover { filter: brightness(1.1); }
+
+.ms-reveal-confirm-rare {
+  background: #1a6fb5;
+  color: #fff;
+}
+
+.ms-reveal-confirm-epic {
+  background: #7c3aed;
+  color: #fff;
+}
+
+.ms-reveal-cancel {
+  background: none;
+  border: none;
+  color: #475569;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  text-decoration: underline;
+  padding: 0;
+}
