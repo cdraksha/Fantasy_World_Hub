@@ -188,16 +188,16 @@ function generateSugarReward(tier) {
   const roll = Math.random();
   if (tier === 'easy') {
     const steps = Math.round((2500 + Math.random() * 5000) / 500) * 500;
-    if (roll < 0.40) return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps (choose Pokémon)` };
+    if (roll < 0.40) return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps` };
     if (roll < 0.65) return { type: 'pack', packTier: 'common', count: 1, label: '1× Common Pack' };
     if (roll < 0.85) return { type: 'pack', packTier: 'rare', count: 1, label: '1× Rare Pack' };
-    return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps (choose Pokémon)` };
+    return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps` };
   }
   if (tier === 'medium') {
     if (roll < 0.35) return { type: 'pack', packTier: 'epic', count: 1, label: '1× Epic Pack' };
     if (roll < 0.60) {
       const steps = Math.round((8000 + Math.random() * 12000) / 1000) * 1000;
-      return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps (choose Pokémon)` };
+      return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps` };
     }
     if (roll < 0.80) return { type: 'freeEvolution', label: 'Free Evolution (any Pokémon)' };
     return { type: 'pack', packTier: 'rare', count: 2, label: '2× Rare Packs' };
@@ -2392,8 +2392,9 @@ export default function PokemonWalker({ onStop }) {
       });
       if (reward.type === 'pack') {
         next = applyPack(next, reward.packTier, reward.count);
-      } else if (reward.type === 'buddySteps' && pickedUid) {
-        next = { ...next, buddy: pickedUid, pokemon: next.pokemon.map(p => p.uid === pickedUid ? { ...p, buddySteps: (p.buddySteps || 0) + reward.amount } : p) };
+      } else if (reward.type === 'buddySteps') {
+        const targetUid = pickedUid || next.buddy;
+        if (targetUid) next = { ...next, buddy: targetUid, pokemon: next.pokemon.map(p => p.uid === targetUid ? { ...p, buddySteps: (p.buddySteps || 0) + reward.amount } : p) };
       } else if (reward.type === 'combo') {
         if (reward.parts.includes('legendary')) next = applyPack(next, 'legendary', 1);
       }
@@ -3515,6 +3516,7 @@ export default function PokemonWalker({ onStop }) {
                                           <span className="pklist-col-img">{p.sprite && <img src={p.sprite} alt={p.name} className="pklist-sprite" />}</span>
                                           <span className="pklist-col-name">
                                             {p.name}
+                                            {(p.timesEvolved > 0) && <span className="pklist-evolved-label">(evolved)</span>}
                                             {count > 1 && <span className="pklist-count-badge">×{count}</span>}
                                           </span>
                                           <span className="pklist-col-region">{getRegion(p.dexId)}</span>
@@ -4496,8 +4498,7 @@ export default function PokemonWalker({ onStop }) {
                         if (sa?.status === 'rewarding') {
                           const reward = sa.reward;
                           const needsEvoPicker = reward.type === 'freeEvolution' || (reward.type === 'combo' && reward.parts.includes('freeEvolution'));
-                          const needsBuddyPicker = reward.type === 'buddySteps';
-                          const needsPicker = needsEvoPicker || needsBuddyPicker;
+                          const needsPicker = needsEvoPicker;
                           return (
                             <div className="fast-panel fast-rewarding">
                               <div className="fast-result-title">🎉 Challenge Complete!</div>
