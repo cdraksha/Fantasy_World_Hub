@@ -866,6 +866,8 @@ function loadState() {
     if (!saved.claimedStarterRegions) saved.claimedStarterRegions = [];
     if (!saved.claimedTrainers) saved.claimedTrainers = [];
     if (!saved.claimedVaultMilestones) saved.claimedVaultMilestones = [];
+    // Stamp count:1 on any pokemon missing it
+    if (saved.pokemon) saved.pokemon = saved.pokemon.map(p => p.count !== undefined ? p : { ...p, count: 1 });
     // Clean up old sequential milestone state if present
     delete saved.nextVaultMilestoneIdx;
     delete saved.pendingStarters;
@@ -1975,14 +1977,20 @@ export default function PokemonWalker({ onStop }) {
 
     if (ms.reward === 'starter') {
       const poke = await fetchPokemonById(ms.starter.toLowerCase());
-      setAppState(prev => ({
-        ...prev,
-        stepVault: (prev.stepVault || 0) - ms.threshold,
-        claimedVaultMilestones: [...(prev.claimedVaultMilestones || []), milestoneKey],
-        pokemon: [...prev.pokemon, { uid: makeUID(), ...poke, packTier: 'common', buddySteps: 0, caughtDate: todayString(), onTeam: false }],
-        caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId])],
-        challengeLog: [{ date: todayString(), type: 'milestone', tier: 'common', outcome: `Claimed ${ms.starter} (${ms.region} starter)` }, ...(prev.challengeLog || [])],
-      }));
+      setAppState(prev => {
+        const existingIdx = prev.pokemon.findIndex(p => p.dexId === poke.dexId);
+        const updatedPokemon = existingIdx !== -1
+          ? prev.pokemon.map((p, i) => i === existingIdx ? { ...p, count: (p.count || 1) + 1 } : p)
+          : [...prev.pokemon, { uid: makeUID(), ...poke, packTier: 'common', buddySteps: 0, caughtDate: todayString(), onTeam: false, count: 1 }];
+        return {
+          ...prev,
+          stepVault: (prev.stepVault || 0) - ms.threshold,
+          claimedVaultMilestones: [...(prev.claimedVaultMilestones || []), milestoneKey],
+          pokemon: updatedPokemon,
+          caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId])],
+          challengeLog: [{ date: todayString(), type: 'milestone', tier: 'common', outcome: `Claimed ${ms.starter} (${ms.region} starter)` }, ...(prev.challengeLog || [])],
+        };
+      });
       setDeltaFlash(`${ms.starter} joined your team!`);
     } else {
       const packTier = ms.reward === 'gym' ? 'rare' : 'epic';
@@ -2011,15 +2019,25 @@ export default function PokemonWalker({ onStop }) {
   const handleConfirmMilestoneReveal = () => {
     if (!milestoneReveal) return;
     const { fetchedTeam, packTier, milestoneKey, threshold, trainer } = milestoneReveal;
-    const newPokes = fetchedTeam.map(p => ({ uid: makeUID(), ...p, packTier, buddySteps: 0, caughtDate: todayString(), onTeam: false }));
-    setAppState(prev => ({
-      ...prev,
-      stepVault: (prev.stepVault || 0) - threshold,
-      claimedVaultMilestones: [...(prev.claimedVaultMilestones || []), milestoneKey],
-      pokemon: [...prev.pokemon, ...newPokes],
-      caughtDex: [...new Set([...(prev.caughtDex || []), ...newPokes.map(p => p.dexId)])],
-      challengeLog: [{ date: todayString(), type: 'milestone', tier: packTier, outcome: `Claimed Team ${trainer} — ${newPokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
-    }));
+    setAppState(prev => {
+      let updatedPokemon = [...prev.pokemon];
+      for (const p of fetchedTeam) {
+        const existingIdx = updatedPokemon.findIndex(pk => pk.dexId === p.dexId);
+        if (existingIdx !== -1) {
+          updatedPokemon[existingIdx] = { ...updatedPokemon[existingIdx], count: (updatedPokemon[existingIdx].count || 1) + 1 };
+        } else {
+          updatedPokemon.push({ uid: makeUID(), ...p, packTier, buddySteps: 0, caughtDate: todayString(), onTeam: false, count: 1 });
+        }
+      }
+      return {
+        ...prev,
+        stepVault: (prev.stepVault || 0) - threshold,
+        claimedVaultMilestones: [...(prev.claimedVaultMilestones || []), milestoneKey],
+        pokemon: updatedPokemon,
+        caughtDex: [...new Set([...(prev.caughtDex || []), ...updatedPokemon.map(pk => pk.dexId)])],
+        challengeLog: [{ date: todayString(), type: 'milestone', tier: packTier, outcome: `Claimed Team ${trainer} — ${fetchedTeam.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+      };
+    });
     setMilestoneReveal(null);
     setDeltaFlash(`Team ${trainer} added to your collection!`);
     setTimeout(() => setDeltaFlash(null), 4000);
@@ -3489,8 +3507,8 @@ export default function PokemonWalker({ onStop }) {
                                     {(() => {
                                       const seen = new Map();
                                       group.forEach(p => {
-                                        if (!seen.has(p.dexId)) seen.set(p.dexId, { p, count: 1 });
-                                        else seen.get(p.dexId).count++;
+                                        if (!seen.has(p.dexId)) seen.set(p.dexId, { p, count: p.count || 1 });
+                                        else seen.get(p.dexId).count += (p.count || 1);
                                       });
                                       return [...seen.values()].map(({ p, count }) => (
                                         <div key={p.uid} className="pklist-row" onClick={() => setDetailPokemon(p)}>
