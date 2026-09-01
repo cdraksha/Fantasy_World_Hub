@@ -1289,6 +1289,7 @@ function MidnightWarning({ spendable, onSpend, onDeposit, onIgnore }) {
 // ─── Weight Graph ────────────────────────────────────────────────────────
 
 function WeightGraph({ history }) {
+  const [tooltip, setTooltip] = useState(null);
   if (!history || history.length < 1) return null;
   const recent = history.slice(-14);
   const kgs = recent.map(e => e.kg);
@@ -1366,18 +1367,34 @@ function WeightGraph({ history }) {
       {/* Weight line */}
       {linePath && <path d={linePath} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
       {/* Dots */}
-      {recent.map((e, i) => {
+      {recent.map((entry, i) => {
         const b = bandAt[i];
-        const color = b ? (e.kg > b.upper ? '#ef4444' : e.kg < b.lower ? '#16a34a' : '#6366f1') : '#6366f1';
+        const color = b ? (entry.kg > b.upper ? '#ef4444' : entry.kg < b.lower ? '#16a34a' : '#6366f1') : '#6366f1';
         const isLast = i === recent.length - 1;
         return (
-          <g key={i}>
-            {isLast && <circle cx={xOf(i)} cy={yOf(e.kg)} r={9} fill={color} opacity="0.15" />}
-            <circle cx={xOf(i)} cy={yOf(e.kg)} r={isLast ? 5 : 3}
+          <g key={i} style={{ cursor: 'crosshair' }}
+            onMouseEnter={() => setTooltip({ x: xOf(i), y: yOf(entry.kg), date: fmtDate(entry.date), kg: entry.kg })}
+            onMouseLeave={() => setTooltip(null)}
+          >
+            {isLast && <circle cx={xOf(i)} cy={yOf(entry.kg)} r={9} fill={color} opacity="0.15" />}
+            <circle cx={xOf(i)} cy={yOf(entry.kg)} r={isLast ? 5 : 3}
               fill={color} stroke="#f8fafc" strokeWidth="1.5" />
+            <circle cx={xOf(i)} cy={yOf(entry.kg)} r={10} fill="transparent" />
           </g>
         );
       })}
+      {/* Hover tooltip */}
+      {tooltip && (() => {
+        const tw = 72, th = 30, tx = Math.min(Math.max(tooltip.x - tw / 2, PL), W - PR - tw);
+        const ty = tooltip.y - th - 8 < PT ? tooltip.y + 10 : tooltip.y - th - 8;
+        return (
+          <g style={{ pointerEvents: 'none' }}>
+            <rect x={tx} y={ty} width={tw} height={th} rx={5} fill="#1e293b" opacity="0.88" />
+            <text x={tx + tw / 2} y={ty + 11} textAnchor="middle" fontSize="9" fill="#e2e8f0" fontWeight="700" fontFamily="Inter, sans-serif">{tooltip.date}</text>
+            <text x={tx + tw / 2} y={ty + 23} textAnchor="middle" fontSize="10" fill="#7dd3fc" fontWeight="800" fontFamily="Inter, sans-serif">{tooltip.kg} kg</text>
+          </g>
+        );
+      })()}
     </svg>
     </div>
   );
