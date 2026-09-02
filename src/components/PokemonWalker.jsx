@@ -174,72 +174,33 @@ function initFasting() {
 // ─── Sugar Control ────────────────────────────────────────────────────────
 
 function generateSugarChallenge(tier) {
-  let daysMin, daysMax, limitGrams;
-  if (tier === 'easy')   { daysMin = 3; daysMax = 7; limitGrams = 50; }
-  if (tier === 'medium') { daysMin = 3; daysMax = 6; limitGrams = 25; }
-  if (tier === 'hard')   { daysMin = 2; daysMax = 5; limitGrams = 10; }
-  const days = daysMin + Math.floor(Math.random() * (daysMax - daysMin + 1));
-  const buffer = tier === 'hard' ? (2 + Math.floor(Math.random() * 3)) : (1 + Math.floor(Math.random() * 2));
-  const window = days + buffer;
-  return { days, window, limitGrams };
+  if (tier === 'easy')   return { days: 7, window: 8, limitGrams: 50 };
+  if (tier === 'medium') return { days: 7, window: 8, limitGrams: 25 };
+  if (tier === 'hard')   return { days: 7, window: 8, limitGrams: 12.5 };
+  return { days: 7, window: 8, limitGrams: 50 };
 }
 
 function generateSugarReward(tier) {
-  const roll = Math.random();
-  if (tier === 'easy') {
-    const steps = Math.round((2500 + Math.random() * 5000) / 500) * 500;
-    if (roll < 0.40) return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps` };
-    if (roll < 0.65) return { type: 'pack', packTier: 'common', count: 1, label: '1× Common Pack' };
-    if (roll < 0.85) return { type: 'pack', packTier: 'rare', count: 1, label: '1× Rare Pack' };
-    return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps` };
-  }
-  if (tier === 'medium') {
-    if (roll < 0.35) return { type: 'pack', packTier: 'epic', count: 1, label: '1× Epic Pack' };
-    if (roll < 0.60) {
-      const steps = Math.round((8000 + Math.random() * 12000) / 1000) * 1000;
-      return { type: 'buddySteps', amount: steps, label: `+${steps.toLocaleString()} Buddy Steps` };
-    }
-    if (roll < 0.80) return { type: 'freeEvolution', label: 'Free Evolution (any Pokémon)' };
-    return { type: 'pack', packTier: 'rare', count: 2, label: '2× Rare Packs' };
-  }
-  if (tier === 'hard') {
-    if (roll < 0.30) return { type: 'pack', packTier: 'legendary', count: 1, label: '1× Legendary Pack' };
-    if (roll < 0.55) return { type: 'freeEvolution', label: 'Free Evolution (any Pokémon)' };
-    if (roll < 0.75) return { type: 'combo', parts: ['legendary', 'freeEvolution'], label: '1× Legendary Pack + Free Evolution' };
-    return { type: 'pack', packTier: 'epic', count: 2, label: '2× Epic Packs' };
-  }
-  return { type: 'pack', packTier: 'common', count: 1, label: '1× Common Pack' };
+  if (tier === 'easy')   return { type: 'combo', buddySteps: 6000,  packs: { common: 3 }, label: '+6,000 Buddy Steps + 3× Common Packs' };
+  if (tier === 'medium') return { type: 'combo', buddySteps: 12000, packs: { rare: 3 },   label: '+12,000 Buddy Steps + 3× Rare Packs' };
+  if (tier === 'hard')   return { type: 'combo', buddySteps: 30000, packs: { epic: 3 },   label: '+30,000 Buddy Steps + 3× Epic Packs' };
+  return { type: 'combo', buddySteps: 6000, packs: { common: 3 }, label: '+6,000 Buddy Steps + 3× Common Packs' };
 }
 
 function generateSugarPenalty(tier) {
-  const roll = Math.random();
-  if (tier === 'easy') {
-    const amount = Math.round((1000 + Math.random() * 2000) / 500) * 500;
-    if (roll < 0.55) return { type: 'loseBuddySteps', amount, label: `Buddy loses ${amount.toLocaleString()} steps` };
-    const days = 1 + Math.floor(Math.random() * 2);
-    return { type: 'buddyFreeze', days, label: `Buddy steps frozen for ${days} day${days > 1 ? 's' : ''}` };
-  }
-  if (tier === 'medium') {
-    if (roll < 0.40) {
-      const amount = Math.round((3000 + Math.random() * 5000) / 500) * 500;
-      return { type: 'loseBuddySteps', amount, label: `Buddy loses ${amount.toLocaleString()} steps` };
-    }
-    if (roll < 0.70) {
-      const days = 2 + Math.floor(Math.random() * 3);
-      return { type: 'buddyFreeze', days, label: `Buddy steps frozen for ${days} days` };
-    }
-    return { type: 'buddyReset', label: 'Buddy steps reset to 0' };
-  }
-  if (tier === 'hard') {
-    return { type: 'hardFail', label: 'Buddy Pokémon removed from collection + Vault frozen 7 days' };
-  }
-  return { type: 'buddyReset', label: 'Buddy steps reset to 0' };
+  if (tier === 'easy')   return { type: 'loseBuddyStepsPct', pct: 0.5, label: 'Buddy loses 50% of its steps' };
+  if (tier === 'medium') return { type: 'buddyReset', label: 'Buddy loses all steps' };
+  if (tier === 'hard')   return { type: 'combo', parts: ['buddyReset', 'buddyFreeze'], days: 7, label: 'Buddy loses all steps + frozen for 7 days' };
+  return { type: 'buddyReset', label: 'Buddy loses all steps' };
 }
 
 function applySugarPenalty(state, penalty) {
   function applyOne(s, type, p) {
     if (type === 'loseBuddySteps' && s.buddy) {
       return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: Math.max(0, (pk.buddySteps || 0) - p.amount) } : pk) };
+    }
+    if (type === 'loseBuddyStepsPct' && s.buddy) {
+      return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: Math.floor((pk.buddySteps || 0) * (1 - p.pct)) } : pk) };
     }
     if (type === 'buddyReset' && s.buddy) {
       return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: 0 } : pk) };
@@ -2413,7 +2374,13 @@ export default function PokemonWalker({ onStop }) {
         const targetUid = pickedUid || next.buddy;
         if (targetUid) next = { ...next, buddy: targetUid, pokemon: next.pokemon.map(p => p.uid === targetUid ? { ...p, buddySteps: (p.buddySteps || 0) + reward.amount } : p) };
       } else if (reward.type === 'combo') {
-        if (reward.parts.includes('legendary')) next = applyPack(next, 'legendary', 1);
+        if (reward.buddySteps) {
+          const targetUid = next.buddy;
+          if (targetUid) next = { ...next, buddy: targetUid, pokemon: next.pokemon.map(p => p.uid === targetUid ? { ...p, buddySteps: (p.buddySteps || 0) + reward.buddySteps } : p) };
+        }
+        if (reward.packs) {
+          for (const [tier, count] of Object.entries(reward.packs)) next = applyPack(next, tier, count);
+        }
       }
       const tier = sa.tier;
       const completedTiers = prev.sugar.completedTiers.includes(tier) ? prev.sugar.completedTiers : [...prev.sugar.completedTiers, tier];
