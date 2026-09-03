@@ -829,6 +829,11 @@ function loadState() {
     if (!saved.claimedVaultMilestones) saved.claimedVaultMilestones = [];
     // Stamp count:1 on any pokemon missing it
     if (saved.pokemon) saved.pokemon = saved.pokemon.map(p => p.count !== undefined ? p : { ...p, count: 1 });
+    // One-time fix: reset nextEvoDexId for evolved pokemon so background checker re-validates final-form status
+    if (!saved.evolvedNextEvoFixed && saved.pokemon) {
+      saved.pokemon = saved.pokemon.map(p => (p.timesEvolved > 0) ? { ...p, nextEvoDexId: undefined } : p);
+      saved.evolvedNextEvoFixed = true;
+    }
     // Clean up old sequential milestone state if present
     delete saved.nextVaultMilestoneIdx;
     delete saved.pendingStarters;
@@ -2155,12 +2160,13 @@ export default function PokemonWalker({ onStop }) {
         setEvolving(null);
         return;
       }
-      const evolved = await fetchPokemonById(nextId);
+      const [evolved, nextNextId] = await Promise.all([fetchPokemonById(nextId), fetchEvolution(nextId).catch(() => null)]);
+      const nextEvoDexId = nextNextId ?? null;
       setAppState(prev => ({
         ...prev,
         pokemon: prev.pokemon.map(p =>
           p.uid === prev.buddy
-            ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1, buddySteps: (p.buddySteps || 0) - evolveCost }
+            ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1, buddySteps: (p.buddySteps || 0) - evolveCost, nextEvoDexId }
             : p
         ),
         evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'buddy' }, ...(prev.evolutionLog || [])],
@@ -2278,14 +2284,15 @@ export default function PokemonWalker({ onStop }) {
         setTimeout(() => setDeltaFlash(null), 3000);
         return;
       }
-      const evolved = await fetchPokemonById(nextId);
+      const [evolved, nextNextId] = await Promise.all([fetchPokemonById(nextId), fetchEvolution(nextId).catch(() => null)]);
+      const nextEvoDexId = nextNextId ?? null;
       setAppState(prev => {
         const fa = prev.fasting?.active;
         return {
           ...prev,
           pokemon: prev.pokemon.map(p =>
             p.uid === uid
-              ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1 }
+              ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1, nextEvoDexId }
               : p
           ),
           evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'fasting' }, ...(prev.evolutionLog || [])],
