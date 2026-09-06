@@ -297,6 +297,14 @@ function waterRewardLabel(r) {
   return parts.join(' · ');
 }
 
+const DISTANCE_TIERS = [
+  { km: 1,  buddySteps: 100,   packs: {} },
+  { km: 3,  buddySteps: 500,   packs: {} },
+  { km: 5,  buddySteps: 1000,  packs: {} },
+  { km: 8,  buddySteps: 5000,  packs: {} },
+  { km: 10, buddySteps: 10000, packs: { common: 1 } },
+];
+
 const TREADMILL_TIERS = [
   { mins: 5,  buddySteps: 500,  packs: {} },
   { mins: 10, buddySteps: 2000, packs: {} },
@@ -1415,8 +1423,11 @@ export default function PokemonWalker({ onStop }) {
   const [showHatchRecords, setShowHatchRecords] = useState(false);
   const [showTimingPanel, setShowTimingPanel] = useState(false);
   const [showTreadmillPanel, setShowTreadmillPanel] = useState(false);
-  const [treadmillConfirming, setTreadmillConfirming] = useState(null); // mins value pending confirm
+  const [treadmillConfirming, setTreadmillConfirming] = useState(null);
   const treadmillConfirmTimer = useRef(null);
+  const [showDistancePanel, setShowDistancePanel] = useState(false);
+  const [distanceConfirming, setDistanceConfirming] = useState(null);
+  const distanceConfirmTimer = useRef(null);
   const [showWeightPanel, setShowWeightPanel] = useState(false);
   const [weightInput, setWeightInput] = useState('');
   const [weightResult, setWeightResult] = useState(null);
@@ -2772,6 +2783,22 @@ export default function PokemonWalker({ onStop }) {
       if (!w.pendingReward) return prev;
       return { ...prev, water: { ...w, pendingReward: null, milestonesCleared: w.pendingReward } };
     });
+  };
+
+  const handleClaimDistance = (tier) => {
+    setAppState(prev => {
+      let next = { ...prev };
+      if (tier.packs.common) next = { ...next, packInventory: { ...next.packInventory, common: next.packInventory.common + tier.packs.common } };
+      if (tier.buddySteps > 0 && prev.buddy) {
+        next = { ...next, pokemon: next.pokemon.map(p => p.uid === prev.buddy ? { ...p, buddySteps: (p.buddySteps || 0) + tier.buddySteps } : p) };
+      }
+      return next;
+    });
+    const parts = [];
+    if (tier.packs.common) parts.push(`+${tier.packs.common} common pack`);
+    if (tier.buddySteps > 0) parts.push(`buddy +${tier.buddySteps.toLocaleString()} steps`);
+    setDeltaFlash(`${tier.km}km claimed — ${parts.join(' · ')}`);
+    setTimeout(() => setDeltaFlash(null), 3000);
   };
 
   const handleClaimTreadmill = (tier) => {
@@ -4214,6 +4241,67 @@ export default function PokemonWalker({ onStop }) {
                                       clearTimeout(treadmillConfirmTimer.current);
                                       setTreadmillConfirming(tier.mins);
                                       treadmillConfirmTimer.current = setTimeout(() => setTreadmillConfirming(null), 4000);
+                                    }}
+                                  >
+                                    Claim
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Distance Run */}
+                    <div className="gba-section">
+                      <button className="timing-toggle-btn" onClick={() => setShowDistancePanel(p => !p)}>
+                        Distance Run
+                      </button>
+                      {showDistancePanel && (
+                        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center' }}>
+                            Claim after each run · same distance claimable multiple times
+                          </div>
+                          {DISTANCE_TIERS.map(tier => {
+                            const noBuddy = tier.buddySteps > 0 && !appState.buddy;
+                            return (
+                              <div key={tier.km} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 8px' }}>
+                                <div style={{ minWidth: 36, textAlign: 'center' }}>
+                                  <div style={{ background: '#8b5cf6', color: '#fff', borderRadius: 6, fontWeight: 900, fontSize: 11, lineHeight: 1, padding: '3px 0' }}>
+                                    {tier.km}
+                                  </div>
+                                  <div style={{ fontSize: 7, color: '#6b7280', marginTop: 2, fontWeight: 600 }}>KM</div>
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  {tier.packs.common && (
+                                    <div style={{ fontSize: 8, fontWeight: 700, color: '#5a5a6a' }}>1x Common Pack</div>
+                                  )}
+                                  {tier.buddySteps > 0 && (
+                                    <div style={{ fontSize: 8, fontWeight: 700, color: '#16a34a' }}>
+                                      Buddy +{tier.buddySteps.toLocaleString()} steps
+                                      {noBuddy && <span style={{ color: '#f59e0b', fontWeight: 600 }}> (no buddy set)</span>}
+                                    </div>
+                                  )}
+                                </div>
+                                {distanceConfirming === tier.km ? (
+                                  <button
+                                    style={{ padding: '6px 10px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 900, fontSize: 9, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
+                                    onClick={() => {
+                                      clearTimeout(distanceConfirmTimer.current);
+                                      setDistanceConfirming(null);
+                                      handleClaimDistance(tier);
+                                    }}
+                                  >
+                                    Confirm
+                                  </button>
+                                ) : (
+                                  <button
+                                    style={{ padding: '6px 10px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 9, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}
+                                    onClick={() => {
+                                      clearTimeout(distanceConfirmTimer.current);
+                                      setDistanceConfirming(tier.km);
+                                      distanceConfirmTimer.current = setTimeout(() => setDistanceConfirming(null), 4000);
                                     }}
                                   >
                                     Claim
