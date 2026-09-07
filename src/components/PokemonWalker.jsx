@@ -126,12 +126,15 @@ function generateFastingChallenge(tier) {
 }
 
 function applyFastingPenalty(state, penalty) {
+  const vaultFreeze3 = s => ({ ...s, vaultFrozenUntil: Date.now() + 3 * 24 * 60 * 60 * 1000 });
   function applyOne(s, type, p) {
-    if (type === 'loseBuddySteps' && s.buddy) {
-      return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: Math.max(0, (pk.buddySteps || 0) - p.amount) } : pk) };
+    if (type === 'loseBuddySteps') {
+      if (s.buddy) return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: Math.max(0, (pk.buddySteps || 0) - p.amount) } : pk) };
+      return vaultFreeze3(s);
     }
-    if (type === 'buddyReset' && s.buddy) {
-      return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: 0 } : pk) };
+    if (type === 'buddyReset') {
+      if (s.buddy) return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: 0 } : pk) };
+      return vaultFreeze3(s);
     }
     if (type === 'buddyFreeze') {
       const until = addDays(todayString(), p.days);
@@ -195,15 +198,19 @@ function generateSugarPenalty(tier) {
 }
 
 function applySugarPenalty(state, penalty) {
+  const vaultFreeze3 = s => ({ ...s, vaultFrozenUntil: Date.now() + 3 * 24 * 60 * 60 * 1000 });
   function applyOne(s, type, p) {
-    if (type === 'loseBuddySteps' && s.buddy) {
-      return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: Math.max(0, (pk.buddySteps || 0) - p.amount) } : pk) };
+    if (type === 'loseBuddySteps') {
+      if (s.buddy) return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: Math.max(0, (pk.buddySteps || 0) - p.amount) } : pk) };
+      return vaultFreeze3(s);
     }
-    if (type === 'loseBuddyStepsPct' && s.buddy) {
-      return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: Math.floor((pk.buddySteps || 0) * (1 - p.pct)) } : pk) };
+    if (type === 'loseBuddyStepsPct') {
+      if (s.buddy) return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: Math.floor((pk.buddySteps || 0) * (1 - p.pct)) } : pk) };
+      return vaultFreeze3(s);
     }
-    if (type === 'buddyReset' && s.buddy) {
-      return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: 0 } : pk) };
+    if (type === 'buddyReset') {
+      if (s.buddy) return { ...s, pokemon: s.pokemon.map(pk => pk.uid === s.buddy ? { ...pk, buddySteps: 0 } : pk) };
+      return vaultFreeze3(s);
     }
     if (type === 'buddyFreeze') {
       const until = addDays(todayString(), p.days);
