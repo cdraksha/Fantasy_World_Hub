@@ -4292,8 +4292,13 @@ export default function PokemonWalker({ onStop }) {
                             <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center' }}>
                               Highest qualifying tier auto-claimed · total distance tracked
                             </div>
-                            <div style={{ fontSize: 8, color: '#6b7280' }}>
-                              Tiers: 1km · 3km · 5km · 8km · 10km+pack
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                              {DISTANCE_TIERS.map(t => (
+                                <div key={t.km} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: '#6b7280', background: '#f8fafc', borderRadius: 5, padding: '3px 7px' }}>
+                                  <span style={{ fontWeight: 700, color: '#8b5cf6' }}>{t.km}km</span>
+                                  <span>{t.buddySteps.toLocaleString()} buddy steps{t.packs.common ? ' + 1 common pack' : ''}</span>
+                                </div>
+                              ))}
                             </div>
                             <div style={{ display: 'flex', gap: 6 }}>
                               <input
