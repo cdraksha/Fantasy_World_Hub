@@ -313,17 +313,16 @@ const DISTANCE_TIERS = [
 ];
 
 const MONTHLY_STEP_TIERS = [
-  { pct: 100, buddySteps: 90000, packs: { common: 30, rare: 30, epic: 30, legendary: 5 } },
-  { pct: 90,  buddySteps: 70000, packs: { common: 30, rare: 15, epic: 15, legendary: 1 } },
-  { pct: 80,  buddySteps: 70000, packs: { common: 30, rare: 15, epic: 15 } },
-  { pct: 70,  buddySteps: 70000, packs: { common: 15, rare: 10, epic: 10 } },
-  { pct: 60,  buddySteps: 50000, packs: { common: 10, rare: 10, epic: 10 } },
-  { pct: 50,  buddySteps: 50000, packs: { common: 5,  rare: 3,  epic: 3  } },
-  { pct: 40,  buddySteps: 50000, packs: { common: 3,  rare: 3,  epic: 1  } },
-  { pct: 30,  buddySteps: 50000, packs: { common: 3,  rare: 1             } },
-  { pct: 20,  buddySteps: 20000, packs: { common: 3                       } },
-  { pct: 10,  buddySteps: 10000, packs: { common: 2                       } },
-  { pct: 0,   buddySteps: 5000,  packs: { common: 1                       } },
+  { pct: 50, label: 'Godmode', buddySteps: 100000, packs: { rare: 10, epic: 10, legendary: 1 } },
+  { pct: 40, label: 'Insane',  buddySteps: 70000,  packs: { rare: 15, epic: 15              } },
+  { pct: 35, label: 'Crazy',   buddySteps: 60000,  packs: { rare: 5,  epic: 5               } },
+  { pct: 30, label: 'Beast',   buddySteps: 50000,  packs: { rare: 3,  epic: 3               } },
+  { pct: 25, label: 'Elite',   buddySteps: 40000,  packs: { rare: 3,  epic: 1               } },
+  { pct: 20, label: 'Great',   buddySteps: 30000,  packs: { rare: 2,  common: 2             } },
+  { pct: 15, label: 'Strong',  buddySteps: 20000,  packs: { rare: 1,  common: 2             } },
+  { pct: 10, label: 'Good',    buddySteps: 15000,  packs: { common: 3                       } },
+  { pct: 5,  label: 'Solid',   buddySteps: 10000,  packs: { common: 2                       } },
+  { pct: 0,  label: 'Hit it',  buddySteps: 5000,   packs: { common: 1                       } },
 ];
 
 const TREADMILL_TIERS = [
@@ -3787,8 +3786,8 @@ export default function PokemonWalker({ onStop }) {
                                     border: isActive ? '1px solid #22c55e' : isNext ? '1px dashed #3b82f6' : '1px solid transparent',
                                     opacity: isPast ? 0.3 : 1,
                                   }}>
-                                    <span style={{ fontSize: 8, color: isActive ? '#22c55e' : '#9ca3af', fontWeight: isActive ? 700 : 400, minWidth: 70, whiteSpace: 'nowrap' }}>
-                                      {tierSteps.toLocaleString()}
+                                    <span style={{ fontSize: 8, color: isActive ? '#22c55e' : '#9ca3af', fontWeight: isActive ? 700 : 400, minWidth: 90, whiteSpace: 'nowrap' }}>
+                                      {tier.label} · {tierSteps.toLocaleString()}
                                     </span>
                                     <span style={{ fontSize: 7, color: isActive ? '#86efac' : '#6b7280', flex: 1 }}>
                                       +{(tier.buddySteps / 1000).toFixed(0)}k buddy · {packLabel(tier.packs)}
