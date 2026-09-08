@@ -312,6 +312,20 @@ const DISTANCE_TIERS = [
   { km: 10, buddySteps: 10000, packs: { common: 1 } },
 ];
 
+const MONTHLY_STEP_TIERS = [
+  { pct: 100, buddySteps: 90000, packs: { common: 30, rare: 30, epic: 30, legendary: 5 } },
+  { pct: 90,  buddySteps: 70000, packs: { common: 30, rare: 15, epic: 15, legendary: 1 } },
+  { pct: 80,  buddySteps: 70000, packs: { common: 30, rare: 15, epic: 15 } },
+  { pct: 70,  buddySteps: 70000, packs: { common: 15, rare: 10, epic: 10 } },
+  { pct: 60,  buddySteps: 50000, packs: { common: 10, rare: 10, epic: 10 } },
+  { pct: 50,  buddySteps: 50000, packs: { common: 5,  rare: 3,  epic: 3  } },
+  { pct: 40,  buddySteps: 50000, packs: { common: 3,  rare: 3,  epic: 1  } },
+  { pct: 30,  buddySteps: 50000, packs: { common: 3,  rare: 1             } },
+  { pct: 20,  buddySteps: 20000, packs: { common: 3                       } },
+  { pct: 10,  buddySteps: 10000, packs: { common: 2                       } },
+  { pct: 0,   buddySteps: 5000,  packs: { common: 1                       } },
+];
+
 const TREADMILL_TIERS = [
   { mins: 5,  buddySteps: 500,  packs: {} },
   { mins: 10, buddySteps: 2000, packs: {} },
@@ -774,6 +788,7 @@ function defaultState(steps) {
     sugar: initSugar(),
     daycare: initDaycare(),
     totalDistanceCovered: 0,
+    monthlyChallenge: null,
     stepHistory: [],
     evolutionLog: [],
     caughtDex: [],
@@ -844,6 +859,11 @@ function loadState() {
     if (!saved.claimedTrainers) saved.claimedTrainers = [];
     if (!saved.claimedVaultMilestones) saved.claimedVaultMilestones = [];
     if (!saved.totalDistanceCovered) saved.totalDistanceCovered = 0;
+    if (!saved.monthlyChallenge) {
+      const augSteps = (saved.stepHistory || []).filter(e => e.date.startsWith('2026-08')).reduce((s, e) => s + e.steps, 0);
+      const septTarget = augSteps ? Math.round(augSteps * 1.05) : 326597;
+      saved.monthlyChallenge = { month: '2026-09', target: septTarget, baseMonth: '2026-08', baseSteps: augSteps, streak: 1, pendingClaim: null, history: [] };
+    }
     // Stamp count:1 on any pokemon missing it
     if (saved.pokemon) saved.pokemon = saved.pokemon.map(p => p.count !== undefined ? p : { ...p, count: 1 });
     // One-time fix: reset nextEvoDexId for evolved pokemon so background checker re-validates final-form status
@@ -1007,6 +1027,27 @@ function loadState() {
           { date: saved.todayDate, steps: saved.todaySteps },
           ...(saved.stepHistory || []),
         ].slice(0, 365);
+      }
+      // Monthly challenge month rollover
+      if (saved.monthlyChallenge) {
+        const mc = saved.monthlyChallenge;
+        const todayMonth = today.slice(0, 7);
+        if (mc.month && todayMonth > mc.month && !mc.pendingClaim) {
+          const actual = (saved.stepHistory || []).filter(e => e.date.startsWith(mc.month)).reduce((s, e) => s + e.steps, 0);
+          const won = actual >= mc.target;
+          const pctOver = won ? Math.round(((actual - mc.target) / mc.target) * 100) : null;
+          const newStreak = won ? (mc.streak || 0) + 1 : 0;
+          const increment = Math.max(5000, Math.round(actual * 0.05));
+          saved.monthlyChallenge = {
+            month: todayMonth,
+            target: actual + increment,
+            baseMonth: mc.month,
+            baseSteps: actual,
+            streak: newStreak,
+            pendingClaim: won ? { month: mc.month, actual, target: mc.target, pctOver, streak: mc.streak || 0 } : null,
+            history: [...(mc.history || []), { month: mc.month, target: mc.target, actual, won, pctOver }],
+          };
+        }
       }
       saved.todayDate = today;
       saved.todaySteps = 0;
@@ -1435,6 +1476,7 @@ export default function PokemonWalker({ onStop }) {
   const [treadmillConfirming, setTreadmillConfirming] = useState(null);
   const treadmillConfirmTimer = useRef(null);
   const [showDistancePanel, setShowDistancePanel] = useState(false);
+  const [showMonthlyPanel, setShowMonthlyPanel] = useState(false);
   const [distanceInput, setDistanceInput] = useState('');
   const [showWeightPanel, setShowWeightPanel] = useState(false);
   const [weightInput, setWeightInput] = useState('');
@@ -2811,6 +2853,31 @@ export default function PokemonWalker({ onStop }) {
     });
     setDistanceInput('');
     setDeltaFlash(tier ? `${km}km logged · ${tier.km}km tier claimed` : `${km}km logged`);
+    setTimeout(() => setDeltaFlash(null), 3000);
+  };
+
+  const handleClaimMonthlyChallenge = () => {
+    setAppState(prev => {
+      const mc = prev.monthlyChallenge;
+      if (!mc?.pendingClaim) return prev;
+      const { pctOver, streak } = mc.pendingClaim;
+      const baseTier = [...MONTHLY_STEP_TIERS].find(t => pctOver >= t.pct) || MONTHLY_STEP_TIERS.at(-1);
+      const baseIdx = MONTHLY_STEP_TIERS.indexOf(baseTier);
+      const tier = streak >= 2 && baseIdx > 0 ? MONTHLY_STEP_TIERS[baseIdx - 1] : baseTier;
+      const applyPack = (s, t, count) => ({ ...s, packInventory: { ...s.packInventory, [t]: (s.packInventory[t] || 0) + count } });
+      let next = { ...prev };
+      if (tier.buddySteps > 0 && prev.buddy) {
+        next = { ...next, pokemon: next.pokemon.map(p => p.uid === prev.buddy ? { ...p, buddySteps: (p.buddySteps || 0) + tier.buddySteps } : p) };
+      }
+      for (const [t, count] of Object.entries(tier.packs)) next = applyPack(next, t, count);
+      const label = Object.entries(tier.packs).map(([t, c]) => `${c}× ${t}`).join(' + ');
+      return {
+        ...next,
+        monthlyChallenge: { ...mc, pendingClaim: null },
+        challengeLog: [{ date: todayString(), type: 'monthly', tier: null, outcome: `Monthly Steps — ${mc.pendingClaim.month} — ${pctOver}% over target · ${tier.buddySteps.toLocaleString()} buddy steps + ${label}` }, ...(prev.challengeLog || [])],
+      };
+    });
+    setDeltaFlash('Monthly Steps reward claimed!');
     setTimeout(() => setDeltaFlash(null), 3000);
   };
 
@@ -4698,6 +4765,57 @@ export default function PokemonWalker({ onStop }) {
                               })}
                             </div>
                             <div className="fast-idle-hint">Stay under the daily sugar limit for the required days within the window.</div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Monthly Steps Challenge */}
+                    <div className="gba-section">
+                      <button className="timing-toggle-btn" onClick={() => setShowMonthlyPanel(p => !p)}>
+                        Monthly Steps Challenge
+                        {appState.monthlyChallenge?.pendingClaim && <span className="obj-active-badge">Claim!</span>}
+                      </button>
+                      {showMonthlyPanel && (() => {
+                        const mc = appState.monthlyChallenge;
+                        if (!mc) return null;
+                        const today = todayString();
+                        const currentMonth = today.slice(0, 7);
+                        const monthLabel = m => new Date(m + '-02').toLocaleString('default', { month: 'long', year: 'numeric' });
+                        const currentSteps = (appState.stepHistory || []).filter(e => e.date.startsWith(mc.month)).reduce((s, e) => s + e.steps, 0) + (mc.month === currentMonth ? (appState.todaySteps || 0) : 0);
+                        const pct = mc.target > 0 ? Math.min(1, currentSteps / mc.target) : 0;
+                        const overPct = currentSteps >= mc.target ? Math.round(((currentSteps - mc.target) / mc.target) * 100) : null;
+                        const streakBonus = (mc.streak || 0) >= 2;
+                        const previewTier = overPct !== null ? ([...MONTHLY_STEP_TIERS].find(t => overPct >= t.pct) || MONTHLY_STEP_TIERS.at(-1)) : null;
+                        const previewIdx = previewTier ? MONTHLY_STEP_TIERS.indexOf(previewTier) : -1;
+                        const effectiveTier = previewTier && streakBonus && previewIdx > 0 ? MONTHLY_STEP_TIERS[previewIdx - 1] : previewTier;
+                        return (
+                          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {mc.pendingClaim && (
+                              <div style={{ background: '#166534', borderRadius: 6, padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <div style={{ fontSize: 9, color: '#bbf7d0', fontWeight: 700 }}>{monthLabel(mc.pendingClaim.month)} — {mc.pendingClaim.pctOver}% over target</div>
+                                <div style={{ fontSize: 8, color: '#86efac' }}>{mc.pendingClaim.actual.toLocaleString()} steps · target was {mc.pendingClaim.target.toLocaleString()}</div>
+                                {streakBonus && <div style={{ fontSize: 8, color: '#fbbf24', fontWeight: 700 }}>🔥 {mc.streak}-month streak — reward bumped up!</div>}
+                                <button className="fast-claim-btn" style={{ marginTop: 4 }} onClick={handleClaimMonthlyChallenge}>Claim Reward</button>
+                              </div>
+                            )}
+                            <div style={{ fontSize: 9, color: '#9ca3af', textAlign: 'center' }}>
+                              {monthLabel(mc.month)} · Target: {mc.target.toLocaleString()} steps
+                              {mc.streak > 0 && <span style={{ color: '#fbbf24', marginLeft: 4 }}>🔥 {mc.streak}-month streak</span>}
+                            </div>
+                            <div style={{ background: '#1f2937', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+                              <div style={{ background: overPct !== null ? '#22c55e' : '#3b82f6', height: '100%', width: `${Math.round(pct * 100)}%`, transition: 'width 0.3s' }} />
+                            </div>
+                            <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center' }}>
+                              {currentSteps.toLocaleString()} / {mc.target.toLocaleString()}
+                              {overPct !== null ? <span style={{ color: '#22c55e', marginLeft: 4 }}>+{overPct}% over!</span> : <span style={{ marginLeft: 4 }}>{(mc.target - currentSteps).toLocaleString()} to go</span>}
+                            </div>
+                            {effectiveTier && (
+                              <div style={{ fontSize: 8, color: '#86efac', textAlign: 'center' }}>
+                                Current reward tier: +{effectiveTier.buddySteps.toLocaleString()} buddy steps · {Object.entries(effectiveTier.packs).map(([t, c]) => `${c}× ${t}`).join(' + ')}
+                              </div>
+                            )}
+                            <div style={{ fontSize: 7, color: '#6b7280', textAlign: 'center', marginTop: 2 }}>Next month target = this month actual + 5%</div>
                           </div>
                         );
                       })()}
