@@ -3131,8 +3131,21 @@ export default function PokemonWalker({ onStop }) {
                           {appState.bestDayDate && <span className="pw-stat-box-sub">{appState.bestDayDate}</span>}
                         </div>
                         <div className="pw-stat-box-sm">
-                          <span className="pw-stat-box-val">{appState.streakDays || 0}d</span>
-                          <span className="pw-stat-box-label">Daily Streak</span>
+                          {(() => {
+                            const histMap = {};
+                            (appState.stepHistory || []).forEach(e => { histMap[e.date] = e.steps; });
+                            const today = todayString();
+                            if (appState.todaySteps) histMap[today] = appState.todaySteps;
+                            let streak = 0;
+                            const startFrom = (histMap[today] || 0) >= 8000 ? today : addDays(today, -1);
+                            let d = startFrom;
+                            while (true) {
+                              const s = histMap[d] || 0;
+                              if (s >= 8000) { streak++; d = addDays(d, -1); } else break;
+                            }
+                            return <span className="pw-stat-box-val">{streak}d</span>;
+                          })()}
+                          <span className="pw-stat-box-label">8K Streak</span>
                         </div>
                         <div className="pw-stat-box-sm">
                           <span className="pw-stat-box-val">{appState.streak10k || 0}d</span>
@@ -4063,7 +4076,7 @@ export default function PokemonWalker({ onStop }) {
                     {/* Water Intake */}
                     <div className="gba-section">
                       <button className="water-toggle-btn" onClick={() => setShowWaterPanel(p => !p)}>
-                        💧 Water Intake
+                        Water Intake
                         {(() => {
                           const w = appState.water;
                           const today = todayString();
@@ -4217,7 +4230,7 @@ export default function PokemonWalker({ onStop }) {
                     {/* Treadmill Jogging */}
                     <div className="gba-section">
                       <button className="timing-toggle-btn" onClick={() => setShowTreadmillPanel(p => !p)}>
-                        🏃 Treadmill Jogging
+                        Treadmill Jogging
                       </button>
                       {showTreadmillPanel && (
                         <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -4335,7 +4348,7 @@ export default function PokemonWalker({ onStop }) {
                     {/* Fasting Challenge */}
                     <div className="gba-section">
                       <button className="fast-toggle-btn" onClick={() => setShowFastingPanel(p => !p)}>
-                        🍽️ Fasting Challenge
+                        Fasting Challenge
                         {appState.fasting?.active?.status === 'running' && (
                           appState.fasting.active.lastLogDate === addDays(todayString(), -1)
                             ? <span className="obj-updated-badge">Updated</span>
@@ -4522,7 +4535,7 @@ export default function PokemonWalker({ onStop }) {
                     {/* Sugar Control */}
                     <div className="gba-section">
                       <button className="sugar-toggle-btn" onClick={() => setShowSugarPanel(p => !p)}>
-                        🍬 Sugar Control
+                        Sugar Control
                         {appState.sugar?.active?.status === 'running' && (
                           appState.sugar.active.lastLogDate === addDays(todayString(), -1)
                             ? <span className="obj-updated-badge">Updated</span>
@@ -5408,7 +5421,7 @@ export default function PokemonWalker({ onStop }) {
                       return (
                         <>
                           <button className="log-section-toggle" style={{ marginTop: 8 }} onClick={() => setShowLogChallengesDropdown(p => !p)}>
-                            🏆 Challenges · {challengeEntries.length}
+                            Challenges · {challengeEntries.length}
                             <span className="log-section-chevron">{showLogChallengesDropdown ? '▲' : '▼'}</span>
                           </button>
                           {showLogChallengesDropdown && (
