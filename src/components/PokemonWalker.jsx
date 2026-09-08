@@ -4783,39 +4783,60 @@ export default function PokemonWalker({ onStop }) {
                         const currentMonth = today.slice(0, 7);
                         const monthLabel = m => new Date(m + '-02').toLocaleString('default', { month: 'long', year: 'numeric' });
                         const currentSteps = (appState.stepHistory || []).filter(e => e.date.startsWith(mc.month)).reduce((s, e) => s + e.steps, 0) + (mc.month === currentMonth ? (appState.todaySteps || 0) : 0);
-                        const pct = mc.target > 0 ? Math.min(1, currentSteps / mc.target) : 0;
+                        const barPct = mc.target > 0 ? Math.min(1, currentSteps / mc.target) : 0;
                         const overPct = currentSteps >= mc.target ? Math.round(((currentSteps - mc.target) / mc.target) * 100) : null;
                         const streakBonus = (mc.streak || 0) >= 2;
-                        const previewTier = overPct !== null ? ([...MONTHLY_STEP_TIERS].find(t => overPct >= t.pct) || MONTHLY_STEP_TIERS.at(-1)) : null;
-                        const previewIdx = previewTier ? MONTHLY_STEP_TIERS.indexOf(previewTier) : -1;
-                        const effectiveTier = previewTier && streakBonus && previewIdx > 0 ? MONTHLY_STEP_TIERS[previewIdx - 1] : previewTier;
+                        const activeTierIdx = overPct !== null ? MONTHLY_STEP_TIERS.findIndex(t => overPct >= t.pct) : -1;
+                        const effectiveIdx = streakBonus && activeTierIdx > 0 ? activeTierIdx - 1 : activeTierIdx;
+                        const packLabel = packs => Object.entries(packs).map(([t, c]) => `${c}× ${t}`).join(' + ') || '—';
                         return (
                           <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
                             {mc.pendingClaim && (
                               <div style={{ background: '#166534', borderRadius: 6, padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <div style={{ fontSize: 9, color: '#bbf7d0', fontWeight: 700 }}>{monthLabel(mc.pendingClaim.month)} — {mc.pendingClaim.pctOver}% over target</div>
                                 <div style={{ fontSize: 8, color: '#86efac' }}>{mc.pendingClaim.actual.toLocaleString()} steps · target was {mc.pendingClaim.target.toLocaleString()}</div>
-                                {streakBonus && <div style={{ fontSize: 8, color: '#fbbf24', fontWeight: 700 }}>🔥 {mc.streak}-month streak — reward bumped up!</div>}
+                                {streakBonus && <div style={{ fontSize: 8, color: '#fbbf24', fontWeight: 700 }}>{mc.streak}-month streak — reward bumped up one tier!</div>}
                                 <button className="fast-claim-btn" style={{ marginTop: 4 }} onClick={handleClaimMonthlyChallenge}>Claim Reward</button>
                               </div>
                             )}
                             <div style={{ fontSize: 9, color: '#9ca3af', textAlign: 'center' }}>
                               {monthLabel(mc.month)} · Target: {mc.target.toLocaleString()} steps
-                              {mc.streak > 0 && <span style={{ color: '#fbbf24', marginLeft: 4 }}>🔥 {mc.streak}-month streak</span>}
+                              {mc.streak > 0 && <span style={{ color: '#fbbf24', marginLeft: 6 }}>{mc.streak}-month streak</span>}
                             </div>
-                            <div style={{ background: '#1f2937', borderRadius: 4, height: 8, overflow: 'hidden' }}>
-                              <div style={{ background: overPct !== null ? '#22c55e' : '#3b82f6', height: '100%', width: `${Math.round(pct * 100)}%`, transition: 'width 0.3s' }} />
+                            <div style={{ background: '#1f2937', borderRadius: 4, height: 7, overflow: 'hidden' }}>
+                              <div style={{ background: overPct !== null ? '#22c55e' : '#3b82f6', height: '100%', width: `${Math.round(barPct * 100)}%`, transition: 'width 0.3s' }} />
                             </div>
                             <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center' }}>
                               {currentSteps.toLocaleString()} / {mc.target.toLocaleString()}
-                              {overPct !== null ? <span style={{ color: '#22c55e', marginLeft: 4 }}>+{overPct}% over!</span> : <span style={{ marginLeft: 4 }}>{(mc.target - currentSteps).toLocaleString()} to go</span>}
+                              {overPct !== null
+                                ? <span style={{ color: '#22c55e', marginLeft: 4 }}>+{overPct}% over target</span>
+                                : <span style={{ marginLeft: 4 }}>{(mc.target - currentSteps).toLocaleString()} steps to go</span>}
                             </div>
-                            {effectiveTier && (
-                              <div style={{ fontSize: 8, color: '#86efac', textAlign: 'center' }}>
-                                Current reward tier: +{effectiveTier.buddySteps.toLocaleString()} buddy steps · {Object.entries(effectiveTier.packs).map(([t, c]) => `${c}× ${t}`).join(' + ')}
-                              </div>
-                            )}
-                            <div style={{ fontSize: 7, color: '#6b7280', textAlign: 'center', marginTop: 2 }}>Next month target = this month actual + 5%</div>
+                            {/* Reward tiers table */}
+                            <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              {MONTHLY_STEP_TIERS.map((tier, idx) => {
+                                const isActive = idx === effectiveIdx && overPct !== null;
+                                const isPast = effectiveIdx !== -1 && idx > effectiveIdx && overPct !== null;
+                                const isNext = overPct === null ? idx === MONTHLY_STEP_TIERS.length - 1 : (effectiveIdx !== -1 && idx === effectiveIdx - 1);
+                                const stepsNeeded = overPct === null ? Math.ceil(mc.target * (1 + tier.pct / 100)) - currentSteps : null;
+                                return (
+                                  <div key={tier.pct} style={{
+                                    display: 'flex', alignItems: 'center', gap: 4, padding: '3px 6px', borderRadius: 4,
+                                    background: isActive ? '#14532d' : isPast ? 'transparent' : 'transparent',
+                                    border: isActive ? '1px solid #22c55e' : isNext ? '1px dashed #3b82f6' : '1px solid transparent',
+                                    opacity: isPast ? 0.35 : 1,
+                                  }}>
+                                    <span style={{ fontSize: 8, color: isActive ? '#22c55e' : '#9ca3af', fontWeight: isActive ? 700 : 400, minWidth: 34 }}>+{tier.pct}%</span>
+                                    <span style={{ fontSize: 7, color: isActive ? '#86efac' : '#6b7280', flex: 1 }}>
+                                      +{(tier.buddySteps / 1000).toFixed(0)}k buddy · {packLabel(tier.packs)}
+                                    </span>
+                                    {isActive && <span style={{ fontSize: 7, color: '#4ade80', fontWeight: 700 }}>← YOU</span>}
+                                    {isNext && overPct === null && stepsNeeded > 0 && <span style={{ fontSize: 7, color: '#60a5fa' }}>{stepsNeeded.toLocaleString()} more</span>}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div style={{ fontSize: 7, color: '#6b7280', textAlign: 'center', marginTop: 2 }}>Progress tracked automatically · next month target = this month actual + 5%{streakBonus ? ' · streak bonus active' : ''}</div>
                           </div>
                         );
                       })()}
