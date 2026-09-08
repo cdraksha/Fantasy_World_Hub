@@ -773,6 +773,7 @@ function defaultState(steps) {
     fasting: initFasting(),
     sugar: initSugar(),
     daycare: initDaycare(),
+    totalDistanceCovered: 0,
     stepHistory: [],
     evolutionLog: [],
     caughtDex: [],
@@ -842,6 +843,7 @@ function loadState() {
     if (!saved.claimedStarterRegions) saved.claimedStarterRegions = [];
     if (!saved.claimedTrainers) saved.claimedTrainers = [];
     if (!saved.claimedVaultMilestones) saved.claimedVaultMilestones = [];
+    if (!saved.totalDistanceCovered) saved.totalDistanceCovered = 0;
     // Stamp count:1 on any pokemon missing it
     if (saved.pokemon) saved.pokemon = saved.pokemon.map(p => p.count !== undefined ? p : { ...p, count: 1 });
     // One-time fix: reset nextEvoDexId for evolved pokemon so background checker re-validates final-form status
@@ -1433,8 +1435,7 @@ export default function PokemonWalker({ onStop }) {
   const [treadmillConfirming, setTreadmillConfirming] = useState(null);
   const treadmillConfirmTimer = useRef(null);
   const [showDistancePanel, setShowDistancePanel] = useState(false);
-  const [distanceConfirming, setDistanceConfirming] = useState(null);
-  const distanceConfirmTimer = useRef(null);
+  const [distanceInput, setDistanceInput] = useState('');
   const [showWeightPanel, setShowWeightPanel] = useState(false);
   const [weightInput, setWeightInput] = useState('');
   const [weightResult, setWeightResult] = useState(null);
@@ -1454,6 +1455,7 @@ export default function PokemonWalker({ onStop }) {
   const [claimingTrainer, setClaimingTrainer] = useState(null);
   const [showLogStepsDropdown, setShowLogStepsDropdown] = useState(false);
   const [showLogMilestonesDropdown, setShowLogMilestonesDropdown] = useState(false);
+  const [showLogDistanceDropdown, setShowLogDistanceDropdown] = useState(false);
   const [showLogChallengesDropdown, setShowLogChallengesDropdown] = useState(false);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
@@ -2792,19 +2794,24 @@ export default function PokemonWalker({ onStop }) {
     });
   };
 
-  const handleClaimDistance = (tier) => {
+  const handleClaimDistance = () => {
+    const km = parseFloat(distanceInput);
+    if (isNaN(km) || km <= 0) return;
+    const tier = [...DISTANCE_TIERS].reverse().find(t => km >= t.km) || null;
     setAppState(prev => {
-      let next = { ...prev };
-      if (tier.packs.common) next = { ...next, packInventory: { ...next.packInventory, common: next.packInventory.common + tier.packs.common } };
-      if (tier.buddySteps > 0 && prev.buddy) {
-        next = { ...next, pokemon: next.pokemon.map(p => p.uid === prev.buddy ? { ...p, buddySteps: (p.buddySteps || 0) + tier.buddySteps } : p) };
+      let next = { ...prev, totalDistanceCovered: Math.round(((prev.totalDistanceCovered || 0) + km) * 10) / 10 };
+      if (tier) {
+        if (tier.packs.common) next = { ...next, packInventory: { ...next.packInventory, common: next.packInventory.common + tier.packs.common } };
+        if (tier.buddySteps > 0 && prev.buddy) next = { ...next, pokemon: next.pokemon.map(p => p.uid === prev.buddy ? { ...p, buddySteps: (p.buddySteps || 0) + tier.buddySteps } : p) };
       }
-      return next;
+      const rewardNote = tier ? ` · ${tier.km}km tier · buddy +${tier.buddySteps.toLocaleString()} steps${tier.packs.common ? ' + 1 common pack' : ''}` : ' · below 1km threshold';
+      return {
+        ...next,
+        challengeLog: [{ date: todayString(), type: 'distance', tier: null, outcome: `${km}km run${rewardNote}` }, ...(prev.challengeLog || [])],
+      };
     });
-    const parts = [];
-    if (tier.packs.common) parts.push(`+${tier.packs.common} common pack`);
-    if (tier.buddySteps > 0) parts.push(`buddy +${tier.buddySteps.toLocaleString()} steps`);
-    setDeltaFlash(`${tier.km}km claimed — ${parts.join(' · ')}`);
+    setDistanceInput('');
+    setDeltaFlash(tier ? `${km}km logged · ${tier.km}km tier claimed` : `${km}km logged`);
     setTimeout(() => setDeltaFlash(null), 3000);
   };
 
@@ -3131,6 +3138,18 @@ export default function PokemonWalker({ onStop }) {
                         <div className="pw-stat-box-sm">
                           <span className="pw-stat-box-val">{appState.streak10k || 0}d</span>
                           <span className="pw-stat-box-label">10K Streak</span>
+                        </div>
+                        <div className="pw-stat-box-sm">
+                          {(() => {
+                            const currentMonth = todayString().slice(0, 7);
+                            const monthlySteps = (appState.stepHistory || []).filter(e => e.date.startsWith(currentMonth)).reduce((s, e) => s + e.steps, 0) + (appState.todaySteps || 0);
+                            return <span className="pw-stat-box-val">{fmtNum(monthlySteps)}</span>;
+                          })()}
+                          <span className="pw-stat-box-label">Monthly Steps</span>
+                        </div>
+                        <div className="pw-stat-box-sm">
+                          <span className="pw-stat-box-val">{(appState.totalDistanceCovered || 0).toFixed(1)}km</span>
+                          <span className="pw-stat-box-label">Distance Covered</span>
                         </div>
                       </div>
                       <div
@@ -4263,62 +4282,50 @@ export default function PokemonWalker({ onStop }) {
                     {/* Distance Run */}
                     <div className="gba-section">
                       <button className="timing-toggle-btn" onClick={() => setShowDistancePanel(p => !p)}>
-                        Distance Run
+                        Distance Covered by Workout
                       </button>
-                      {showDistancePanel && (
-                        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center' }}>
-                            Claim after each run · same distance claimable multiple times
-                          </div>
-                          {DISTANCE_TIERS.map(tier => {
-                            const noBuddy = tier.buddySteps > 0 && !appState.buddy;
-                            return (
-                              <div key={tier.km} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 8px' }}>
-                                <div style={{ minWidth: 36, textAlign: 'center' }}>
-                                  <div style={{ background: '#8b5cf6', color: '#fff', borderRadius: 6, fontWeight: 900, fontSize: 11, lineHeight: 1, padding: '3px 0' }}>
-                                    {tier.km}
-                                  </div>
-                                  <div style={{ fontSize: 7, color: '#6b7280', marginTop: 2, fontWeight: 600 }}>KM</div>
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  {tier.packs.common && (
-                                    <div style={{ fontSize: 8, fontWeight: 700, color: '#5a5a6a' }}>1x Common Pack</div>
-                                  )}
-                                  {tier.buddySteps > 0 && (
-                                    <div style={{ fontSize: 8, fontWeight: 700, color: '#16a34a' }}>
-                                      Buddy +{tier.buddySteps.toLocaleString()} steps
-                                      {noBuddy && <span style={{ color: '#f59e0b', fontWeight: 600 }}> (no buddy set)</span>}
-                                    </div>
-                                  )}
-                                </div>
-                                {distanceConfirming === tier.km ? (
-                                  <button
-                                    style={{ padding: '6px 10px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 900, fontSize: 9, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
-                                    onClick={() => {
-                                      clearTimeout(distanceConfirmTimer.current);
-                                      setDistanceConfirming(null);
-                                      handleClaimDistance(tier);
-                                    }}
-                                  >
-                                    Confirm
-                                  </button>
-                                ) : (
-                                  <button
-                                    style={{ padding: '6px 10px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 9, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}
-                                    onClick={() => {
-                                      clearTimeout(distanceConfirmTimer.current);
-                                      setDistanceConfirming(tier.km);
-                                      distanceConfirmTimer.current = setTimeout(() => setDistanceConfirming(null), 4000);
-                                    }}
-                                  >
-                                    Claim
-                                  </button>
-                                )}
+                      {showDistancePanel && (() => {
+                        const kmVal = parseFloat(distanceInput);
+                        const previewTier = !isNaN(kmVal) && kmVal > 0 ? ([...DISTANCE_TIERS].reverse().find(t => kmVal >= t.km) || null) : null;
+                        return (
+                          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center' }}>
+                              Highest qualifying tier auto-claimed · total distance tracked
+                            </div>
+                            <div style={{ fontSize: 8, color: '#6b7280' }}>
+                              Tiers: 1km · 3km · 5km · 8km · 10km+pack
+                            </div>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                placeholder="km ran (e.g. 4.5)"
+                                value={distanceInput}
+                                onChange={e => setDistanceInput(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleClaimDistance()}
+                                style={{ flex: 1, padding: '6px 8px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 11, outline: 'none' }}
+                              />
+                              <button
+                                onClick={handleClaimDistance}
+                                disabled={isNaN(kmVal) || kmVal <= 0}
+                                style={{ padding: '6px 12px', background: (isNaN(kmVal) || kmVal <= 0) ? '#e2e8f0' : 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: (isNaN(kmVal) || kmVal <= 0) ? '#9ca3af' : '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: (isNaN(kmVal) || kmVal <= 0) ? 'default' : 'pointer' }}
+                              >
+                                Log
+                              </button>
+                            </div>
+                            {previewTier && (
+                              <div style={{ fontSize: 8, color: '#7c3aed', fontWeight: 700, background: '#f5f3ff', borderRadius: 6, padding: '4px 8px' }}>
+                                Will claim: {previewTier.km}km tier · buddy +{previewTier.buddySteps.toLocaleString()} steps{previewTier.packs.common ? ' + 1 common pack' : ''}
+                                {!appState.buddy && ' (no buddy set)'}
                               </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                            )}
+                            {!isNaN(kmVal) && kmVal > 0 && !previewTier && (
+                              <div style={{ fontSize: 8, color: '#9ca3af', fontWeight: 600, padding: '2px 0' }}>Below 1km — distance logged, no tier reward</div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Fasting Challenge */}
@@ -5377,8 +5384,9 @@ export default function PokemonWalker({ onStop }) {
                         water: '💧 Water Intake',
                       };
                       const allLog = appState.challengeLog || [];
-                      const challengeEntries = allLog.filter(e => e.type !== 'milestone');
+                      const challengeEntries = allLog.filter(e => e.type !== 'milestone' && e.type !== 'distance');
                       const milestoneEntries = allLog.filter(e => e.type === 'milestone');
+                      const distanceEntries = allLog.filter(e => e.type === 'distance');
                       const tierColor = t => ({ common: '#7a7a8a', rare: '#1a6fb5', epic: '#7c3aed', legendary: '#b8860b' }[t] || '#444');
                       const renderRow = (entry, i) => {
                         const isLoss = /failed|broke|lost|defaulted/i.test(entry.outcome);
@@ -5405,13 +5413,22 @@ export default function PokemonWalker({ onStop }) {
                               : <div className="clog-list">{challengeEntries.map(renderRow)}</div>
                           )}
                           <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowLogMilestonesDropdown(p => !p)}>
-                            🎯 Milestones · {milestoneEntries.length}
+                            Milestones · {milestoneEntries.length}
                             <span className="log-section-chevron">{showLogMilestonesDropdown ? '▲' : '▼'}</span>
                           </button>
                           {showLogMilestonesDropdown && (
                             milestoneEntries.length === 0
                               ? <div className="sh-empty">No milestones claimed yet.</div>
                               : <div className="clog-list">{milestoneEntries.map(renderRow)}</div>
+                          )}
+                          <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowLogDistanceDropdown(p => !p)}>
+                            Distance Covered · {distanceEntries.length}
+                            <span className="log-section-chevron">{showLogDistanceDropdown ? '▲' : '▼'}</span>
+                          </button>
+                          {showLogDistanceDropdown && (
+                            distanceEntries.length === 0
+                              ? <div className="sh-empty">No runs logged yet.</div>
+                              : <div className="clog-list">{distanceEntries.map(renderRow)}</div>
                           )}
                         </>
                       );
