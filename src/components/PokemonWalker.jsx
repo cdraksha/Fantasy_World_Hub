@@ -2804,10 +2804,9 @@ export default function PokemonWalker({ onStop }) {
         if (tier.packs.common) next = { ...next, packInventory: { ...next.packInventory, common: next.packInventory.common + tier.packs.common } };
         if (tier.buddySteps > 0 && prev.buddy) next = { ...next, pokemon: next.pokemon.map(p => p.uid === prev.buddy ? { ...p, buddySteps: (p.buddySteps || 0) + tier.buddySteps } : p) };
       }
-      const rewardNote = tier ? ` · ${tier.km}km tier · buddy +${tier.buddySteps.toLocaleString()} steps${tier.packs.common ? ' + 1 common pack' : ''}` : ' · below 1km threshold';
       return {
         ...next,
-        challengeLog: [{ date: todayString(), type: 'distance', tier: null, outcome: `${km}km run${rewardNote}` }, ...(prev.challengeLog || [])],
+        challengeLog: [{ date: todayString(), type: 'distance', tier: null, outcome: `${km}km covered` }, ...(prev.challengeLog || [])],
       };
     });
     setDistanceInput('');
@@ -5427,7 +5426,7 @@ export default function PokemonWalker({ onStop }) {
                               : <div className="clog-list">{milestoneEntries.map(renderRow)}</div>
                           )}
                           <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowLogDistanceDropdown(p => !p)}>
-                            Distance Covered · {distanceEntries.length}
+                            Distance Covered by Working Out · {distanceEntries.length}
                             <span className="log-section-chevron">{showLogDistanceDropdown ? '▲' : '▼'}</span>
                           </button>
                           {showLogDistanceDropdown && (
