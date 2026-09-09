@@ -6,7 +6,7 @@ import '../styles/pokemon-walker.css';
 
 const LS_KEY = 'fw_pokemon_walker';
 
-const PACK_COSTS = { common: 5000, rare: 10000, epic: 20000, legendary: 40000 };
+const PACK_COSTS = { common: 5000, rare: 10000, epic: 20000 };
 
 // ─── Loan constants ───────────────────────────────────────────────────────────
 const LOAN_BASE           = 50_000;
@@ -52,7 +52,7 @@ function generateDebtTrap(index, defaultCount) {
   const duration = Math.min(Math.max(10 + Math.floor(index / 2) + dtRand(-2, 2), 8), 30);
   const compoundRate = index < 5 ? 1 : 2;
 
-  const reward = { common: 0, rare: 0, epic: 0, legendary: 0, vaultBonus: 0 };
+  const reward = { common: 0, rare: 0, epic: 0, vaultBonus: 0 };
   if (index <= 1) {
     reward.common = dtRand(1, 3); reward.rare = dtRand(1, 2);
     reward.vaultBonus = dtRand(1, 3) * 1000;
@@ -60,10 +60,10 @@ function generateDebtTrap(index, defaultCount) {
     reward.rare = dtRand(2, 3); reward.epic = dtRand(1, 2);
     reward.vaultBonus = dtRand(3, 6) * 1000;
   } else if (index <= 5) {
-    reward.epic = dtRand(2, 3); reward.legendary = dtRand(0, 1);
+    reward.epic = dtRand(3, 5);
     reward.vaultBonus = dtRand(5, 10) * 1000;
   } else {
-    reward.epic = dtRand(1, 2); reward.legendary = dtRand(1, 2);
+    reward.epic = dtRand(4, 7);
     reward.vaultBonus = dtRand(8, 15) * 1000;
   }
 
@@ -275,7 +275,7 @@ const TIMING_MILESTONES = [
   { days: 5,  tier: 'common' },
   { days: 15, tier: 'rare' },
   { days: 25, tier: 'epic' },
-  { days: 35, tier: 'legendary' },
+  { days: 35, tier: 'epic' },
 ];
 
 // ─── Water Intake ─────────────────────────────────────────────────────────────
@@ -291,8 +291,8 @@ const WATER_MILESTONES = [
   { days: 60,  reward: { buddySteps: 20000, packs: { common: 10, rare: 5 } } },
   { days: 70,  reward: { buddySteps: 20000, packs: { common: 10, rare: 5,  epic: 5 } } },
   { days: 80,  reward: { buddySteps: 20000, packs: { common: 10, rare: 10, epic: 10 } } },
-  { days: 90,  reward: { buddySteps: 30000, packs: { common: 10, epic: 5,  legendary: 1 } } },
-  { days: 100, reward: { buddySteps: 50000, packs: { common: 30, legendary: 3 } } },
+  { days: 90,  reward: { buddySteps: 30000, packs: { common: 10, epic: 5 } } },
+  { days: 100, reward: { buddySteps: 50000, packs: { common: 10, epic: 5 } } },
 ];
 
 function waterRewardLabel(r) {
@@ -313,7 +313,7 @@ const DISTANCE_TIERS = [
 ];
 
 const MONTHLY_STEP_TIERS = [
-  { pct: 50, label: 'Godmode', buddySteps: 100000, packs: { rare: 10, epic: 10, legendary: 1 } },
+  { pct: 50, label: 'Godmode', buddySteps: 100000, packs: { rare: 10, epic: 10 } },
   { pct: 40, label: 'Insane',  buddySteps: 70000,  packs: { rare: 15, epic: 15              } },
   { pct: 35, label: 'Crazy',   buddySteps: 60000,  packs: { rare: 5,  epic: 5               } },
   { pct: 30, label: 'Beast',   buddySteps: 50000,  packs: { rare: 3,  epic: 3               } },
@@ -603,8 +603,102 @@ const POOLS = {
   common: COMMON_IDS,
   rare: [...RARE_IDS],
   epic: [...EPIC_IDS],
-  legendary: [...LEGENDARY_IDS],
 };
+
+// Legendary & Mythical Pokémon unlocked as direct rewards at cumulative step milestones
+const LEGENDARY_MILESTONES = [
+  { steps: 100000, dexId: 489, name: 'Phione',       classification: 'Mythical'   },
+  { steps: 102200, dexId: 808, name: 'Meltan',        classification: 'Mythical'   },
+  { steps: 104400, dexId: 789, name: 'Cosmog',        classification: 'Legendary'  },
+  { steps: 106700, dexId: 490, name: 'Manaphy',       classification: 'Mythical'   },
+  { steps: 108900, dexId: 251, name: 'Celebi',        classification: 'Mythical'   },
+  { steps: 111100, dexId: 488, name: 'Cresselia',     classification: 'Legendary'  },
+  { steps: 113300, dexId: 378, name: 'Regice',        classification: 'Legendary'  },
+  { steps: 115600, dexId: 377, name: 'Regirock',      classification: 'Legendary'  },
+  { steps: 117800, dexId: 379, name: 'Registeel',     classification: 'Legendary'  },
+  { steps: 120000, dexId: 144, name: 'Articuno',      classification: 'Legendary'  },
+  { steps: 122200, dexId: 146, name: 'Moltres',       classification: 'Legendary'  },
+  { steps: 124400, dexId: 145, name: 'Zapdos',        classification: 'Legendary'  },
+  { steps: 126700, dexId: 481, name: 'Mesprit',       classification: 'Legendary'  },
+  { steps: 128900, dexId: 480, name: 'Uxie',          classification: 'Legendary'  },
+  { steps: 131100, dexId: 482, name: 'Azelf',         classification: 'Legendary'  },
+  { steps: 133300, dexId: 640, name: 'Virizion',      classification: 'Legendary'  },
+  { steps: 135600, dexId: 638, name: 'Cobalion',      classification: 'Legendary'  },
+  { steps: 137800, dexId: 639, name: 'Terrakion',     classification: 'Legendary'  },
+  { steps: 140000, dexId: 787, name: 'Tapu Bulu',     classification: 'Legendary'  },
+  { steps: 142200, dexId: 788, name: 'Tapu Fini',     classification: 'Legendary'  },
+  { steps: 144400, dexId: 786, name: 'Tapu Lele',     classification: 'Legendary'  },
+  { steps: 146700, dexId: 785, name: 'Tapu Koko',     classification: 'Legendary'  },
+  { steps: 148900, dexId: 243, name: 'Raikou',        classification: 'Legendary'  },
+  { steps: 151100, dexId: 244, name: 'Entei',         classification: 'Legendary'  },
+  { steps: 153300, dexId: 245, name: 'Suicune',       classification: 'Legendary'  },
+  { steps: 155600, dexId: 151, name: 'Mew',           classification: 'Mythical'   },
+  { steps: 157800, dexId: 492, name: 'Shaymin',       classification: 'Mythical'   },
+  { steps: 160000, dexId: 385, name: 'Jirachi',       classification: 'Mythical'   },
+  { steps: 162200, dexId: 494, name: 'Victini',       classification: 'Mythical'   },
+  { steps: 164400, dexId: 893, name: 'Zarude',        classification: 'Mythical'   },
+  { steps: 166700, dexId: 647, name: 'Keldeo',        classification: 'Mythical'   },
+  { steps: 168900, dexId: 649, name: 'Genesect',      classification: 'Mythical'   },
+  { steps: 171100, dexId: 719, name: 'Diancie',       classification: 'Mythical'   },
+  { steps: 173300, dexId: 802, name: 'Marshadow',     classification: 'Mythical'   },
+  { steps: 175600, dexId: 807, name: 'Zeraora',       classification: 'Mythical'   },
+  { steps: 177800, dexId: 801, name: 'Magearna',      classification: 'Mythical'   },
+  { steps: 180000, dexId: 1025, name: 'Pecharunt',    classification: 'Mythical'   },
+  { steps: 182200, dexId: 1017, name: 'Ogerpon',      classification: 'Legendary'  },
+  { steps: 184400, dexId: 1001, name: 'Wo-Chien',     classification: 'Legendary'  },
+  { steps: 186700, dexId: 1009, name: 'Okidogi',      classification: 'Legendary'  },
+  { steps: 188900, dexId: 1010, name: 'Munkidori',    classification: 'Legendary'  },
+  { steps: 191100, dexId: 1011, name: 'Fezandipiti',  classification: 'Legendary'  },
+  { steps: 193300, dexId: 1002, name: 'Chien-Pao',    classification: 'Legendary'  },
+  { steps: 195600, dexId: 1003, name: 'Ting-Lu',      classification: 'Legendary'  },
+  { steps: 197800, dexId: 1004, name: 'Chi-Yu',       classification: 'Legendary'  },
+  { steps: 200000, dexId: 896,  name: 'Glastrier',    classification: 'Legendary'  },
+  { steps: 202200, dexId: 897,  name: 'Spectrier',    classification: 'Legendary'  },
+  { steps: 204400, dexId: 894,  name: 'Regieleki',    classification: 'Legendary'  },
+  { steps: 206700, dexId: 895,  name: 'Regidrago',    classification: 'Legendary'  },
+  { steps: 208900, dexId: 891,  name: 'Kubfu',        classification: 'Legendary'  },
+  { steps: 211100, dexId: 892,  name: 'Urshifu',      classification: 'Legendary'  },
+  { steps: 213300, dexId: 641,  name: 'Tornadus',     classification: 'Legendary'  },
+  { steps: 215600, dexId: 642,  name: 'Thundurus',    classification: 'Legendary'  },
+  { steps: 217800, dexId: 645,  name: 'Landorus',     classification: 'Legendary'  },
+  { steps: 220000, dexId: 485,  name: 'Heatran',      classification: 'Legendary'  },
+  { steps: 222200, dexId: 380,  name: 'Latias',       classification: 'Legendary'  },
+  { steps: 224400, dexId: 381,  name: 'Latios',       classification: 'Legendary'  },
+  { steps: 226700, dexId: 250,  name: 'Ho-Oh',        classification: 'Legendary'  },
+  { steps: 228900, dexId: 249,  name: 'Lugia',        classification: 'Legendary'  },
+  { steps: 231100, dexId: 717,  name: 'Yveltal',      classification: 'Legendary'  },
+  { steps: 233300, dexId: 716,  name: 'Xerneas',      classification: 'Legendary'  },
+  { steps: 235600, dexId: 718,  name: 'Zygarde',      classification: 'Legendary'  },
+  { steps: 237800, dexId: 646,  name: 'Kyurem',       classification: 'Legendary'  },
+  { steps: 240000, dexId: 643,  name: 'Reshiram',     classification: 'Legendary'  },
+  { steps: 242200, dexId: 644,  name: 'Zekrom',       classification: 'Legendary'  },
+  { steps: 244400, dexId: 898,  name: 'Calyrex',      classification: 'Legendary'  },
+  { steps: 246700, dexId: 800,  name: 'Necrozma',     classification: 'Legendary'  },
+  { steps: 248900, dexId: 791,  name: 'Solgaleo',     classification: 'Legendary'  },
+  { steps: 251100, dexId: 792,  name: 'Lunala',       classification: 'Legendary'  },
+  { steps: 253300, dexId: 888,  name: 'Zacian',       classification: 'Legendary'  },
+  { steps: 255600, dexId: 889,  name: 'Zamazenta',    classification: 'Legendary'  },
+  { steps: 257800, dexId: 890,  name: 'Eternatus',    classification: 'Legendary'  },
+  { steps: 260000, dexId: 487,  name: 'Giratina',     classification: 'Legendary'  },
+  { steps: 262200, dexId: 484,  name: 'Palkia',       classification: 'Legendary'  },
+  { steps: 264400, dexId: 483,  name: 'Dialga',       classification: 'Legendary'  },
+  { steps: 266700, dexId: 486,  name: 'Regigigas',    classification: 'Legendary'  },
+  { steps: 268900, dexId: 382,  name: 'Kyogre',       classification: 'Legendary'  },
+  { steps: 271100, dexId: 383,  name: 'Groudon',      classification: 'Legendary'  },
+  { steps: 273300, dexId: 384,  name: 'Rayquaza',     classification: 'Legendary'  },
+  { steps: 275600, dexId: 150,  name: 'Mewtwo',       classification: 'Legendary'  },
+  { steps: 277800, dexId: 386,  name: 'Deoxys',       classification: 'Mythical'   },
+  { steps: 280000, dexId: 720,  name: 'Hoopa',        classification: 'Mythical'   },
+  { steps: 282200, dexId: 721,  name: 'Volcanion',    classification: 'Mythical'   },
+  { steps: 284400, dexId: 493,  name: 'Arceus',       classification: 'Mythical'   },
+  { steps: 286700, dexId: 1007, name: 'Koraidon',     classification: 'Legendary'  },
+  { steps: 288900, dexId: 1008, name: 'Miraidon',     classification: 'Legendary'  },
+  { steps: 291100, dexId: 1024, name: 'Terapagos',    classification: 'Legendary'  },
+  { steps: 293300, dexId: 790,  name: 'Cosmoem',      classification: 'Legendary'  },
+  { steps: 295600, dexId: 491,  name: 'Darkrai',      classification: 'Mythical'   },
+  { steps: 297800, dexId: 648,  name: 'Meloetta',     classification: 'Mythical'   },
+  { steps: 300000, dexId: 809,  name: 'Melmetal',     classification: 'Mythical'   },
+];
 
 // Stage-1 Pokémon that can evolve — used as Day Care guest
 const DAYCARE_POOL = [
@@ -633,11 +727,7 @@ function initDaycare() {
 
 function pickFromPool(tier, ownedDexIds) {
   const pool = POOLS[tier];
-  if (tier === 'legendary') {
-    const unowned = pool.filter(id => !ownedDexIds.has(id));
-    const src = unowned.length > 0 ? unowned : pool;
-    return src[Math.floor(Math.random() * src.length)];
-  }
+  if (!pool) return POOLS.epic[Math.floor(Math.random() * POOLS.epic.length)];
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -788,6 +878,7 @@ function defaultState(steps) {
     daycare: initDaycare(),
     totalDistanceCovered: 0,
     monthlyChallenge: null,
+    claimedLegendaryMilestones: [],
     stepHistory: [],
     evolutionLog: [],
     caughtDex: [],
@@ -858,6 +949,7 @@ function loadState() {
     if (!saved.claimedTrainers) saved.claimedTrainers = [];
     if (!saved.claimedVaultMilestones) saved.claimedVaultMilestones = [];
     if (!saved.totalDistanceCovered) saved.totalDistanceCovered = 0;
+    if (!saved.claimedLegendaryMilestones) saved.claimedLegendaryMilestones = [];
     if (!saved.monthlyChallenge) {
       const augSteps = (saved.stepHistory || []).filter(e => e.date.startsWith('2026-08')).reduce((s, e) => s + e.steps, 0);
       const septTarget = augSteps ? Math.round(augSteps * 1.05) : 326597;
@@ -1656,6 +1748,26 @@ export default function PokemonWalker({ onStop }) {
     return { newPacks, resetVault: 0, newPendingStarters, newIdx: Math.min(idx + 1, STARTER_MILESTONES.length) };
   }, []);
 
+  // ─── Check legendary/mythical step milestones ───────────────────────
+  const checkLegendaryMilestones = useCallback(async (prevTotal, newTotal, claimedList) => {
+    const newly = LEGENDARY_MILESTONES.filter(m => m.steps > prevTotal && m.steps <= newTotal && !claimedList.includes(m.steps));
+    if (newly.length === 0) return;
+    const fetched = await Promise.allSettled(newly.map(m => fetchPokemonById(m.dexId)));
+    const pokes = fetched.map((r, i) => r.status === 'fulfilled' ? r.value : null).filter(Boolean);
+    const newSteps = newly.map(m => m.steps);
+    setAppState(prev => ({
+      ...prev,
+      pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false, isSpecialMilestone: true }))],
+      caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
+      claimedLegendaryMilestones: [...(prev.claimedLegendaryMilestones || []), ...newSteps],
+      challengeLog: [...pokes.map(p => ({ date: todayString(), type: 'specialMilestone', tier: 'epic', outcome: `Step milestone: ${p.name} joined your collection!` })), ...(prev.challengeLog || [])],
+    }));
+    if (pokes.length > 0) {
+      setDeltaFlash(`Step milestone! ${pokes.map(p => p.name).join(', ')} joined your collection!`);
+      setTimeout(() => setDeltaFlash(null), 5000);
+    }
+  }, []);
+
   // ─── Check achievements ─────────────────────────────────────────────
   const checkAchievements = useCallback((state) => {
     const ach = { ...state.achievements };
@@ -1819,6 +1931,11 @@ export default function PokemonWalker({ onStop }) {
       return next;
     });
     setStepInput('');
+    if (delta > 0) {
+      const prevTotal = appState.totalStepsWalked;
+      const newTotal = prevTotal + delta;
+      checkLegendaryMilestones(prevTotal, newTotal, appState.claimedLegendaryMilestones || []);
+    }
   };
 
   // ─── Start Day Care ──────────────────────────────────────────────────
@@ -1921,7 +2038,7 @@ export default function PokemonWalker({ onStop }) {
     setAppState(prev => {
       const dt = prev.debtTrap;
       const newPacks = { ...prev.packInventory };
-      ['common','rare','epic','legendary'].forEach(tier => {
+      ['common','rare','epic'].forEach(tier => {
         if (dt.reward[tier] > 0) newPacks[tier] = (newPacks[tier] || 0) + dt.reward[tier];
       });
       let newPokemon = prev.pokemon.map(p =>
@@ -1936,7 +2053,7 @@ export default function PokemonWalker({ onStop }) {
           types: legendaryPoke.types,
           timesEvolved: 0,
           location: 'Debt Trap Companion',
-          packTier: 'legendary',
+          packTier: 'epic',
           caughtDate: todayString(),
           onTeam: false,
           isDTLoan: true,
@@ -2598,18 +2715,18 @@ export default function PokemonWalker({ onStop }) {
     setClaimingWeddingReward(true);
     try {
       const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
-      const pool = [...LEGENDARY_IDS].filter(id => !ownedDexIds.has(id));
-      const src = pool.length >= 2 ? pool : [...LEGENDARY_IDS];
-      const ids = src.sort(() => Math.random() - 0.5).slice(0, 2);
+      const pool = POOLS.epic.filter(id => !ownedDexIds.has(id));
+      const src = pool.length >= 5 ? pool : POOLS.epic;
+      const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 5);
       const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
       setAppState(prev => ({
         ...prev,
-        pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'legendary', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
+        pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
         caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
         weddingChallenge: { ...prev.weddingChallenge, claimedReward: true },
-        challengeLog: [{ date: todayString(), type: 'wedding', tier: 'legendary', outcome: `Won Prashast's Wedding Challenge — 2 Legendaries: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+        challengeLog: [{ date: todayString(), type: 'wedding', tier: 'epic', outcome: `Won Prashast's Wedding Challenge — 5 epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
       }));
-      setDeltaFlash(`🎊 Wedding challenge won! ${pokes.map(p => p.name).join(' & ')} are yours!`);
+      setDeltaFlash(`Wedding challenge won! ${pokes.map(p => p.name).join(', ')} are yours!`);
       setTimeout(() => setDeltaFlash(null), 5000);
     } catch { /* silently fail */ }
     setClaimingWeddingReward(false);
@@ -2708,20 +2825,19 @@ export default function PokemonWalker({ onStop }) {
   };
 
   const handleClaimPrudhviWeddingReward = async () => {
-    const LEGENDARY_IDS = [144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 380, 381, 382, 383, 384, 385];
     const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
-    const pool = LEGENDARY_IDS.filter(id => !ownedDexIds.has(id));
-    const src = pool.length >= 1 ? pool : LEGENDARY_IDS;
-    const id = src[Math.floor(Math.random() * src.length)];
-    const poke = await fetchPokemonById(id);
+    const pool = POOLS.epic.filter(id => !ownedDexIds.has(id));
+    const src = pool.length >= 5 ? pool : POOLS.epic;
+    const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 5);
+    const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
     setAppState(prev => ({
       ...prev,
-      pokemon: [...prev.pokemon, { uid: makeUID(), ...poke, packTier: 'legendary', buddySteps: 0, caughtDate: todayString(), onTeam: false }],
-      caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId])],
+      pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
+      caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
       prudhviWeddingChallenge: { ...prev.prudhviWeddingChallenge, claimedReward: true },
-      challengeLog: [{ date: todayString(), type: 'prudhviWeddingChallenge', tier: 'legendary', outcome: `Won Prudhvi's Wedding challenge — 1 Legendary Pokémon claimed!` }, ...(prev.challengeLog || [])],
+      challengeLog: [{ date: todayString(), type: 'prudhviWeddingChallenge', tier: 'epic', outcome: `Won Prudhvi's Wedding challenge — 5 epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
     }));
-    setDeltaFlash("🎉 Prudhvi's Wedding challenge won! 1 Legendary Pokémon claimed!");
+    setDeltaFlash(`Prudhvi's Wedding challenge won! ${pokes.map(p => p.name).join(', ')} claimed!`);
     setTimeout(() => setDeltaFlash(null), 5000);
   };
 
@@ -3385,7 +3501,7 @@ export default function PokemonWalker({ onStop }) {
                 <div className="gba-section">
                   <div className="gba-section-title">Daily Rewards</div>
                   <div className="gba-pack-grid">
-                    {(['common', 'rare', 'epic', 'legendary']).map(tier => {
+                    {(['common', 'rare', 'epic']).map(tier => {
                       const cost = PACK_COSTS[tier];
                       const canAfford = (appState.spendableSteps || 0) >= cost;
                       const pct = Math.min(100, ((appState.spendableSteps || 0) / cost) * 100);
@@ -3525,6 +3641,38 @@ export default function PokemonWalker({ onStop }) {
                                 (ms) => handleClaimVaultMilestone(ms)
                               )}
                             </div>
+                            <div className="ms-section">
+                              <div className="ms-section-header">
+                                <span>Legendary & Mythical</span>
+                                <span className="ms-header-sub">Direct Pokémon unlock · based on total steps walked</span>
+                              </div>
+                              <table className="ms-table">
+                                <tbody>
+                                  {LEGENDARY_MILESTONES.map(m => {
+                                    const claimed = (appState.claimedLegendaryMilestones || []).includes(m.steps);
+                                    const unlocked = appState.totalStepsWalked >= m.steps;
+                                    return (
+                                      <tr className={`ms-row${claimed ? ' ms-claimed' : unlocked ? ' ms-ready' : ' ms-locked'}`} key={m.steps}>
+                                        <td className="ms-td ms-td-name">
+                                          <div className="ms-name">{m.name}</div>
+                                          <div className="ms-team">{m.classification}</div>
+                                        </td>
+                                        <td className="ms-td ms-td-region">{getRegion(m.dexId)}</td>
+                                        <td className="ms-td ms-td-reward">1× Direct unlock</td>
+                                        <td className="ms-td ms-td-steps">{m.steps.toLocaleString()}</td>
+                                        <td className="ms-td ms-td-action">
+                                          {claimed
+                                            ? <span className="ms-need" style={{ color: '#22c55e' }}>✓ Got it</span>
+                                            : unlocked
+                                            ? <span className="ms-need" style={{ color: '#fbbf24' }}>Auto-claimed on step save</span>
+                                            : <span className="ms-need">{(m.steps - appState.totalStepsWalked).toLocaleString()} left</span>}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
                           </>
                         );
                       })()}
@@ -3546,7 +3694,7 @@ export default function PokemonWalker({ onStop }) {
                     </div>
                     <div className="pw-panel-section-title">Your Packs</div>
                     <div className="gba-pack-grid">
-                      {(['common', 'rare', 'epic', 'legendary']).map(tier => (
+                      {(['common', 'rare', 'epic']).map(tier => (
                         <div className={`gba-pack-card ${tier}${appState.packInventory[tier] > 0 ? ' has-pack' : ''}`} key={tier}>
                           <div className="gba-pack-tier">{tier}</div>
                           <div className="gba-pack-count">×{appState.packInventory[tier]}</div>
@@ -3571,7 +3719,7 @@ export default function PokemonWalker({ onStop }) {
                   <div className="pw-ip-body">
                     <div className="gba-section-title" style={{ marginBottom: 6 }}>Pokédex · {uniqueDex.size} / 1010</div>
                     <div className="gba-tier-row">
-                      {(['legendary', 'epic', 'rare', 'common']).map(tier => (
+                      {(['epic', 'rare', 'common']).map(tier => (
                         <div key={tier} className={`gba-tier-box ${tier}`}>
                           <div className="gba-tier-count">{allPokes.filter(p => p.packTier === tier).length}</div>
                           <div className="gba-tier-name">{tier}</div>
@@ -3608,7 +3756,7 @@ export default function PokemonWalker({ onStop }) {
                           const allPokes = appState.pokemon;
                           const filteredStorage = regionFilter ? allPokes.filter(p => getRegion(p.dexId) === regionFilter) : allPokes;
                           if (filteredStorage.length === 0) return <div className="gba-empty" style={{ marginTop: 8 }}>No {regionFilter} Pokémon in storage.</div>;
-                          return (['legendary', 'epic', 'rare', 'common']).map(tier => {
+                          return (['epic', 'rare', 'common']).map(tier => {
                             const group = filteredStorage.filter(p => p.packTier === tier);
                             if (group.length === 0) return null;
                             const isOpen = !!openTiers[tier];
@@ -4004,9 +4152,8 @@ export default function PokemonWalker({ onStop }) {
                                   {dt.reward.common > 0 && <span className="dt-chip common">{dt.reward.common}× Common</span>}
                                   {dt.reward.rare > 0 && <span className="dt-chip rare">{dt.reward.rare}× Rare</span>}
                                   {dt.reward.epic > 0 && <span className="dt-chip epic">{dt.reward.epic}× Epic</span>}
-                                  {dt.reward.legendary > 0 && <span className="dt-chip legendary">{dt.reward.legendary}× Legendary</span>}
                                   {dt.reward.vaultBonus > 0 && <span className="dt-chip vault">+{fmtNum(dt.reward.vaultBonus)} vault</span>}
-                                  {dt.hasLegendaryCompanion && <span className="dt-chip companion">👑 Legendary companion</span>}
+                                  {dt.hasLegendaryCompanion && <span className="dt-chip companion">Epic companion</span>}
                                 </div>
                               </div>
                               <div className="dt-collateral-section">
