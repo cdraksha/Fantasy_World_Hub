@@ -1594,7 +1594,6 @@ export default function PokemonWalker({ onStop }) {
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
     epic: POOLS.epic[Math.floor(Math.random() * POOLS.epic.length)],
-    legendary: POOLS.legendary[Math.floor(Math.random() * POOLS.legendary.length)],
   }));
   const midnightChecked = useRef(false);
   const packWarningChecked = useRef({ '9pm': false, '11pm': false });
