@@ -1747,21 +1747,28 @@ export default function PokemonWalker({ onStop }) {
     return { newPacks, resetVault: 0, newPendingStarters, newIdx: Math.min(idx + 1, STARTER_MILESTONES.length) };
   }, []);
 
-  // ─── Claim legendary/mythical step milestone ─────────────────────────
+  // ─── Claim legendary/mythical vault milestone ─────────────────────────
   const handleClaimLegendaryMilestone = useCallback(async (ms) => {
+    const milestoneKey = `legendary:${ms.steps}`;
+    if ((appState.stepVault || 0) < ms.steps) return;
+    if ((appState.claimedVaultMilestones || []).includes(milestoneKey)) return;
     try {
       const poke = await fetchPokemonById(ms.dexId);
-      setAppState(prev => ({
-        ...prev,
-        pokemon: [...prev.pokemon, { uid: makeUID(), ...poke, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }],
-        caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId])],
-        claimedLegendaryMilestones: [...(prev.claimedLegendaryMilestones || []), ms.steps],
-        challengeLog: [{ date: todayString(), type: 'specialMilestone', tier: 'epic', outcome: `Step milestone ${ms.steps.toLocaleString()}: ${poke.name} claimed!` }, ...(prev.challengeLog || [])],
-      }));
+      setAppState(prev => {
+        if ((prev.stepVault || 0) < ms.steps) return prev;
+        return {
+          ...prev,
+          stepVault: (prev.stepVault || 0) - ms.steps,
+          pokemon: [...prev.pokemon, { uid: makeUID(), ...poke, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false, count: 1 }],
+          caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId])],
+          claimedVaultMilestones: [...(prev.claimedVaultMilestones || []), milestoneKey],
+          challengeLog: [{ date: todayString(), type: 'milestone', tier: 'epic', outcome: `Vault milestone ${ms.steps.toLocaleString()} steps: ${poke.name} claimed!` }, ...(prev.challengeLog || [])],
+        };
+      });
       setDeltaFlash(`${poke.name} claimed!`);
       setTimeout(() => setDeltaFlash(null), 4000);
     } catch { /* silently fail */ }
-  }, []);
+  }, [appState?.stepVault, appState?.claimedVaultMilestones]);
 
   // ─── Check achievements ─────────────────────────────────────────────
   const checkAchievements = useCallback((state) => {
@@ -3490,7 +3497,7 @@ export default function PokemonWalker({ onStop }) {
                 {/* Daily Rewards — right below step entry */}
                 <div className="gba-section">
                   <div className="gba-section-title">Daily Rewards</div>
-                  <div className="gba-pack-grid">
+                  <div className="gba-pack-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
                     {(['common', 'rare', 'epic']).map(tier => {
                       const cost = PACK_COSTS[tier];
                       const canAfford = (appState.spendableSteps || 0) >= cost;
@@ -3634,13 +3641,14 @@ export default function PokemonWalker({ onStop }) {
                             <div className="ms-section">
                               <div className="ms-section-header">
                                 <span>Legendary & Mythical</span>
-                                <span className="ms-header-sub">Direct Pokémon unlock · based on total steps walked</span>
+                                <span className="ms-header-sub">Direct Pokémon unlock · costs vault steps</span>
                               </div>
                               <table className="ms-table">
                                 <tbody>
                                   {LEGENDARY_MILESTONES.map(m => {
-                                    const claimed = (appState.claimedLegendaryMilestones || []).includes(m.steps);
-                                    const unlocked = appState.totalStepsWalked >= m.steps;
+                                    const milestoneKey = `legendary:${m.steps}`;
+                                    const claimed = (appState.claimedVaultMilestones || []).includes(milestoneKey);
+                                    const unlocked = (appState.stepVault || 0) >= m.steps;
                                     return (
                                       <tr className={`ms-row${claimed ? ' ms-claimed' : unlocked ? ' ms-ready' : ' ms-locked'}`} key={m.steps}>
                                         <td className="ms-td ms-td-name">
@@ -3655,7 +3663,7 @@ export default function PokemonWalker({ onStop }) {
                                             ? <span className="ms-need" style={{ color: '#22c55e' }}>✓ Claimed</span>
                                             : unlocked
                                             ? <button className="ms-claim-btn" onClick={() => handleClaimLegendaryMilestone(m)}>Claim</button>
-                                            : <span className="ms-need">{(m.steps - appState.totalStepsWalked).toLocaleString()} left</span>}
+                                            : <span className="ms-need">{(m.steps - (appState.stepVault || 0)).toLocaleString()} left</span>}
                                         </td>
                                       </tr>
                                     );
@@ -3683,7 +3691,7 @@ export default function PokemonWalker({ onStop }) {
                       <div className="pw-panel-hero-label">packs ready to open</div>
                     </div>
                     <div className="pw-panel-section-title">Your Packs</div>
-                    <div className="gba-pack-grid">
+                    <div className="gba-pack-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
                       {(['common', 'rare', 'epic']).map(tier => (
                         <div className={`gba-pack-card ${tier}${appState.packInventory[tier] > 0 ? ' has-pack' : ''}`} key={tier}>
                           <div className="gba-pack-tier">{tier}</div>
@@ -3704,19 +3712,46 @@ export default function PokemonWalker({ onStop }) {
               {showMyPokemonPanel && (
                 <div className="pw-icon-panel">
                   <div className="pw-ip-header">
-                    <span className="pw-ip-title">My Pokémon · {allPokes.length}</span>
+                    <span className="pw-ip-title">My Pokémon</span>
+                    <span className="mypk-total-badge">{allPokes.length} caught</span>
                   </div>
                   <div className="pw-ip-body">
-                    <div className="gba-section-title" style={{ marginBottom: 6 }}>Pokédex · {uniqueDex.size} / 1010</div>
-                    <div className="gba-tier-row">
-                      {(['epic', 'rare', 'common']).map(tier => (
-                        <div key={tier} className={`gba-tier-box ${tier}`}>
-                          <div className="gba-tier-count">{allPokes.filter(p => p.packTier === tier).length}</div>
-                          <div className="gba-tier-name">{tier}</div>
+                    {/* Tier summary cards */}
+                    {(() => {
+                      const claimedLegKeys2 = new Set(appState.claimedVaultMilestones || []);
+                      const claimedLegDexIds2 = new Set(
+                        LEGENDARY_MILESTONES.filter(m => claimedLegKeys2.has(`legendary:${m.steps}`)).map(m => m.dexId)
+                      );
+                      const legCount = allPokes.filter(p => claimedLegDexIds2.has(p.dexId)).length;
+                      const epicCount = allPokes.filter(p => !claimedLegDexIds2.has(p.dexId) && (p.packTier === 'epic' || p.packTier === 'legendary')).length;
+                      const rareCount = allPokes.filter(p => p.packTier === 'rare').length;
+                      const commonCount = allPokes.filter(p => p.packTier === 'common').length;
+                      return (
+                        <div className="mypk-summary">
+                          <div className="mypk-dex-line">
+                            <span className="mypk-dex-label">Pokédex</span>
+                            <div className="mypk-dex-bar"><div className="mypk-dex-fill" style={{ width: `${(uniqueDex.size / 1010) * 100}%` }} /></div>
+                            <span className="mypk-dex-count">{uniqueDex.size}<span className="mypk-dex-total">/1010</span></span>
+                          </div>
+                          <div className="mypk-tier-grid">
+                            {[
+                              { key: 'legendary', label: 'Legendary', count: legCount, color: '#d97706', bg: 'rgba(217,119,6,0.08)', border: 'rgba(217,119,6,0.3)' },
+                              { key: 'epic',      label: 'Epic',      count: epicCount,   color: '#7c3aed', bg: 'rgba(124,58,237,0.08)', border: 'rgba(124,58,237,0.3)' },
+                              { key: 'rare',      label: 'Rare',      count: rareCount,   color: '#2B50A1', bg: 'rgba(43,80,161,0.08)',  border: 'rgba(43,80,161,0.3)'  },
+                              { key: 'common',    label: 'Common',    count: commonCount, color: '#3d9e42', bg: 'rgba(61,158,66,0.08)',  border: 'rgba(61,158,66,0.3)'  },
+                            ].map(t => (
+                              <div key={t.key} className="mypk-tier-card" style={{ background: t.bg, borderColor: t.border }}>
+                                <span className="mypk-tier-count" style={{ color: t.color }}>{t.count}</span>
+                                <span className="mypk-tier-label" style={{ color: t.color }}>{t.label}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                    <div className="gba-pokedex-regions" style={{ marginTop: 8 }}>
+                      );
+                    })()}
+
+                    {/* Pokédex region filter */}
+                    <div className="mypk-regions-wrap">
                       {regionFilter && (
                         <div className="gba-region-filter-bar">
                           <span>Showing: <strong>{regionFilter}</strong></span>
@@ -3728,10 +3763,7 @@ export default function PokemonWalker({ onStop }) {
                         const total = r.max - r.min + 1;
                         return (
                           <div key={r.name} className={`gba-region-row${regionFilter === r.name ? ' gba-region-row-active' : ''}`}>
-                            <span
-                              className="gba-region-name gba-region-link"
-                              onClick={() => setRegionFilter(prev => prev === r.name ? null : r.name)}
-                            >{r.name}</span>
+                            <span className="gba-region-name gba-region-link" onClick={() => setRegionFilter(prev => prev === r.name ? null : r.name)}>{r.name}</span>
                             <div className="gba-region-bar"><div className="gba-region-fill" style={{ width: `${(count / total) * 100}%` }} /></div>
                             <span className="gba-region-count">{count}/{total}</span>
                           </div>
@@ -3746,8 +3778,46 @@ export default function PokemonWalker({ onStop }) {
                           const allPokes = appState.pokemon;
                           const filteredStorage = regionFilter ? allPokes.filter(p => getRegion(p.dexId) === regionFilter) : allPokes;
                           if (filteredStorage.length === 0) return <div className="gba-empty" style={{ marginTop: 8 }}>No {regionFilter} Pokémon in storage.</div>;
-                          return (['epic', 'rare', 'common']).map(tier => {
-                            const group = filteredStorage.filter(p => p.packTier === tier);
+                          const claimedLegKeys = new Set(appState.claimedVaultMilestones || []);
+                          const claimedLegDexIds = new Set(
+                            LEGENDARY_MILESTONES.filter(m => claimedLegKeys.has(`legendary:${m.steps}`)).map(m => m.dexId)
+                          );
+                          const legendaryGroup = filteredStorage.filter(p => claimedLegDexIds.has(p.dexId));
+                          const nonLegendaryStorage = filteredStorage.filter(p => !claimedLegDexIds.has(p.dexId));
+                          const legendaryIsOpen = !!openTiers['legendary'];
+                          const legendarySection = (
+                            <div key="legendary" className="pklist-section" style={{ marginTop: 6 }}>
+                              <button className="pklist-toggle pklist-toggle-legendary" onClick={() => setOpenTiers(p => ({ ...p, legendary: !p.legendary }))}>
+                                <span>legendary & mythical · {legendaryGroup.length}</span>
+                                <span className="pklist-chevron">{legendaryIsOpen ? '▲' : '▼'}</span>
+                              </button>
+                              {legendaryIsOpen && legendaryGroup.length > 0 && (
+                                <div className="pklist-list">
+                                  <div className="pklist-header-row">
+                                    <span className="pklist-col-img" />
+                                    <span className="pklist-col-name">Pokémon</span>
+                                    <span className="pklist-col-region">Region</span>
+                                    <span className="pklist-col-type">Type</span>
+                                    <span className="pklist-col-evo">Buddy Steps</span>
+                                  </div>
+                                  {legendaryGroup.map(p => (
+                                    <div key={p.uid} className="pklist-row" onClick={() => setDetailPokemon(p)}>
+                                      <span className="pklist-col-img">{p.sprite && <img src={p.sprite} alt={p.name} className="pklist-sprite" />}</span>
+                                      <span className="pklist-col-name">{p.name}</span>
+                                      <span className="pklist-col-region">{getRegion(p.dexId)}</span>
+                                      <span className="pklist-col-type">{p.types?.map(t => <TypeBadge key={t} type={t} />)}</span>
+                                      <span className="pklist-col-evo"><span className="pklist-evo-label">{fmtNum(p.buddySteps || 0)}</span></span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {legendaryIsOpen && legendaryGroup.length === 0 && (
+                                <div className="gba-empty" style={{ marginTop: 4, fontSize: 9 }}>No legendary or mythical Pokémon yet. Claim from vault milestones.</div>
+                              )}
+                            </div>
+                          );
+                          return [legendarySection, ...(['epic', 'rare', 'common']).map(tier => {
+                            const group = nonLegendaryStorage.filter(p => p.packTier === tier);
                             if (group.length === 0) return null;
                             const isOpen = !!openTiers[tier];
                             return (
@@ -3801,7 +3871,7 @@ export default function PokemonWalker({ onStop }) {
                                 )}
                               </div>
                             );
-                          });
+                          })];
                         })()}
                       </>
                     )}

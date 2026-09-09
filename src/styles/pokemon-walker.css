@@ -4603,6 +4603,106 @@
 .sh-download-btn:hover { background: #15803d; }
 
 /* Pokémon list view */
+/* ── My Pokémon redesign ── */
+.mypk-total-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,203,5,0.7);
+  margin-left: auto;
+}
+
+.mypk-summary {
+  background: #fff;
+  border: 1.5px solid #e0dbd0;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+.mypk-dex-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.mypk-dex-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  color: #1a1a2e;
+  flex-shrink: 0;
+  width: 44px;
+}
+
+.mypk-dex-bar {
+  flex: 1;
+  height: 6px;
+  background: #e0dbd0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mypk-dex-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FFCB05, #f59e0b);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.mypk-dex-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1a1a2e;
+  flex-shrink: 0;
+}
+
+.mypk-dex-total {
+  font-size: 8px;
+  font-weight: 500;
+  color: #aaa;
+}
+
+.mypk-tier-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 5px;
+}
+
+.mypk-tier-card {
+  border: 1.5px solid;
+  border-radius: 7px;
+  padding: 6px 4px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mypk-tier-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.mypk-tier-label {
+  font-size: 7px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+}
+
+.mypk-regions-wrap {
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .pklist-section { margin-bottom: 8px; }
 
 .pklist-toggle {
@@ -4625,10 +4725,10 @@
 }
 .pklist-toggle:hover { background: #e8e4da; }
 .pklist-toggle-legendary { border-left-color: #d97706; color: #d97706; background: rgba(217,119,6,0.08); }
+.pklist-toggle-legendary:hover { background: rgba(217,119,6,0.14); }
 .pklist-toggle-epic      { border-left-color: #7c3aed; color: #7c3aed; background: rgba(124,58,237,0.08); }
 .pklist-toggle-rare      { border-left-color: #2B50A1; color: #2B50A1; background: rgba(43,80,161,0.08); }
 .pklist-toggle-common    { border-left-color: #3d9e42; color: #3d9e42; background: rgba(61,158,66,0.08); }
-.pklist-toggle-legendary:hover { background: rgba(217,119,6,0.14); }
 .pklist-toggle-epic:hover      { background: rgba(124,58,237,0.14); }
 .pklist-toggle-rare:hover      { background: rgba(43,80,161,0.14); }
 .pklist-toggle-common:hover    { background: rgba(61,158,66,0.14); }
