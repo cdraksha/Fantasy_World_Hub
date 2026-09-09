@@ -4747,7 +4747,7 @@ export default function PokemonWalker({ onStop }) {
 
                         if (sa?.status === 'rewarding') {
                           const reward = sa.reward;
-                          const needsEvoPicker = reward.type === 'freeEvolution' || (reward.type === 'combo' && reward.parts.includes('freeEvolution'));
+                          const needsEvoPicker = reward.type === 'freeEvolution' || (reward.type === 'combo' && reward.parts?.includes('freeEvolution'));
                           const needsPicker = needsEvoPicker;
                           return (
                             <div className="fast-panel fast-rewarding">
