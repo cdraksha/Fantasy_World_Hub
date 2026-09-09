@@ -1747,24 +1747,20 @@ export default function PokemonWalker({ onStop }) {
     return { newPacks, resetVault: 0, newPendingStarters, newIdx: Math.min(idx + 1, STARTER_MILESTONES.length) };
   }, []);
 
-  // ─── Check legendary/mythical step milestones ───────────────────────
-  const checkLegendaryMilestones = useCallback(async (prevTotal, newTotal, claimedList) => {
-    const newly = LEGENDARY_MILESTONES.filter(m => m.steps > prevTotal && m.steps <= newTotal && !claimedList.includes(m.steps));
-    if (newly.length === 0) return;
-    const fetched = await Promise.allSettled(newly.map(m => fetchPokemonById(m.dexId)));
-    const pokes = fetched.map((r, i) => r.status === 'fulfilled' ? r.value : null).filter(Boolean);
-    const newSteps = newly.map(m => m.steps);
-    setAppState(prev => ({
-      ...prev,
-      pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false, isSpecialMilestone: true }))],
-      caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
-      claimedLegendaryMilestones: [...(prev.claimedLegendaryMilestones || []), ...newSteps],
-      challengeLog: [...pokes.map(p => ({ date: todayString(), type: 'specialMilestone', tier: 'epic', outcome: `Step milestone: ${p.name} joined your collection!` })), ...(prev.challengeLog || [])],
-    }));
-    if (pokes.length > 0) {
-      setDeltaFlash(`Step milestone! ${pokes.map(p => p.name).join(', ')} joined your collection!`);
-      setTimeout(() => setDeltaFlash(null), 5000);
-    }
+  // ─── Claim legendary/mythical step milestone ─────────────────────────
+  const handleClaimLegendaryMilestone = useCallback(async (ms) => {
+    try {
+      const poke = await fetchPokemonById(ms.dexId);
+      setAppState(prev => ({
+        ...prev,
+        pokemon: [...prev.pokemon, { uid: makeUID(), ...poke, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }],
+        caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId])],
+        claimedLegendaryMilestones: [...(prev.claimedLegendaryMilestones || []), ms.steps],
+        challengeLog: [{ date: todayString(), type: 'specialMilestone', tier: 'epic', outcome: `Step milestone ${ms.steps.toLocaleString()}: ${poke.name} claimed!` }, ...(prev.challengeLog || [])],
+      }));
+      setDeltaFlash(`${poke.name} claimed!`);
+      setTimeout(() => setDeltaFlash(null), 4000);
+    } catch { /* silently fail */ }
   }, []);
 
   // ─── Check achievements ─────────────────────────────────────────────
@@ -1930,11 +1926,6 @@ export default function PokemonWalker({ onStop }) {
       return next;
     });
     setStepInput('');
-    if (delta > 0) {
-      const prevTotal = appState.totalStepsWalked;
-      const newTotal = prevTotal + delta;
-      checkLegendaryMilestones(prevTotal, newTotal, appState.claimedLegendaryMilestones || []);
-    }
   };
 
   // ─── Start Day Care ──────────────────────────────────────────────────
@@ -3661,9 +3652,9 @@ export default function PokemonWalker({ onStop }) {
                                         <td className="ms-td ms-td-steps">{m.steps.toLocaleString()}</td>
                                         <td className="ms-td ms-td-action">
                                           {claimed
-                                            ? <span className="ms-need" style={{ color: '#22c55e' }}>✓ Got it</span>
+                                            ? <span className="ms-need" style={{ color: '#22c55e' }}>✓ Claimed</span>
                                             : unlocked
-                                            ? <span className="ms-need" style={{ color: '#fbbf24' }}>Auto-claimed on step save</span>
+                                            ? <button className="ms-claim-btn" onClick={() => handleClaimLegendaryMilestone(m)}>Claim</button>
                                             : <span className="ms-need">{(m.steps - appState.totalStepsWalked).toLocaleString()} left</span>}
                                         </td>
                                       </tr>
