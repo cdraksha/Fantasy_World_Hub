@@ -2304,7 +2304,7 @@ export default function PokemonWalker({ onStop }) {
               : p
           ),
           evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'vault' }, ...(prev.evolutionLog || [])],
-          caughtDex: prev.caughtDex?.includes(evolved.dexId) ? prev.caughtDex : [...(prev.caughtDex || []), evolved.dexId],
+          caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId, evolved.dexId])],
         };
       });
       setDetailPokemon(prev => prev?.uid === uid
@@ -2481,7 +2481,7 @@ export default function PokemonWalker({ onStop }) {
               : p
           ),
           evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'fasting' }, ...(prev.evolutionLog || [])],
-          caughtDex: prev.caughtDex?.includes(evolved.dexId) ? prev.caughtDex : [...(prev.caughtDex || []), evolved.dexId],
+          caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId, evolved.dexId])],
           fasting: {
             ...prev.fasting,
             active: fa ? { ...fa, status: 'done' } : fa,
@@ -2612,7 +2612,7 @@ export default function PokemonWalker({ onStop }) {
           ...prev,
           pokemon: prev.pokemon.map(p => p.uid === uid ? { ...p, dexId: evolved.dexId, name: evolved.name, sprite: evolved.sprite, types: evolved.types, timesEvolved: (p.timesEvolved || 0) + 1, buddySteps: 0, nextEvoDexId: nextEvoDexIdSugar } : p),
           evolutionLog: [{ date: todayString(), from: poke.name, to: evolved.name, method: 'sugar' }, ...(prev.evolutionLog || [])],
-          caughtDex: prev.caughtDex?.includes(evolved.dexId) ? prev.caughtDex : [...(prev.caughtDex || []), evolved.dexId],
+          caughtDex: [...new Set([...(prev.caughtDex || []), poke.dexId, evolved.dexId])],
           sugar: {
             ...prev.sugar,
             active: sa ? { ...sa, status: 'done' } : sa,
@@ -3253,7 +3253,7 @@ export default function PokemonWalker({ onStop }) {
   const totalPacks = Object.values(appState.packInventory).reduce((a, b) => a + b, 0);
 
   const allPokes = appState.pokemon;
-  const uniqueDex = new Set(appState.caughtDex || allPokes.map(p => p.dexId));
+  const uniqueDex = new Set((appState.caughtDex || allPokes.map(p => p.dexId)).map(Number));
   const pokedexRegions = [
     { name: 'Kanto', min: 1, max: 151 },
     { name: 'Johto', min: 152, max: 251 },
