@@ -3865,11 +3865,21 @@ export default function PokemonWalker({ onStop }) {
                           const legendaryGroup = filteredStorage.filter(p => claimedLegDexIds.has(p.dexId));
                           const nonLegendaryStorage = filteredStorage.filter(p => !claimedLegDexIds.has(p.dexId));
                           const legendaryIsOpen = !!openTiers['legendary'];
+                          const tierMeta = {
+                            legendary: { color: '#d97706', bg: 'rgba(217,119,6,0.07)', border: 'rgba(217,119,6,0.35)' },
+                            epic:      { color: '#7c3aed', bg: 'rgba(124,58,237,0.07)', border: 'rgba(124,58,237,0.35)' },
+                            rare:      { color: '#2B50A1', bg: 'rgba(43,80,161,0.07)',  border: 'rgba(43,80,161,0.35)'  },
+                            common:    { color: '#3d9e42', bg: 'rgba(61,158,66,0.07)',  border: 'rgba(61,158,66,0.35)'  },
+                          };
                           const legendarySection = (
                             <div key="legendary" className="pklist-section" style={{ marginTop: 6 }}>
-                              <button className="pklist-toggle pklist-toggle-legendary" onClick={() => setOpenTiers(p => ({ ...p, legendary: !p.legendary }))}>
-                                <span>legendary & mythical · {legendaryGroup.length}</span>
-                                <span className="pklist-chevron">{legendaryIsOpen ? '▲' : '▼'}</span>
+                              <button
+                                className="log-section-toggle"
+                                style={{ background: tierMeta.legendary.bg, borderColor: tierMeta.legendary.border, color: tierMeta.legendary.color, borderLeft: `3px solid ${tierMeta.legendary.color}` }}
+                                onClick={() => setOpenTiers(p => ({ ...p, legendary: !p.legendary }))}
+                              >
+                                <span>Legendary & Mythical · {legendaryGroup.length}</span>
+                                <span className="log-section-chevron">{legendaryIsOpen ? '▲' : '▼'}</span>
                               </button>
                               {legendaryIsOpen && legendaryGroup.length > 0 && (
                                 <div className="pklist-list">
@@ -3900,11 +3910,16 @@ export default function PokemonWalker({ onStop }) {
                             const group = nonLegendaryStorage.filter(p => p.packTier === tier);
                             if (group.length === 0) return null;
                             const isOpen = !!openTiers[tier];
+                            const tm = tierMeta[tier];
                             return (
                               <div key={tier} className="pklist-section" style={{ marginTop: 6 }}>
-                                <button className={`pklist-toggle pklist-toggle-${tier}`} onClick={() => setOpenTiers(p => ({ ...p, [tier]: !p[tier] }))}>
-                                  <span>{tier} · {new Set(group.map(p => p.dexId)).size}{group.length !== new Set(group.map(p => p.dexId)).size ? ` (${group.length} total)` : ''}</span>
-                                  <span className="pklist-chevron">{isOpen ? '▲' : '▼'}</span>
+                                <button
+                                  className="log-section-toggle"
+                                  style={{ background: tm.bg, borderColor: tm.border, color: tm.color, borderLeft: `3px solid ${tm.color}` }}
+                                  onClick={() => setOpenTiers(p => ({ ...p, [tier]: !p[tier] }))}
+                                >
+                                  <span style={{ textTransform: 'capitalize' }}>{tier} · {new Set(group.map(p => p.dexId)).size}{group.length !== new Set(group.map(p => p.dexId)).size ? ` (${group.length} total)` : ''}</span>
+                                  <span className="log-section-chevron">{isOpen ? '▲' : '▼'}</span>
                                 </button>
                                 {isOpen && (
                                   <div className="pklist-list">
@@ -3956,54 +3971,6 @@ export default function PokemonWalker({ onStop }) {
                       </>
                     )}
 
-                    {/* Records */}
-                    {(() => {
-                      const allRecords = appState.evolutionLog || [];
-                      const evolutions = allRecords.filter(e => e.method !== 'egg');
-                      const hatches = allRecords.filter(e => e.method === 'egg');
-                      return (
-                        <div className="records-container">
-                          <div className="pklist-section">
-                            <button className="pklist-toggle pklist-toggle-evo" onClick={() => setShowEvoRecords(p => !p)}>
-                              <span>✨ Evolutions · {evolutions.length}</span>
-                              <span className="pklist-chevron">{showEvoRecords ? '▲' : '▼'}</span>
-                            </button>
-                            {showEvoRecords && (
-                              <div className="pklist-list">
-                                {evolutions.length === 0 ? (
-                                  <div className="records-empty">None yet</div>
-                                ) : evolutions.map((entry, i) => (
-                                  <div key={i} className="records-row">
-                                    <span className="records-date">{entry.date}</span>
-                                    <span className="records-names">{entry.from} → {entry.to}</span>
-                                    <span className={`records-badge records-badge-${entry.method}`}>{entry.method}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <div className="pklist-section">
-                            <button className="pklist-toggle pklist-toggle-egg" onClick={() => setShowHatchRecords(p => !p)}>
-                              <span>🥚 Hatches · {hatches.length}</span>
-                              <span className="pklist-chevron">{showHatchRecords ? '▲' : '▼'}</span>
-                            </button>
-                            {showHatchRecords && (
-                              <div className="pklist-list">
-                                {hatches.length === 0 ? (
-                                  <div className="records-empty">None yet</div>
-                                ) : hatches.map((entry, i) => (
-                                  <div key={i} className="records-row">
-                                    <span className="records-date">{entry.date}</span>
-                                    <span className="records-names">{entry.to}</span>
-                                    <span className="records-badge records-badge-egg">egg</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })()}
                   </div>
                 </div>
               )}
@@ -6050,6 +6017,53 @@ export default function PokemonWalker({ onStop }) {
                               ? <div className="sh-empty">No runs logged yet.</div>
                               : <div className="clog-list">{distanceEntries.map(renderRow)}</div>
                           )}
+                          {(() => {
+                            const allRecords = appState.evolutionLog || [];
+                            const evolutions = allRecords.filter(e => e.method !== 'egg');
+                            const hatches = allRecords.filter(e => e.method === 'egg');
+                            return (
+                              <>
+                                <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowEvoRecords(p => !p)}>
+                                  Evolutions · {evolutions.length}
+                                  <span className="log-section-chevron">{showEvoRecords ? '▲' : '▼'}</span>
+                                </button>
+                                {showEvoRecords && (
+                                  evolutions.length === 0
+                                    ? <div className="sh-empty">No evolutions yet.</div>
+                                    : <div className="clog-list">
+                                        {evolutions.map((entry, i) => (
+                                          <div key={i} className="clog-row">
+                                            <div className="clog-row-top">
+                                              <span className="clog-type">{entry.method}</span>
+                                              <span className="clog-date">{entry.date}</span>
+                                            </div>
+                                            <div className="clog-outcome" style={{ color: '#7c3aed' }}>{entry.from} → {entry.to}</div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                )}
+                                <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowHatchRecords(p => !p)}>
+                                  Hatches · {hatches.length}
+                                  <span className="log-section-chevron">{showHatchRecords ? '▲' : '▼'}</span>
+                                </button>
+                                {showHatchRecords && (
+                                  hatches.length === 0
+                                    ? <div className="sh-empty">No hatches yet.</div>
+                                    : <div className="clog-list">
+                                        {hatches.map((entry, i) => (
+                                          <div key={i} className="clog-row">
+                                            <div className="clog-row-top">
+                                              <span className="clog-type">egg</span>
+                                              <span className="clog-date">{entry.date}</span>
+                                            </div>
+                                            <div className="clog-outcome" style={{ color: '#15803d' }}>{entry.to} hatched</div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </>
                       );
                     })()}
