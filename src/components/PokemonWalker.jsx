@@ -3976,6 +3976,38 @@ export default function PokemonWalker({ onStop }) {
                       </>
                     )}
 
+                    {/* Evolutions */}
+                    {(() => {
+                      const evolutions = (appState.evolutionLog || []).filter(e => e.method !== 'egg');
+                      return (
+                        <>
+                          <button
+                            className="log-section-toggle"
+                            style={{ marginTop: 8, background: 'rgba(124,58,237,0.07)', borderColor: 'rgba(124,58,237,0.35)', color: '#7c3aed', borderLeft: '3px solid #7c3aed' }}
+                            onClick={() => setShowEvoRecords(p => !p)}
+                          >
+                            Evolutions · {evolutions.length}
+                            <span className="log-section-chevron">{showEvoRecords ? '▲' : '▼'}</span>
+                          </button>
+                          {showEvoRecords && (
+                            evolutions.length === 0
+                              ? <div className="sh-empty">No evolutions yet.</div>
+                              : <div className="clog-list" style={{ marginTop: 4 }}>
+                                  {evolutions.map((entry, i) => (
+                                    <div key={i} className="clog-row">
+                                      <div className="clog-row-top">
+                                        <span className="clog-type">{entry.method}</span>
+                                        <span className="clog-date">{entry.date}</span>
+                                      </div>
+                                      <div className="clog-outcome" style={{ color: '#7c3aed' }}>{entry.from} → {entry.to}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                          )}
+                        </>
+                      );
+                    })()}
+
                   </div>
                 </div>
               )}
@@ -6022,32 +6054,6 @@ export default function PokemonWalker({ onStop }) {
                               ? <div className="sh-empty">No runs logged yet.</div>
                               : <div className="clog-list">{distanceEntries.map(renderRow)}</div>
                           )}
-                          {(() => {
-                            const evolutions = (appState.evolutionLog || []).filter(e => e.method !== 'egg');
-                            return (
-                              <>
-                                <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowEvoRecords(p => !p)}>
-                                  Evolutions · {evolutions.length}
-                                  <span className="log-section-chevron">{showEvoRecords ? '▲' : '▼'}</span>
-                                </button>
-                                {showEvoRecords && (
-                                  evolutions.length === 0
-                                    ? <div className="sh-empty">No evolutions yet.</div>
-                                    : <div className="clog-list">
-                                        {evolutions.map((entry, i) => (
-                                          <div key={i} className="clog-row">
-                                            <div className="clog-row-top">
-                                              <span className="clog-type">{entry.method}</span>
-                                              <span className="clog-date">{entry.date}</span>
-                                            </div>
-                                            <div className="clog-outcome" style={{ color: '#7c3aed' }}>{entry.from} → {entry.to}</div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                )}
-                              </>
-                            );
-                          })()}
                         </>
                       );
                     })()}
