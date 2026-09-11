@@ -940,6 +940,7 @@ function loadState() {
     if (!saved.challengeLog) saved.challengeLog = [];
     if (saved.freeEvolutionCredits === undefined) saved.freeEvolutionCredits = 0;
     if (!saved.water) saved.water = initWater();
+    if (!saved.calories) saved.calories = { todayDate: null, consumed: 0, burnt: 0, logged: false, history: [] };
     if (!saved.rnChallenge) saved.rnChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.prudhviChallenge) saved.prudhviChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.prudhviWeddingChallenge) saved.prudhviWeddingChallenge = { claimedReward: false, penaltyApplied: false };
@@ -1574,6 +1575,9 @@ export default function PokemonWalker({ onStop }) {
   const [weightResult, setWeightResult] = useState(null);
   const [showWaterPanel, setShowWaterPanel] = useState(false);
   const [waterInput, setWaterInput] = useState('');
+  const [showCaloriesPanel, setShowCaloriesPanel] = useState(false);
+  const [calConsumedInput, setCalConsumedInput] = useState('');
+  const [calBurntInput, setCalBurntInput] = useState('');
   const [showWifeChallengePanel, setShowWifeChallengePanel] = useState(false);
   const [wifeChallengeInput, setWifeChallengeInput] = useState('');
   const [claimingVictory, setClaimingVictory] = useState(false);
@@ -2240,6 +2244,9 @@ export default function PokemonWalker({ onStop }) {
         achievements: newAch,
         packInventory: isEgg ? prev.packInventory : { ...prev.packInventory, [newPoke.packTier]: prev.packInventory[newPoke.packTier] - 1 },
         caughtDex: newCaughtDex,
+        evolutionLog: isEgg
+          ? [{ date: todayString(), from: 'Egg', to: fetched.name, method: 'egg' }, ...(prev.evolutionLog || [])]
+          : prev.evolutionLog,
       };
     });
   };
@@ -2901,6 +2908,58 @@ export default function PokemonWalker({ onStop }) {
         packInventory: { ...prev.packInventory, [tier]: prev.packInventory[tier] + 1 },
         timing: { ...prev.timing, pendingReward: null },
         challengeLog: [{ date: todayString(), type: 'timing', tier, outcome: `${tier} pack · ${streak}-day streak` }, ...(prev.challengeLog || [])],
+      };
+    });
+  };
+
+  // ─── Calories handlers ───────────────────────────────────────────────
+  const handleAddCalories = (consumed, burnt) => {
+    const c = Number(consumed) || 0;
+    const b = Number(burnt) || 0;
+    if (c === 0 && b === 0) return;
+    setAppState(prev => {
+      const today = todayString();
+      const cal = prev.calories || { todayDate: null, consumed: 0, burnt: 0, logged: false, history: [] };
+      const base = cal.todayDate === today ? cal : { ...cal, consumed: 0, burnt: 0, logged: false };
+      return {
+        ...prev,
+        calories: { ...base, todayDate: today, consumed: base.consumed + c, burnt: base.burnt + b },
+      };
+    });
+  };
+
+  const handleLogCaloriesDay = () => {
+    setAppState(prev => {
+      const today = todayString();
+      const cal = prev.calories || { todayDate: null, consumed: 0, burnt: 0, logged: false, history: [] };
+      if (cal.logged && cal.todayDate === today) return prev;
+      const net = (cal.consumed || 0) - (cal.burnt || 0);
+      const TARGET = 1500;
+      const over = net - TARGET;
+      let next = { ...prev };
+      if (over <= 0) {
+        // Under target — buddy +2000
+        if (prev.buddy) {
+          next = { ...next, pokemon: next.pokemon.map(p => p.uid === prev.buddy ? { ...p, buddySteps: (p.buddySteps || 0) + 2000 } : p) };
+        }
+      } else {
+        // Over target — buddy loses overage steps
+        if (prev.buddy) {
+          next = { ...next, pokemon: next.pokemon.map(p => p.uid === prev.buddy ? { ...p, buddySteps: Math.max(0, (p.buddySteps || 0) - over) } : p) };
+        }
+      }
+      const outcome = over <= 0
+        ? `Calories: ${net} kcal net (under target) · buddy +2,000 steps`
+        : `Calories: ${net} kcal net (${over} over target) · buddy −${over} steps`;
+      return {
+        ...next,
+        calories: {
+          ...cal,
+          todayDate: today,
+          logged: true,
+          history: [{ date: today, consumed: cal.consumed, burnt: cal.burnt, net, over }, ...(cal.history || [])],
+        },
+        challengeLog: [{ date: today, type: 'calories', tier: over <= 0 ? 'rare' : null, outcome }, ...(prev.challengeLog || [])],
       };
     });
   };
@@ -5049,6 +5108,118 @@ export default function PokemonWalker({ onStop }) {
                         );
                       })()}
                     </div>
+
+                    {/* Calories */}
+                    {(() => {
+                      const today = todayString();
+                      const cal = appState.calories || { todayDate: null, consumed: 0, burnt: 0, logged: false, history: [] };
+                      const isToday = cal.todayDate === today;
+                      const consumed = isToday ? (cal.consumed || 0) : 0;
+                      const burnt = isToday ? (cal.burnt || 0) : 0;
+                      const net = consumed - burnt;
+                      const TARGET = 1500;
+                      const remaining = TARGET - net;
+                      const pct = Math.min(100, (net / TARGET) * 100);
+                      const over = net > TARGET;
+                      const logged = isToday && cal.logged;
+                      return (
+                        <div className="gba-section">
+                          <button className="cal-toggle-btn" onClick={() => setShowCaloriesPanel(p => !p)}>
+                            Calories
+                            {logged ? <span className="obj-updated-badge">Logged ✓</span>
+                              : over ? <span className="obj-pending-badge">{net - TARGET} over</span>
+                              : consumed > 0 ? <span className="obj-pending-badge">{remaining} left</span>
+                              : null}
+                          </button>
+                          {showCaloriesPanel && (
+                            <div className="cal-panel">
+                              {/* Progress bar */}
+                              <div className="cal-bar-wrap">
+                                <div className="cal-bar">
+                                  <div className="cal-bar-fill" style={{ width: `${pct}%`, background: over ? '#ef4444' : pct > 80 ? '#f59e0b' : '#22c55e' }} />
+                                </div>
+                                <div className="cal-bar-labels">
+                                  <span className="cal-net-label">{net} kcal net</span>
+                                  <span className={`cal-remain-label${over ? ' cal-over' : ''}`}>
+                                    {over ? `${net - TARGET} over limit` : `${remaining} left`}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Stats row */}
+                              <div className="cal-stats-row">
+                                <div className="cal-stat">
+                                  <span className="cal-stat-val">{consumed}</span>
+                                  <span className="cal-stat-label">consumed</span>
+                                </div>
+                                <div className="cal-stat-minus">−</div>
+                                <div className="cal-stat">
+                                  <span className="cal-stat-val">{burnt}</span>
+                                  <span className="cal-stat-label">burnt</span>
+                                </div>
+                                <div className="cal-stat-minus">=</div>
+                                <div className="cal-stat">
+                                  <span className="cal-stat-val" style={{ color: over ? '#ef4444' : '#16a34a' }}>{net}</span>
+                                  <span className="cal-stat-label">net</span>
+                                </div>
+                              </div>
+
+                              {/* Entry inputs */}
+                              <div className="cal-inputs-row">
+                                <div className="cal-input-group">
+                                  <label className="cal-input-label">+ Consumed</label>
+                                  <input
+                                    type="number"
+                                    className="cal-input"
+                                    placeholder="kcal"
+                                    value={calConsumedInput}
+                                    onChange={e => setCalConsumedInput(e.target.value)}
+                                    min="0"
+                                  />
+                                </div>
+                                <div className="cal-input-group">
+                                  <label className="cal-input-label">− Workout Burnt</label>
+                                  <input
+                                    type="number"
+                                    className="cal-input"
+                                    placeholder="kcal"
+                                    value={calBurntInput}
+                                    onChange={e => setCalBurntInput(e.target.value)}
+                                    min="0"
+                                  />
+                                </div>
+                                <button className="cal-add-btn" onClick={() => { handleAddCalories(calConsumedInput, calBurntInput); setCalConsumedInput(''); setCalBurntInput(''); }}>
+                                  Add
+                                </button>
+                              </div>
+
+                              {/* Log day */}
+                              {!logged ? (
+                                <button className="cal-log-btn" onClick={handleLogCaloriesDay} disabled={consumed === 0}>
+                                  Log Day · {over ? `buddy −${net - TARGET} steps` : 'buddy +2,000 steps'}
+                                </button>
+                              ) : (
+                                <div className="cal-logged-msg">Day logged · {over ? `buddy lost ${net - TARGET} steps` : 'buddy earned 2,000 steps'}</div>
+                              )}
+
+                              {/* History */}
+                              {(cal.history || []).length > 0 && (
+                                <div className="cal-history">
+                                  <div className="cal-history-title">History</div>
+                                  {cal.history.slice(0, 7).map((h, i) => (
+                                    <div key={i} className="cal-history-row">
+                                      <span className="cal-history-date">{h.date}</span>
+                                      <span className="cal-history-net" style={{ color: h.over > 0 ? '#ef4444' : '#16a34a' }}>{h.net} kcal</span>
+                                      <span className="cal-history-result">{h.over > 0 ? `−${h.over} steps` : '+2,000 steps'}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* ── Surprise Challenges ── */}
                     <div className="obj-category-label" style={{ marginTop: 10 }}>Surprise Challenges</div>
