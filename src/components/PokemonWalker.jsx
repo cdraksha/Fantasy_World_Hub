@@ -3918,7 +3918,11 @@ export default function PokemonWalker({ onStop }) {
                                   style={{ background: tm.bg, borderColor: tm.border, color: tm.color, borderLeft: `3px solid ${tm.color}` }}
                                   onClick={() => setOpenTiers(p => ({ ...p, [tier]: !p[tier] }))}
                                 >
-                                  <span style={{ textTransform: 'capitalize' }}>{tier} · {new Set(group.map(p => Number(p.dexId))).size}{group.length !== new Set(group.map(p => Number(p.dexId))).size ? ` (${group.length} total)` : ''}</span>
+                                  {(() => {
+                                    const uniqueCount = new Set(group.map(p => Number(p.dexId))).size;
+                                    const totalCount = group.reduce((s, p) => s + (p.count || 1), 0);
+                                    return <span style={{ textTransform: 'capitalize' }}>{tier} · {uniqueCount}{totalCount !== uniqueCount ? ` (${totalCount} total)` : ''}</span>;
+                                  })()}
                                   <span className="log-section-chevron">{isOpen ? '▲' : '▼'}</span>
                                 </button>
                                 {isOpen && (
