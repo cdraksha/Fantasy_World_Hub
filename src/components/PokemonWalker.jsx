@@ -1287,6 +1287,133 @@ function PokemonDetailPopup({ pokemon, allPokemon, vault, buddy, onClose, onEvol
   );
 }
 
+// ─── Pokédex Popup ────────────────────────────────────────────────────────
+
+const POKEDEX_TOTAL = 1010;
+
+const POKEDEX_REGIONS = [
+  { name: 'All',    min: 1,   max: 1010 },
+  { name: 'Kanto',  min: 1,   max: 151  },
+  { name: 'Johto',  min: 152, max: 251  },
+  { name: 'Hoenn',  min: 252, max: 386  },
+  { name: 'Sinnoh', min: 387, max: 493  },
+  { name: 'Unova',  min: 494, max: 649  },
+  { name: 'Kalos',  min: 650, max: 721  },
+  { name: 'Alola',  min: 722, max: 809  },
+  { name: 'Galar',  min: 810, max: 905  },
+  { name: 'Paldea', min: 906, max: 1010 },
+];
+
+const POKEDEX_TIER_META = {
+  legendary: { label: 'Legendary', color: '#d97706' },
+  epic:      { label: 'Epic',      color: '#7c3aed' },
+  rare:      { label: 'Rare',      color: '#2B50A1' },
+  common:    { label: 'Common',    color: '#3d9e42' },
+};
+
+// Module-level cache so the name list is fetched at most once per page load
+let pokedexNameCache = null;
+
+function PokedexPopup({ caughtDex, tierByDexId, onClose }) {
+  const [names, setNames] = useState(pokedexNameCache);
+  const [region, setRegion] = useState('All');
+  const [showCaughtOnly, setShowCaughtOnly] = useState(false);
+
+  useEffect(() => {
+    if (pokedexNameCache) return;
+    let cancelled = false;
+    fetch(`https://pokeapi.co/api/v2/pokemon?limit=${POKEDEX_TOTAL}`)
+      .then(r => r.json())
+      .then(data => {
+        // results are returned in dex order — index i corresponds to dexId i+1
+        const map = {};
+        (data.results || []).forEach((entry, i) => { map[i + 1] = entry.name; });
+        pokedexNameCache = map;
+        if (!cancelled) setNames(map);
+      })
+      .catch(() => { if (!cancelled) setNames({}); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const activeRegion = POKEDEX_REGIONS.find(r => r.name === region) || POKEDEX_REGIONS[0];
+  const caughtInRegion = [...caughtDex].filter(id => id >= activeRegion.min && id <= activeRegion.max).length;
+  const regionTotal = activeRegion.max - activeRegion.min + 1;
+
+  const rows = [];
+  for (let id = activeRegion.min; id <= activeRegion.max; id++) {
+    const isCaught = caughtDex.has(id);
+    if (showCaughtOnly && !isCaught) continue;
+    rows.push({ id, isCaught, tier: tierByDexId.get(id) || null });
+  }
+
+  return (
+    <div className="pw-popup-overlay" onClick={onClose}>
+      <div className="pdx-modal" onClick={e => e.stopPropagation()}>
+        <div className="pdx-header">
+          <div className="pdx-header-main">
+            <span className="pdx-title">Pokédex</span>
+            <span className="pdx-count">{caughtDex.size}<span className="pdx-count-total">/{POKEDEX_TOTAL}</span></span>
+          </div>
+          <button className="pdx-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="pdx-regions">
+          {POKEDEX_REGIONS.map(r => (
+            <button
+              key={r.name}
+              className={`pdx-region-btn${region === r.name ? ' pdx-region-active' : ''}`}
+              onClick={() => setRegion(r.name)}
+            >
+              {r.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="pdx-subbar">
+          <span className="pdx-subbar-count">{caughtInRegion} / {regionTotal} in {activeRegion.name}</span>
+          <button
+            className={`pdx-filter-btn${showCaughtOnly ? ' pdx-filter-active' : ''}`}
+            onClick={() => setShowCaughtOnly(v => !v)}
+          >
+            {showCaughtOnly ? '✓ Caught only' : 'Caught only'}
+          </button>
+        </div>
+
+        <div className="pdx-list">
+          {names === null ? (
+            <div className="pdx-loading">Loading Pokédex…</div>
+          ) : rows.length === 0 ? (
+            <div className="pdx-loading">Nothing caught in {activeRegion.name} yet.</div>
+          ) : rows.map(({ id, isCaught, tier }) => {
+            const meta = tier ? POKEDEX_TIER_META[tier] : null;
+            return (
+              <div key={id} className={`pdx-row${isCaught ? '' : ' pdx-row-unknown'}`}>
+                <span className="pdx-num">#{String(id).padStart(3, '0')}</span>
+                <span className="pdx-sprite-wrap">
+                  <img
+                    src={pokemonSpriteUrl(id)}
+                    alt={isCaught ? (names[id] || '') : 'Unknown'}
+                    className={`pdx-sprite${isCaught ? '' : ' pdx-sprite-shadow'}`}
+                    loading="lazy"
+                  />
+                </span>
+                <span className="pdx-name">
+                  {isCaught ? (names[id] || '—') : '----------'}
+                </span>
+                {meta && (
+                  <span className="pdx-tier" style={{ color: meta.color, borderColor: meta.color }}>
+                    {meta.label}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Pack Opening Screen ──────────────────────────────────────────────────
 
 function PackOpeningScreen({ tier, isEgg, onClose, onCatch }) {
@@ -1526,6 +1653,7 @@ export default function PokemonWalker({ onStop }) {
   const [milestoneReveal, setMilestoneReveal] = useState(null);
   const [eggOpening, setEggOpening] = useState(null);  // tier string when hatching egg, null otherwise
   const [detailPokemon, setDetailPokemon] = useState(null);
+  const [showPokedex, setShowPokedex] = useState(false);
   const [showMidnight, setShowMidnight] = useState(false);
   const [evolving, setEvolving] = useState(null); // uid of Pokémon being evolved
   const [launchInput, setLaunchInput] = useState('');
@@ -3254,6 +3382,25 @@ export default function PokemonWalker({ onStop }) {
 
   const allPokes = appState.pokemon;
   const uniqueDex = new Set((appState.caughtDex || allPokes.map(p => p.dexId)).map(Number));
+
+  // ─── Tier lookup for the Pokédex (legendary only counts when vault-claimed) ──
+  const pokedexTierByDexId = (() => {
+    const rank = { common: 1, rare: 2, epic: 3, legendary: 4 };
+    const claimedKeys = new Set(appState.claimedVaultMilestones || []);
+    const map = new Map();
+    allPokes.forEach(p => {
+      const id = Number(p.dexId);
+      // legacy 'legendary' packTier is shown as epic — only vault claims are legendary
+      const tier = p.packTier === 'legendary' ? 'epic' : p.packTier;
+      if (!tier || !rank[tier]) return;
+      const current = map.get(id);
+      if (!current || rank[tier] > rank[current]) map.set(id, tier);
+    });
+    LEGENDARY_MILESTONES.forEach(m => {
+      if (claimedKeys.has(`legendary:${m.steps}`)) map.set(Number(m.dexId), 'legendary');
+    });
+    return map;
+  })();
   const pokedexRegions = [
     { name: 'Kanto', min: 1, max: 151 },
     { name: 'Johto', min: 152, max: 251 },
@@ -3295,6 +3442,13 @@ export default function PokemonWalker({ onStop }) {
           </span>
           <button className="pw-pack-warning-dismiss" onClick={() => setStepsWarning(false)}>✕</button>
         </div>
+      )}
+      {showPokedex && (
+        <PokedexPopup
+          caughtDex={uniqueDex}
+          tierByDexId={pokedexTierByDexId}
+          onClose={() => setShowPokedex(false)}
+        />
       )}
       {detailPokemon && (
         <PokemonDetailPopup
@@ -3808,11 +3962,12 @@ export default function PokemonWalker({ onStop }) {
                       const commonCount = allPokes.filter(p => p.packTier === 'common').length;
                       return (
                         <div className="mypk-summary">
-                          <div className="mypk-dex-line">
+                          <button className="mypk-dex-line mypk-dex-clickable" onClick={() => setShowPokedex(true)}>
                             <span className="mypk-dex-label">Pokédex</span>
-                            <div className="mypk-dex-bar"><div className="mypk-dex-fill" style={{ width: `${(uniqueDex.size / 1010) * 100}%` }} /></div>
-                            <span className="mypk-dex-count">{uniqueDex.size}<span className="mypk-dex-total">/1010</span></span>
-                          </div>
+                            <div className="mypk-dex-bar"><div className="mypk-dex-fill" style={{ width: `${(uniqueDex.size / POKEDEX_TOTAL) * 100}%` }} /></div>
+                            <span className="mypk-dex-count">{uniqueDex.size}<span className="mypk-dex-total">/{POKEDEX_TOTAL}</span></span>
+                            <span className="mypk-dex-arrow">›</span>
+                          </button>
                           <div className="mypk-tier-grid">
                             {[
                               { key: 'legendary', label: 'Legendary', count: legCount, color: '#d97706', bg: 'rgba(217,119,6,0.08)', border: 'rgba(217,119,6,0.3)' },
