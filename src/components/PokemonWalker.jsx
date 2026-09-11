@@ -1736,6 +1736,7 @@ export default function PokemonWalker({ onStop }) {
   const [showLogMilestonesDropdown, setShowLogMilestonesDropdown] = useState(false);
   const [showLogDistanceDropdown, setShowLogDistanceDropdown] = useState(false);
   const [showLogChallengesDropdown, setShowLogChallengesDropdown] = useState(false);
+  const [showLogCaloriesDropdown, setShowLogCaloriesDropdown] = useState(false);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
@@ -6203,7 +6204,8 @@ export default function PokemonWalker({ onStop }) {
                         water: '💧 Water Intake',
                       };
                       const allLog = appState.challengeLog || [];
-                      const challengeEntries = allLog.filter(e => e.type !== 'milestone' && e.type !== 'distance');
+                      // calories get their own dropdown below, with the full consumed/burnt breakdown
+                      const challengeEntries = allLog.filter(e => e.type !== 'milestone' && e.type !== 'distance' && e.type !== 'calories');
                       const milestoneEntries = allLog.filter(e => e.type === 'milestone');
                       const distanceEntries = allLog.filter(e => e.type === 'distance');
                       const tierColor = t => ({ common: '#7a7a8a', rare: '#1a6fb5', epic: '#7c3aed', legendary: '#b8860b' }[t] || '#444');
@@ -6249,6 +6251,54 @@ export default function PokemonWalker({ onStop }) {
                               ? <div className="sh-empty">No runs logged yet.</div>
                               : <div className="clog-list">{distanceEntries.map(renderRow)}</div>
                           )}
+
+                          {/* Daily calories — from the calories tracker's own history */}
+                          {(() => {
+                            const calHistory = appState.calories?.history || [];
+                            return (
+                              <>
+                                <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowLogCaloriesDropdown(p => !p)}>
+                                  Daily Calories · {calHistory.length}
+                                  <span className="log-section-chevron">{showLogCaloriesDropdown ? '▲' : '▼'}</span>
+                                </button>
+                                {showLogCaloriesDropdown && (
+                                  calHistory.length === 0
+                                    ? <div className="sh-empty">No days logged yet.</div>
+                                    : (
+                                      <table className="sh-table cal-log-table">
+                                        <thead>
+                                          <tr>
+                                            <th className="sh-th">Date</th>
+                                            <th className="sh-th sh-th-right">In</th>
+                                            <th className="sh-th sh-th-right">Burnt</th>
+                                            <th className="sh-th sh-th-right">Net</th>
+                                            <th className="sh-th sh-th-right">Buddy</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {calHistory.map((h, i) => {
+                                            const over = h.over > 0;
+                                            return (
+                                              <tr key={i} className={`sh-row${over ? '' : ' sh-row-10k'}`}>
+                                                <td className="sh-td">{h.date}</td>
+                                                <td className="sh-td sh-td-right">{(h.consumed || 0).toLocaleString()}</td>
+                                                <td className="sh-td sh-td-right">{(h.burnt || 0).toLocaleString()}</td>
+                                                <td className="sh-td sh-td-right" style={{ color: over ? '#dc2626' : '#15803d', fontWeight: 700 }}>
+                                                  {(h.net || 0).toLocaleString()}
+                                                </td>
+                                                <td className="sh-td sh-td-right" style={{ color: over ? '#dc2626' : '#15803d' }}>
+                                                  {over ? `−${h.over.toLocaleString()}` : '+2,000'}
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    )
+                                )}
+                              </>
+                            );
+                          })()}
                         </>
                       );
                     })()}
