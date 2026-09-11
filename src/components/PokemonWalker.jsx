@@ -1312,7 +1312,27 @@ const POKEDEX_TIER_META = {
 };
 
 // Module-level cache so the name list is fetched at most once per page load
-let pokedexNameCache = null;
+let pokedexNameCache = null;    // { [dexId]: name }
+let pokedexNamePromise = null;  // in-flight request, shared by all callers
+
+function loadPokedexNames() {
+  if (pokedexNameCache) return Promise.resolve(pokedexNameCache);
+  if (pokedexNamePromise) return pokedexNamePromise;
+  pokedexNamePromise = fetch(`https://pokeapi.co/api/v2/pokemon?limit=${POKEDEX_TOTAL}`)
+    .then(r => r.json())
+    .then(data => {
+      // results are returned in dex order — index i corresponds to dexId i+1
+      const map = {};
+      (data.results || []).forEach((entry, i) => { map[i + 1] = entry.name; });
+      pokedexNameCache = map;
+      return map;
+    })
+    .catch(() => {
+      pokedexNamePromise = null; // allow a retry on the next call
+      return {};
+    });
+  return pokedexNamePromise;
+}
 
 function PokedexPopup({ caughtDex, tierByDexId, onClose }) {
   const [names, setNames] = useState(pokedexNameCache);
@@ -1322,16 +1342,7 @@ function PokedexPopup({ caughtDex, tierByDexId, onClose }) {
   useEffect(() => {
     if (pokedexNameCache) return;
     let cancelled = false;
-    fetch(`https://pokeapi.co/api/v2/pokemon?limit=${POKEDEX_TOTAL}`)
-      .then(r => r.json())
-      .then(data => {
-        // results are returned in dex order — index i corresponds to dexId i+1
-        const map = {};
-        (data.results || []).forEach((entry, i) => { map[i + 1] = entry.name; });
-        pokedexNameCache = map;
-        if (!cancelled) setNames(map);
-      })
-      .catch(() => { if (!cancelled) setNames({}); });
+    loadPokedexNames().then(map => { if (!cancelled) setNames(map); });
     return () => { cancelled = true; };
   }, []);
 
@@ -1856,6 +1867,35 @@ export default function PokemonWalker({ onStop }) {
       weddingChallenge: { ...prev.weddingChallenge, startDate: todayString(), startWeight: prev.weight.lastKg },
     }));
   }, [appState?.weddingChallenge?.startDate, appState?.weight?.lastKg]);
+
+  // ─── Backfill caughtDex from the evolution log ──────────────────────
+  // Evolutions before the caughtDex fix only recorded the evolved form, so the
+  // pre-evolution vanished from the Pokédex. The log still holds both names, so
+  // resolve them against the dex name list and re-add anything missing.
+  useEffect(() => {
+    if (!appState) return;
+    if ((appState.evolutionLog || []).length === 0) return;
+    let cancelled = false;
+    loadPokedexNames().then(map => {
+      if (cancelled) return;
+      const nameToId = new Map();
+      Object.entries(map).forEach(([id, n]) => nameToId.set(String(n).toLowerCase(), Number(id)));
+      setAppState(prev => {
+        const have = new Set((prev.caughtDex || []).map(Number));
+        const added = [];
+        (prev.evolutionLog || []).forEach(e => {
+          [e.from, e.to].forEach(n => {
+            if (!n) return;
+            const id = nameToId.get(String(n).toLowerCase());
+            if (id && !have.has(id)) { have.add(id); added.push(id); }
+          });
+        });
+        if (added.length === 0) return prev;
+        return { ...prev, caughtDex: [...(prev.caughtDex || []).map(Number), ...added] };
+      });
+    });
+    return () => { cancelled = true; };
+  }, [appState?.evolutionLog?.length]);
 
   // ─── Derived state ──────────────────────────────────────────────────
   const team = appState ? appState.pokemon.filter(p => p.onTeam).map(p => p.uid) : [];
