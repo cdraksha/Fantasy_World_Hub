@@ -3918,7 +3918,7 @@ export default function PokemonWalker({ onStop }) {
                                   style={{ background: tm.bg, borderColor: tm.border, color: tm.color, borderLeft: `3px solid ${tm.color}` }}
                                   onClick={() => setOpenTiers(p => ({ ...p, [tier]: !p[tier] }))}
                                 >
-                                  <span style={{ textTransform: 'capitalize' }}>{tier} · {new Set(group.map(p => p.dexId)).size}{group.length !== new Set(group.map(p => p.dexId)).size ? ` (${group.length} total)` : ''}</span>
+                                  <span style={{ textTransform: 'capitalize' }}>{tier} · {new Set(group.map(p => Number(p.dexId))).size}{group.length !== new Set(group.map(p => Number(p.dexId))).size ? ` (${group.length} total)` : ''}</span>
                                   <span className="log-section-chevron">{isOpen ? '▲' : '▼'}</span>
                                 </button>
                                 {isOpen && (
@@ -3933,8 +3933,9 @@ export default function PokemonWalker({ onStop }) {
                                     {(() => {
                                       const seen = new Map();
                                       group.forEach(p => {
-                                        if (!seen.has(p.dexId)) seen.set(p.dexId, { p, count: p.count || 1 });
-                                        else seen.get(p.dexId).count += (p.count || 1);
+                                        const key = Number(p.dexId);
+                                        if (!seen.has(key)) seen.set(key, { p, count: p.count || 1 });
+                                        else seen.get(key).count += (p.count || 1);
                                       });
                                       return [...seen.values()].map(({ p, count }) => (
                                         <div key={p.uid} className="pklist-row" onClick={() => setDetailPokemon(p)}>
@@ -6018,9 +6019,7 @@ export default function PokemonWalker({ onStop }) {
                               : <div className="clog-list">{distanceEntries.map(renderRow)}</div>
                           )}
                           {(() => {
-                            const allRecords = appState.evolutionLog || [];
-                            const evolutions = allRecords.filter(e => e.method !== 'egg');
-                            const hatches = allRecords.filter(e => e.method === 'egg');
+                            const evolutions = (appState.evolutionLog || []).filter(e => e.method !== 'egg');
                             return (
                               <>
                                 <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowEvoRecords(p => !p)}>
@@ -6038,25 +6037,6 @@ export default function PokemonWalker({ onStop }) {
                                               <span className="clog-date">{entry.date}</span>
                                             </div>
                                             <div className="clog-outcome" style={{ color: '#7c3aed' }}>{entry.from} → {entry.to}</div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                )}
-                                <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowHatchRecords(p => !p)}>
-                                  Hatches · {hatches.length}
-                                  <span className="log-section-chevron">{showHatchRecords ? '▲' : '▼'}</span>
-                                </button>
-                                {showHatchRecords && (
-                                  hatches.length === 0
-                                    ? <div className="sh-empty">No hatches yet.</div>
-                                    : <div className="clog-list">
-                                        {hatches.map((entry, i) => (
-                                          <div key={i} className="clog-row">
-                                            <div className="clog-row-top">
-                                              <span className="clog-type">egg</span>
-                                              <span className="clog-date">{entry.date}</span>
-                                            </div>
-                                            <div className="clog-outcome" style={{ color: '#15803d' }}>{entry.to} hatched</div>
                                           </div>
                                         ))}
                                       </div>
