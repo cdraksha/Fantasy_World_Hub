@@ -114,7 +114,7 @@ const FASTING_PRESETS = {
   ],
   hard: [
     { hours: 16, days: 30, graceDays: 1,
-      reward: { type: 'pack', packTier: 'legendary', count: 1, label: '1× Legendary Pack' },
+      reward: { type: 'pack', packTier: 'epic', count: 10, label: '10× Epic Packs' },
       penalty: { type: 'hardFail', label: 'Buddy loses all steps + Buddy frozen 30 days + 5 Common Pokémon released' },
       bonusReward: { label: '3× Free Evolutions + 5× Common + 1× Rare + 1× Epic Pack', freeEvolutions: 3, packs: { common: 5, rare: 1, epic: 1 } } },
   ],
@@ -2200,7 +2200,8 @@ export default function PokemonWalker({ onStop }) {
     let legendaryCompanionUid = null;
     try {
       if (appState.debtTrap.hasLegendaryCompanion) {
-        const pool = [144,145,146,150,151,249,250,251,377,378,379,380,381,382,383,384,385,386];
+        // legendaries are never granted as rewards — the companion comes from the epic pool
+        const pool = POOLS.epic;
         const unowned = pool.filter(id => !appState.pokemon.find(p => p.dexId === id));
         const src = unowned.length > 0 ? unowned : pool;
         const id = src[Math.floor(Math.random() * src.length)];
@@ -2892,15 +2893,15 @@ export default function PokemonWalker({ onStop }) {
     try {
       const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
       const pool = POOLS.epic.filter(id => !ownedDexIds.has(id));
-      const src = pool.length >= 5 ? pool : POOLS.epic;
-      const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 5);
+      const src = pool.length >= 20 ? pool : POOLS.epic;
+      const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 20);
       const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
       setAppState(prev => ({
         ...prev,
         pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
         caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
         weddingChallenge: { ...prev.weddingChallenge, claimedReward: true },
-        challengeLog: [{ date: todayString(), type: 'wedding', tier: 'epic', outcome: `Won Prashast's Wedding Challenge — 5 epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+        challengeLog: [{ date: todayString(), type: 'wedding', tier: 'epic', outcome: `Won Prashast's Wedding Challenge — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
       }));
       setDeltaFlash(`Wedding challenge won! ${pokes.map(p => p.name).join(', ')} are yours!`);
       setTimeout(() => setDeltaFlash(null), 5000);
@@ -3003,15 +3004,15 @@ export default function PokemonWalker({ onStop }) {
   const handleClaimPrudhviWeddingReward = async () => {
     const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
     const pool = POOLS.epic.filter(id => !ownedDexIds.has(id));
-    const src = pool.length >= 5 ? pool : POOLS.epic;
-    const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 5);
+    const src = pool.length >= 10 ? pool : POOLS.epic;
+    const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 10);
     const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
     setAppState(prev => ({
       ...prev,
       pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
       caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
       prudhviWeddingChallenge: { ...prev.prudhviWeddingChallenge, claimedReward: true },
-      challengeLog: [{ date: todayString(), type: 'prudhviWeddingChallenge', tier: 'epic', outcome: `Won Prudhvi's Wedding challenge — 5 epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+      challengeLog: [{ date: todayString(), type: 'prudhviWeddingChallenge', tier: 'epic', outcome: `Won Prudhvi's Wedding challenge — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
     }));
     setDeltaFlash(`Prudhvi's Wedding challenge won! ${pokes.map(p => p.name).join(', ')} claimed!`);
     setTimeout(() => setDeltaFlash(null), 5000);
@@ -5328,14 +5329,12 @@ export default function PokemonWalker({ onStop }) {
                                   className="fast-claim-btn"
                                   disabled={freeEvolvingSugar}
                                   onClick={() => {
+                                    // the free evolution only settles the challenge — the packs and
+                                    // buddy steps still have to be claimed, so always do both
                                     if (needsEvoPicker && sugarPickedPoke) {
                                       handleFreeEvolveSugar(sugarPickedPoke);
-                                      if (reward.type === 'combo' && reward.parts.includes('legendary')) {
-                                        handleClaimSugarReward(sugarPickedPoke);
-                                      }
-                                    } else {
-                                      handleClaimSugarReward(sugarPickedPoke);
                                     }
+                                    handleClaimSugarReward(sugarPickedPoke);
                                   }}
                                 >
                                   {freeEvolvingSugar ? 'Evolving…' : '✨ Claim Reward'}
@@ -5804,7 +5803,7 @@ export default function PokemonWalker({ onStop }) {
                             <div style={{ display: 'flex', gap: 6, marginBottom: 8, fontSize: 8, padding: '6px 8px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0' }}>
                               <div style={{ flex: 1 }}>
                                 <div style={{ color: '#15803d', fontWeight: 700 }}>🏆 WIN</div>
-                                <div style={{ color: '#374151' }}>2 Legendary Pokémon</div>
+                                <div style={{ color: '#374151' }}>20 Epic Pokémon</div>
                               </div>
                               <div style={{ flex: 1 }}>
                                 <div style={{ color: '#dc2626', fontWeight: 700 }}>💀 LOSE</div>
@@ -5827,7 +5826,7 @@ export default function PokemonWalker({ onStop }) {
                                 onClick={handleClaimWeddingReward}
                                 disabled={claimingWeddingReward}
                               >
-                                {claimingWeddingReward ? 'Claiming…' : '🏆 You won! Claim 2 Legendaries'}
+                                {claimingWeddingReward ? 'Claiming…' : '🏆 You won! Claim 20 Epic'}
                               </button>
                             )}
                             {postWedding && !goalReached && (
@@ -5999,7 +5998,7 @@ export default function PokemonWalker({ onStop }) {
                             <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
                               <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 6, padding: '6px 8px', border: '1px solid #bbf7d0' }}>
                                 <div style={{ fontSize: 8, color: '#166534', fontWeight: 700 }}>🏆 WIN</div>
-                                <div style={{ fontSize: 9, color: '#374151', fontWeight: 600 }}>1 Legendary Pokémon</div>
+                                <div style={{ fontSize: 9, color: '#374151', fontWeight: 600 }}>10 Epic Pokémon</div>
                               </div>
                               <div style={{ flex: 1, background: '#fef2f2', borderRadius: 6, padding: '6px 8px', border: '1px solid #fca5a5' }}>
                                 <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 700 }}>💀 LOSE</div>
@@ -6009,13 +6008,13 @@ export default function PokemonWalker({ onStop }) {
                             {goalReached && !postDeadline && (
                               <button style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
                                 onClick={handleClaimPrudhviWeddingReward}>
-                                🏆 Claim Early — 1 Legendary!
+                                🏆 Claim Early — 10 Epic!
                               </button>
                             )}
                             {postDeadline && goalReached && (
                               <button style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
                                 onClick={handleClaimPrudhviWeddingReward}>
-                                🏆 You won! Claim 1 Legendary
+                                🏆 You won! Claim 10 Epic
                               </button>
                             )}
                             {postDeadline && !goalReached && (
