@@ -262,6 +262,10 @@ const PRUDHVI_GOAL_KG = 97;
 const PRUDHVI_WEDDING_DATE = '2026-11-14';
 const PRUDHVI_WEDDING_GOAL_KG = 94;
 
+const SINGAPORE_DATE = '2026-10-12';
+const SINGAPORE_GOAL_KG = 96;
+const SINGAPORE_DATE_LABEL = 'Oct 12, 2026';
+
 function initWeddingChallenge() {
   return {
     startDate: null,
@@ -896,6 +900,7 @@ function defaultState(steps) {
     rnChallenge: { claimedReward: false, penaltyApplied: false },
     prudhviChallenge: { claimedReward: false, penaltyApplied: false },
     prudhviWeddingChallenge: { claimedReward: false, penaltyApplied: false },
+    singaporeTrip: { claimedReward: false, penaltyApplied: false },
   };
 }
 
@@ -944,6 +949,7 @@ function loadState() {
     if (!saved.rnChallenge) saved.rnChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.prudhviChallenge) saved.prudhviChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.prudhviWeddingChallenge) saved.prudhviWeddingChallenge = { claimedReward: false, penaltyApplied: false };
+    if (!saved.singaporeTrip) saved.singaporeTrip = { claimedReward: false, penaltyApplied: false };
     if (saved.water.milestonesCleared === undefined) saved.water = { ...saved.water, milestonesCleared: 0 };
     if (saved.eggQueue === undefined) saved.eggQueue = 0;
     if (!saved.claimedStarterRegions) saved.claimedStarterRegions = [];
@@ -1728,6 +1734,7 @@ export default function PokemonWalker({ onStop }) {
   const [showRNPanel, setShowRNPanel] = useState(false);
   const [showPrudhviPanel, setShowPrudhviPanel] = useState(false);
   const [showPrudhviWeddingPanel, setShowPrudhviWeddingPanel] = useState(false);
+  const [showSingaporePanel, setShowSingaporePanel] = useState(false);
   const [generatingWeddingImage, setGeneratingWeddingImage] = useState(false);
   const [weddingImage, setWeddingImage] = useState(null);
   const [claimingWeddingReward, setClaimingWeddingReward] = useState(false);
@@ -3028,6 +3035,37 @@ export default function PokemonWalker({ onStop }) {
         pokemon: prev.pokemon.filter(p => !removeUids.has(p.uid)),
         prudhviWeddingChallenge: { ...prev.prudhviWeddingChallenge, penaltyApplied: true },
         challengeLog: [{ date: todayString(), type: 'prudhviWeddingChallenge', tier: 'rare', outcome: `Lost Prudhvi's Wedding challenge — ${toRemove.length} rare Pokémon released: ${toRemove.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+      };
+    });
+  };
+
+  const handleClaimSingaporeReward = async () => {
+    const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
+    const pool = POOLS.epic.filter(id => !ownedDexIds.has(id));
+    const src = pool.length >= 10 ? pool : POOLS.epic;
+    const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 10);
+    const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
+    setAppState(prev => ({
+      ...prev,
+      pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
+      caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
+      singaporeTrip: { ...prev.singaporeTrip, claimedReward: true },
+      challengeLog: [{ date: todayString(), type: 'singaporeTrip', tier: 'epic', outcome: `Won Singapore Trip challenge — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+    }));
+    setDeltaFlash(`Singapore Trip challenge won! ${pokes.map(p => p.name).join(', ')} claimed!`);
+    setTimeout(() => setDeltaFlash(null), 5000);
+  };
+
+  const handleApplySingaporePenalty = () => {
+    setAppState(prev => {
+      const rares = prev.pokemon.filter(p => p.packTier === 'rare' && !p.isDTCollateral && !p.isDTLoan && !p.isLoan && p.uid !== prev.buddy);
+      const toRemove = [...rares].sort(() => Math.random() - 0.5).slice(0, 2);
+      const removeUids = new Set(toRemove.map(p => p.uid));
+      return {
+        ...prev,
+        pokemon: prev.pokemon.filter(p => !removeUids.has(p.uid)),
+        singaporeTrip: { ...prev.singaporeTrip, penaltyApplied: true },
+        challengeLog: [{ date: todayString(), type: 'singaporeTrip', tier: 'rare', outcome: `Lost Singapore Trip challenge — ${toRemove.length} rare Pokémon released: ${toRemove.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
       };
     });
   };
@@ -5950,6 +5988,89 @@ export default function PokemonWalker({ onStop }) {
                       })()}
                     </div>}
 
+                    {!(appState.singaporeTrip?.claimedReward || appState.singaporeTrip?.penaltyApplied) && <div className="gba-section">
+                      <button className="wc-toggle-btn" onClick={() => setShowSingaporePanel(p => !p)}>
+                        ✈️ Singapore Trip
+                        {(() => {
+                          const today = todayString();
+                          const cw = appState.weight?.lastKg ?? null;
+                          if (today > SINGAPORE_DATE) {
+                            return cw !== null && cw < SINGAPORE_GOAL_KG
+                              ? <span className="obj-updated-badge">Claim!</span>
+                              : <span className="obj-pending-badge">Penalty Due</span>;
+                          }
+                          return cw !== null && cw < SINGAPORE_GOAL_KG
+                            ? <span className="obj-updated-badge">Goal Reached!</span>
+                            : <span className="obj-active-badge">Active</span>;
+                        })()}
+                      </button>
+                      {showSingaporePanel && (() => {
+                        const today = todayString();
+                        const currentWeight = appState.weight?.lastKg ?? null;
+                        const daysLeft = Math.max(0, daysBetween(today, SINGAPORE_DATE) + 1);
+                        const postDeadline = today > SINGAPORE_DATE;
+                        const goalReached = currentWeight !== null && currentWeight < SINGAPORE_GOAL_KG;
+                        return (
+                          <div style={{ padding: '4px 0' }}>
+                            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                              <div style={{ flex: 1, background: '#fef3c7', borderRadius: 6, padding: '6px 8px', border: '1px solid #fcd34d' }}>
+                                <div style={{ fontSize: 8, color: '#92400e', fontWeight: 700 }}>GOAL</div>
+                                <div style={{ fontSize: 13, fontWeight: 900, color: '#78350f' }}>below {SINGAPORE_GOAL_KG} kg</div>
+                                <div style={{ fontSize: 8, color: '#b45309' }}>by {SINGAPORE_DATE_LABEL}</div>
+                              </div>
+                              <div style={{ flex: 1, background: goalReached ? '#dcfce7' : '#fef2f2', borderRadius: 6, padding: '6px 8px', border: `1px solid ${goalReached ? '#86efac' : '#fca5a5'}` }}>
+                                <div style={{ fontSize: 8, color: '#374151', fontWeight: 700 }}>CURRENT</div>
+                                <div style={{ fontSize: 13, fontWeight: 900, color: goalReached ? '#15803d' : '#dc2626' }}>
+                                  {currentWeight !== null ? `${currentWeight} kg` : 'Not logged'}
+                                </div>
+                                <div style={{ fontSize: 8, color: '#6b7280' }}>
+                                  {currentWeight !== null ? (goalReached ? '✓ Goal hit!' : `${(currentWeight - SINGAPORE_GOAL_KG + 0.1).toFixed(1)} kg to go`) : 'Log under Weight Loss'}
+                                </div>
+                              </div>
+                              <div style={{ flex: 1, background: '#f0f9ff', borderRadius: 6, padding: '6px 8px', border: '1px solid #bae6fd' }}>
+                                <div style={{ fontSize: 8, color: '#0369a1', fontWeight: 700 }}>DEADLINE</div>
+                                <div style={{ fontSize: 13, fontWeight: 900, color: postDeadline ? '#dc2626' : '#0369a1' }}>{postDeadline ? 'PASSED' : `${daysLeft}d`}</div>
+                                <div style={{ fontSize: 8, color: '#6b7280' }}>{SINGAPORE_DATE_LABEL}</div>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                              <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 6, padding: '6px 8px', border: '1px solid #bbf7d0' }}>
+                                <div style={{ fontSize: 8, color: '#166534', fontWeight: 700 }}>🏆 WIN</div>
+                                <div style={{ fontSize: 9, color: '#374151', fontWeight: 600 }}>10 Epic Pokémon</div>
+                              </div>
+                              <div style={{ flex: 1, background: '#fef2f2', borderRadius: 6, padding: '6px 8px', border: '1px solid #fca5a5' }}>
+                                <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 700 }}>💀 LOSE</div>
+                                <div style={{ fontSize: 9, color: '#374151', fontWeight: 600 }}>2 Rare Pokémon released</div>
+                              </div>
+                            </div>
+                            {goalReached && !postDeadline && (
+                              <button style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
+                                onClick={handleClaimSingaporeReward}>
+                                🏆 Claim Early — 10 Epic!
+                              </button>
+                            )}
+                            {postDeadline && goalReached && (
+                              <button style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
+                                onClick={handleClaimSingaporeReward}>
+                                🏆 You won! Claim 10 Epic
+                              </button>
+                            )}
+                            {postDeadline && !goalReached && (
+                              <button style={{ width: '100%', padding: '8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
+                                onClick={handleApplySingaporePenalty}>
+                                💀 Apply Penalty (release 2 rares)
+                              </button>
+                            )}
+                            {currentWeight === null && (
+                              <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center', marginTop: 8 }}>
+                                Log your weight under Weight Loss to track progress
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>}
+
                     {!(appState.prudhviWeddingChallenge?.claimedReward || appState.prudhviWeddingChallenge?.penaltyApplied) && <div className="gba-section">
                       <button className="wc-toggle-btn" onClick={() => setShowPrudhviWeddingPanel(p => !p)}>
                         💒 Prudhvi's Wedding
@@ -6200,6 +6321,7 @@ export default function PokemonWalker({ onStop }) {
                         rnChallenge: '🤝 Rakshit & Neha',
                         prudhviChallenge: '💍 Prudhvi\'s Engagement',
                         prudhviWeddingChallenge: '💒 Prudhvi\'s Wedding',
+                        singaporeTrip: '✈️ Singapore Trip',
                         water: '💧 Water Intake',
                       };
                       const allLog = appState.challengeLog || [];
