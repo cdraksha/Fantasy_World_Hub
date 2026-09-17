@@ -819,6 +819,25 @@ function daysBetween(a, b) {
   return Math.floor((db - da) / 86400000);
 }
 
+// How long a vault freeze still has to run. The freeze is purely time-based —
+// nothing clears it early, so this is the only thing that lifts it.
+function vaultFreezeLeft(until) {
+  const ms = (until || 0) - Date.now();
+  if (ms <= 0) return null;
+  const mins = ms / 60000;
+  if (mins < 60) {
+    const m = Math.max(1, Math.round(mins));
+    return `${m} min left`;
+  }
+  const hours = mins / 60;
+  if (hours < 24) {
+    const h = Math.round(hours);
+    return `${h} hour${h !== 1 ? 's' : ''} left`;
+  }
+  const d = Math.ceil(hours / 24);
+  return `${d} day${d !== 1 ? 's' : ''} left`;
+}
+
 function getCollectorLevel(totalSteps) {
   return Math.floor(totalSteps / 50000) + 1;
 }
@@ -3908,7 +3927,11 @@ export default function PokemonWalker({ onStop }) {
                             Deposit {fmtFull(appState.spendableSteps)} steps
                           </button>
                         )}
-                        {vaultFrozen && <div className="pw-panel-frozen">Vault frozen — challenge penalty active</div>}
+                        {vaultFrozen && (
+                          <div className="pw-panel-frozen">
+                            Vault frozen — {vaultFreezeLeft(appState.vaultFrozenUntil)}
+                          </div>
+                        )}
                       </div>
                       {(() => {
                         const vault = appState.stepVault || 0;
@@ -4533,7 +4556,7 @@ export default function PokemonWalker({ onStop }) {
                                 <span className="dt-faction">{dt.faction}</span>
                                 <span className="dt-deal-num">Deal #{dt.index + 1}</span>
                               </div>
-                              {vaultFrozen && <div className="dt-vault-frozen">❄️ Vault frozen — repay first</div>}
+                              {vaultFrozen && <div className="dt-vault-frozen">❄️ Vault frozen — {vaultFreezeLeft(appState.vaultFrozenUntil)}</div>}
                               <div className="dt-progress-row">
                                 <span className="dt-progress-label">Day {dt.daysCompleted} / {totalRequired}</span>
                                 {dt.daysCompounded > 0 && <span className="dt-compounded">+{Math.ceil(dt.daysCompounded)}d added</span>}
