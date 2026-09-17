@@ -3194,17 +3194,33 @@ export default function PokemonWalker({ onStop }) {
   };
 
   // ─── Calories handlers ───────────────────────────────────────────────
-  const handleAddCalories = (consumed, burnt) => {
-    const c = Number(consumed) || 0;
-    const b = Number(burnt) || 0;
-    if (c === 0 && b === 0) return;
+  // Inputs are running TOTALS for the day, like the step entry — not increments.
+  // A blank field leaves that side untouched so you can update one without the other.
+  const handleSetCalories = (consumedTotal, burntTotal) => {
+    const cRaw = String(consumedTotal ?? '').trim();
+    const bRaw = String(burntTotal ?? '').trim();
+    if (cRaw === '' && bRaw === '') return;
+
     setAppState(prev => {
       const today = todayString();
       const cal = prev.calories || { todayDate: null, consumed: 0, burnt: 0, logged: false, history: [] };
       const base = cal.todayDate === today ? cal : { ...cal, consumed: 0, burnt: 0, logged: false };
+
+      const nextConsumed = cRaw === '' ? base.consumed : Math.max(0, Number(cRaw) || 0);
+      const nextBurnt    = bRaw === '' ? base.burnt    : Math.max(0, Number(bRaw) || 0);
+      if (nextConsumed === base.consumed && nextBurnt === base.burnt) return prev;
+
+      const dC = nextConsumed - base.consumed;
+      const dB = nextBurnt - base.burnt;
+      const parts = [];
+      if (dC) parts.push(`${dC > 0 ? '+' : ''}${dC} kcal in`);
+      if (dB) parts.push(`${dB > 0 ? '+' : ''}${dB} kcal burnt`);
+      setDeltaFlash(parts.join(' · '));
+      setTimeout(() => setDeltaFlash(null), 3000);
+
       return {
         ...prev,
-        calories: { ...base, todayDate: today, consumed: base.consumed + c, burnt: base.burnt + b },
+        calories: { ...base, todayDate: today, consumed: nextConsumed, burnt: nextBurnt },
       };
     });
   };
@@ -5563,29 +5579,31 @@ export default function PokemonWalker({ onStop }) {
                               {/* Entry inputs */}
                               <div className="cal-inputs-row">
                                 <div className="cal-input-group">
-                                  <label className="cal-input-label">+ Consumed</label>
+                                  <label className="cal-input-label">Total consumed</label>
                                   <input
                                     type="number"
                                     className="cal-input"
-                                    placeholder="kcal"
+                                    placeholder={String(consumed)}
                                     value={calConsumedInput}
                                     onChange={e => setCalConsumedInput(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') { handleSetCalories(calConsumedInput, calBurntInput); setCalConsumedInput(''); setCalBurntInput(''); } }}
                                     min="0"
                                   />
                                 </div>
                                 <div className="cal-input-group">
-                                  <label className="cal-input-label">− Workout Burnt</label>
+                                  <label className="cal-input-label">Total burnt</label>
                                   <input
                                     type="number"
                                     className="cal-input"
-                                    placeholder="kcal"
+                                    placeholder={String(burnt)}
                                     value={calBurntInput}
                                     onChange={e => setCalBurntInput(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') { handleSetCalories(calConsumedInput, calBurntInput); setCalConsumedInput(''); setCalBurntInput(''); } }}
                                     min="0"
                                   />
                                 </div>
-                                <button className="cal-add-btn" onClick={() => { handleAddCalories(calConsumedInput, calBurntInput); setCalConsumedInput(''); setCalBurntInput(''); }}>
-                                  Add
+                                <button className="cal-add-btn" onClick={() => { handleSetCalories(calConsumedInput, calBurntInput); setCalConsumedInput(''); setCalBurntInput(''); }}>
+                                  Update
                                 </button>
                               </div>
 
