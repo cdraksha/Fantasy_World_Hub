@@ -266,6 +266,8 @@ const SINGAPORE_DATE = '2026-10-12';
 const SINGAPORE_GOAL_KG = 96;
 const SINGAPORE_DATE_LABEL = 'Oct 12, 2026';
 
+const WEIGHT_LOG_START = '2026-09-01';   // weight log in the Log tab starts here
+
 const GANJI_TARGET_DAYS = 100;
 const GANJI_DAYS_ALREADY_DONE = 5;   // days completed before the tracker existed
 
@@ -1769,6 +1771,7 @@ export default function PokemonWalker({ onStop }) {
   const [showLogDistanceDropdown, setShowLogDistanceDropdown] = useState(false);
   const [showLogChallengesDropdown, setShowLogChallengesDropdown] = useState(false);
   const [showLogCaloriesDropdown, setShowLogCaloriesDropdown] = useState(false);
+  const [showLogWeightDropdown, setShowLogWeightDropdown] = useState(false);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
@@ -6583,6 +6586,60 @@ export default function PokemonWalker({ onStop }) {
                                                 </td>
                                                 <td className="sh-td sh-td-right" style={{ color: over ? '#dc2626' : '#15803d' }}>
                                                   {over ? `−${h.over.toLocaleString()}` : '+2,000'}
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    )
+                                )}
+                              </>
+                            );
+                          })()}
+
+                          {/* Daily weight — newest first, from WEIGHT_LOG_START onward */}
+                          {(() => {
+                            const rows = (appState.weight?.history || [])
+                              .filter(e => e.date >= WEIGHT_LOG_START)
+                              .slice()
+                              .sort((a, b) => (a.date < b.date ? 1 : -1));   // history is stored oldest-first
+                            const first = rows.length ? rows[rows.length - 1].kg : null;
+                            const latest = rows.length ? rows[0].kg : null;
+                            const total = first !== null ? latest - first : 0;
+                            return (
+                              <>
+                                <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowLogWeightDropdown(p => !p)}>
+                                  Daily Weight · {rows.length}
+                                  {rows.length > 1 && (
+                                    <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, color: total <= 0 ? '#15803d' : '#dc2626' }}>
+                                      {total <= 0 ? '' : '+'}{total.toFixed(1)} kg
+                                    </span>
+                                  )}
+                                  <span className="log-section-chevron">{showLogWeightDropdown ? '▲' : '▼'}</span>
+                                </button>
+                                {showLogWeightDropdown && (
+                                  rows.length === 0
+                                    ? <div className="sh-empty">No weight logged since {WEIGHT_LOG_START}.</div>
+                                    : (
+                                      <table className="sh-table">
+                                        <thead>
+                                          <tr>
+                                            <th className="sh-th">Date</th>
+                                            <th className="sh-th sh-th-right">Weight</th>
+                                            <th className="sh-th sh-th-right">Change</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {rows.map((e, i) => {
+                                            const prevKg = i < rows.length - 1 ? rows[i + 1].kg : null;   // next row is the older day
+                                            const d = prevKg === null ? null : e.kg - prevKg;
+                                            return (
+                                              <tr key={e.date} className={`sh-row${d !== null && d < 0 ? ' sh-row-10k' : ''}`}>
+                                                <td className="sh-td">{e.date}</td>
+                                                <td className="sh-td sh-td-right" style={{ fontWeight: 700 }}>{e.kg.toFixed(1)} kg</td>
+                                                <td className="sh-td sh-td-right" style={{ color: d === null ? '#9ca3af' : d < 0 ? '#15803d' : d > 0 ? '#dc2626' : '#6b7280' }}>
+                                                  {d === null ? '—' : `${d > 0 ? '+' : ''}${d.toFixed(1)}`}
                                                 </td>
                                               </tr>
                                             );
