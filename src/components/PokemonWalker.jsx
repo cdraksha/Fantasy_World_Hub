@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import * as XLSX from 'xlsx';
+// styled fork — the stock xlsx build silently drops cell styling on write
+import * as XLSX from 'xlsx-js-style';
 import '../styles/pokemon-walker.css';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -6444,11 +6445,59 @@ export default function PokemonWalker({ onStop }) {
                       <button
                         className="sh-download-btn"
                         onClick={() => {
-                          const rows = (appState.stepHistory || []).map(e => ({ Date: e.date, Steps: e.steps }));
-                          const ws = XLSX.utils.json_to_sheet(rows);
+                          // one row per date, merged from every source that records a day
+                          const byDate = new Map();
+                          const at = d => {
+                            if (!byDate.has(d)) byDate.set(d, { date: d });
+                            return byDate.get(d);
+                          };
+
+                          (appState.stepHistory || []).forEach(e => { at(e.date).steps = e.steps; });
+
+                          // distance only exists as text in the challenge log, e.g. "5.2km covered"
+                          (appState.challengeLog || [])
+                            .filter(e => e.type === 'distance')
+                            .forEach(e => {
+                              const km = parseFloat(String(e.outcome).match(/([\d.]+)\s*km/i)?.[1]);
+                              if (!isNaN(km)) at(e.date).km = Math.round(((at(e.date).km || 0) + km) * 10) / 10;
+                            });
+
+                          (appState.calories?.history || []).forEach(e => {
+                            at(e.date).consumed = e.consumed;
+                            at(e.date).burnt = e.burnt;
+                          });
+
+                          (appState.weight?.history || []).forEach(e => { at(e.date).kg = e.kg; });
+
+                          const HEADERS = ['Date', 'Daily Steps', 'Distance Covered (workout)',
+                                           'Daily calories (consumed)', 'Daily calories (burnt)', 'Daily Weight'];
+
+                          const rows = [...byDate.values()]
+                            .sort((a, b) => (a.date < b.date ? 1 : -1))   // newest first
+                            .map(r => ({
+                              [HEADERS[0]]: r.date,
+                              [HEADERS[1]]: r.steps ?? '',
+                              [HEADERS[2]]: r.km ?? '',
+                              [HEADERS[3]]: r.consumed ?? '',
+                              [HEADERS[4]]: r.burnt ?? '',
+                              [HEADERS[5]]: r.kg ?? '',
+                            }));
+
+                          const ws = XLSX.utils.json_to_sheet(rows, { header: HEADERS });
+
+                          // bold the header row
+                          HEADERS.forEach((_, i) => {
+                            const cell = ws[XLSX.utils.encode_cell({ r: 0, c: i })];
+                            if (cell) cell.s = {
+                              font: { bold: true },
+                              alignment: { vertical: 'center', wrapText: true },
+                            };
+                          });
+                          ws['!cols'] = [{ wch: 12 }, { wch: 12 }, { wch: 24 }, { wch: 24 }, { wch: 22 }, { wch: 13 }];
+
                           const wb = XLSX.utils.book_new();
-                          XLSX.utils.book_append_sheet(wb, ws, 'Daily Steps');
-                          XLSX.writeFile(wb, 'pokemon-walker-steps.xlsx');
+                          XLSX.utils.book_append_sheet(wb, ws, 'Daily Log');
+                          XLSX.writeFile(wb, `pokemon-walker-${todayString()}.xlsx`);
                         }}
                       >
                         ⬇ Excel
