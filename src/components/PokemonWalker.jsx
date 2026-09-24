@@ -1458,6 +1458,149 @@ function PokedexPopup({ caughtDex, tierByDexId, onClose }) {
   );
 }
 
+// ─── Weight Graph ─────────────────────────────────────────────────────────
+
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const monthLabel = m => `${MONTH_NAMES[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`;
+const dayNum = d => Math.round(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) / 86400000);
+
+function WeightGraphPopup({ history, onClose }) {
+  const all = [...(history || [])].sort((a, b) => (a.date < b.date ? -1 : 1));   // oldest first for plotting
+  const months = [...new Set(all.map(e => e.date.slice(0, 7)))].sort();
+
+  const [startM, setStartM] = useState(months[0] || '');
+  const [endM, setEndM] = useState(months[months.length - 1] || '');
+
+  // guard against an inverted range
+  const lo = startM <= endM ? startM : endM;
+  const hi = startM <= endM ? endM : startM;
+  const pts = all.filter(e => e.date.slice(0, 7) >= lo && e.date.slice(0, 7) <= hi);
+
+  // ── geometry ──
+  const W = 340, H = 200, PAD = { t: 12, r: 10, b: 26, l: 34 };
+  const iw = W - PAD.l - PAD.r, ih = H - PAD.t - PAD.b;
+
+  let body = null;
+  if (pts.length === 0) {
+    body = <div className="wg-empty">No weight logged in this range.</div>;
+  } else {
+    const xs = pts.map(p => dayNum(p.date));
+    const ys = pts.map(p => p.kg);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const yMin = Math.min(...ys), yMax = Math.max(...ys);
+    const pad = Math.max(0.5, (yMax - yMin) * 0.15) || 1;      // never a zero-height band
+    const lowY = yMin - pad, highY = yMax + pad;
+
+    const sx = v => PAD.l + (x1 === x0 ? iw / 2 : ((v - x0) / (x1 - x0)) * iw);
+    const sy = v => PAD.t + ih - ((v - lowY) / (highY - lowY)) * ih;
+
+    const coords = pts.map((p, i) => ({ ...p, cx: sx(xs[i]), cy: sy(ys[i]) }));
+    const path = coords.map((c, i) => `${i ? 'L' : 'M'}${c.cx.toFixed(1)},${c.cy.toFixed(1)}`).join(' ');
+
+    // least-squares trend line
+    let trend = null;
+    if (pts.length >= 2) {
+      const n = pts.length;
+      const mx = xs.reduce((a, b) => a + b, 0) / n;
+      const my = ys.reduce((a, b) => a + b, 0) / n;
+      let num = 0, den = 0;
+      for (let i = 0; i < n; i++) { num += (xs[i] - mx) * (ys[i] - my); den += (xs[i] - mx) ** 2; }
+      if (den !== 0) {
+        const slope = num / den;
+        const at = v => my + slope * (v - mx);
+        trend = { x1: sx(x0), y1: sy(at(x0)), x2: sx(x1), y2: sy(at(x1)), perWeek: slope * 7 };
+      }
+    }
+
+    const ticks = [highY, (highY + lowY) / 2, lowY];
+    const net = ys[ys.length - 1] - ys[0];
+
+    body = (
+      <>
+        <svg className="wg-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+          {ticks.map((t, i) => (
+            <g key={i}>
+              <line x1={PAD.l} y1={sy(t)} x2={W - PAD.r} y2={sy(t)} stroke="#e5e7eb" strokeWidth="1" />
+              <text x={PAD.l - 4} y={sy(t) + 3} textAnchor="end" className="wg-axis">{t.toFixed(1)}</text>
+            </g>
+          ))}
+          <text x={PAD.l} y={H - 8} textAnchor="start" className="wg-axis">{pts[0].date.slice(5)}</text>
+          <text x={W - PAD.r} y={H - 8} textAnchor="end" className="wg-axis">{pts[pts.length - 1].date.slice(5)}</text>
+
+          {trend && (
+            <line x1={trend.x1} y1={trend.y1} x2={trend.x2} y2={trend.y2}
+                  stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="4 3" />
+          )}
+          <path d={path} fill="none" stroke="#2B50A1" strokeWidth="1.8"
+                strokeLinejoin="round" strokeLinecap="round" />
+          {coords.map(c => (
+            <circle key={c.date} cx={c.cx} cy={c.cy} r="2.6" fill="#fff" stroke="#2B50A1" strokeWidth="1.4">
+              <title>{`${c.date} — ${c.kg.toFixed(1)} kg`}</title>
+            </circle>
+          ))}
+        </svg>
+
+        <div className="wg-legend">
+          <span><i className="wg-key wg-key-line" /> weight</span>
+          {trend && <span><i className="wg-key wg-key-trend" /> trend</span>}
+        </div>
+      </>
+    );
+  }
+
+  // summary stats for the side panel
+  const stats = (() => {
+    if (pts.length === 0) return null;
+    const ys = pts.map(p => p.kg);
+    const net = ys[ys.length - 1] - ys[0];
+    return { n: pts.length, net, min: Math.min(...ys), max: Math.max(...ys) };
+  })();
+
+  return (
+    <div className="pw-popup-overlay" onClick={onClose}>
+      <div className="wg-modal" onClick={e => e.stopPropagation()}>
+        <div className="wg-header">
+          <span className="wg-title">Weight Graph</span>
+          <button className="wg-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="wg-body">
+          <div className="wg-chart">{body}</div>
+
+          <div className="wg-side">
+            <label className="wg-field">
+              <span className="wg-field-label">Start month</span>
+              <select className="wg-select" value={startM} onChange={e => setStartM(e.target.value)}>
+                {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+              </select>
+            </label>
+            <label className="wg-field">
+              <span className="wg-field-label">End month</span>
+              <select className="wg-select" value={endM} onChange={e => setEndM(e.target.value)}>
+                {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+              </select>
+            </label>
+
+            {stats && (
+              <div className="wg-stats">
+                <div className="wg-stat"><span>Entries</span><strong>{stats.n}</strong></div>
+                <div className="wg-stat">
+                  <span>Net</span>
+                  <strong style={{ color: stats.net <= 0 ? '#15803d' : '#dc2626' }}>
+                    {stats.net > 0 ? '+' : ''}{stats.net.toFixed(1)} kg
+                  </strong>
+                </div>
+                <div className="wg-stat"><span>Low</span><strong>{stats.min.toFixed(1)}</strong></div>
+                <div className="wg-stat"><span>High</span><strong>{stats.max.toFixed(1)}</strong></div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Pack Opening Screen ──────────────────────────────────────────────────
 
 function PackOpeningScreen({ tier, isEgg, onClose, onCatch }) {
@@ -1773,6 +1916,7 @@ export default function PokemonWalker({ onStop }) {
   const [showLogChallengesDropdown, setShowLogChallengesDropdown] = useState(false);
   const [showLogCaloriesDropdown, setShowLogCaloriesDropdown] = useState(false);
   const [showLogWeightDropdown, setShowLogWeightDropdown] = useState(false);
+  const [showWeightGraph, setShowWeightGraph] = useState(false);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
@@ -3612,6 +3756,12 @@ export default function PokemonWalker({ onStop }) {
           </span>
           <button className="pw-pack-warning-dismiss" onClick={() => setStepsWarning(false)}>✕</button>
         </div>
+      )}
+      {showWeightGraph && (
+        <WeightGraphPopup
+          history={(appState.weight?.history || []).filter(e => e.date >= WEIGHT_LOG_START)}
+          onClose={() => setShowWeightGraph(false)}
+        />
       )}
       {showPokedex && (
         <PokedexPopup
@@ -6663,6 +6813,12 @@ export default function PokemonWalker({ onStop }) {
                                   rows.length === 0
                                     ? <div className="sh-empty">No weight logged yet.</div>
                                     : (
+                                      <>
+                                      <div className="wg-open-row">
+                                        <button className="wg-open-btn" onClick={() => setShowWeightGraph(true)}>
+                                          📈 Graph
+                                        </button>
+                                      </div>
                                       <table className="sh-table">
                                         <thead>
                                           <tr>
@@ -6679,6 +6835,7 @@ export default function PokemonWalker({ onStop }) {
                                           ))}
                                         </tbody>
                                       </table>
+                                      </>
                                     )
                                 )}
                               </>
