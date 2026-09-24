@@ -1470,14 +1470,15 @@ function WeightGraphPopup({ history, onClose }) {
 
   const [startM, setStartM] = useState(months[0] || '');
   const [endM, setEndM] = useState(months[months.length - 1] || '');
+  const [hover, setHover] = useState(null);   // {date, kg, cx, cy}
 
   // guard against an inverted range
   const lo = startM <= endM ? startM : endM;
   const hi = startM <= endM ? endM : startM;
   const pts = all.filter(e => e.date.slice(0, 7) >= lo && e.date.slice(0, 7) <= hi);
 
-  // ── geometry ──
-  const W = 340, H = 200, PAD = { t: 12, r: 10, b: 26, l: 34 };
+  // ── geometry ── (left/bottom padding leaves room for the axis titles)
+  const W = 360, H = 232, PAD = { t: 14, r: 14, b: 46, l: 50 };
   const iw = W - PAD.l - PAD.r, ih = H - PAD.t - PAD.b;
 
   let body = null;
@@ -1512,20 +1513,52 @@ function WeightGraphPopup({ history, onClose }) {
       }
     }
 
-    const ticks = [highY, (highY + lowY) / 2, lowY];
-    const net = ys[ys.length - 1] - ys[0];
+    const yTicks = [highY, (highY * 0.75 + lowY * 0.25), (highY + lowY) / 2, (highY * 0.25 + lowY * 0.75), lowY];
+    // up to 4 date labels, always including the first and last
+    const xTickIdx = [...new Set(
+      pts.length <= 4
+        ? pts.map((_, i) => i)
+        : [0, Math.round((pts.length - 1) / 3), Math.round(((pts.length - 1) * 2) / 3), pts.length - 1]
+    )];
 
     body = (
       <>
-        <svg className="wg-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
-          {ticks.map((t, i) => (
+        <svg
+          className="wg-svg"
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="xMidYMid meet"
+          onMouseLeave={() => setHover(null)}
+        >
+          {/* horizontal gridlines + y tick values */}
+          {yTicks.map((t, i) => (
             <g key={i}>
-              <line x1={PAD.l} y1={sy(t)} x2={W - PAD.r} y2={sy(t)} stroke="#e5e7eb" strokeWidth="1" />
-              <text x={PAD.l - 4} y={sy(t) + 3} textAnchor="end" className="wg-axis">{t.toFixed(1)}</text>
+              <line x1={PAD.l} y1={sy(t)} x2={W - PAD.r} y2={sy(t)} stroke="#eef0f2" strokeWidth="1" />
+              <text x={PAD.l - 6} y={sy(t) + 3} textAnchor="end" className="wg-axis">{t.toFixed(1)}</text>
             </g>
           ))}
-          <text x={PAD.l} y={H - 8} textAnchor="start" className="wg-axis">{pts[0].date.slice(5)}</text>
-          <text x={W - PAD.r} y={H - 8} textAnchor="end" className="wg-axis">{pts[pts.length - 1].date.slice(5)}</text>
+
+          {/* axes */}
+          <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + ih} stroke="#9ca3af" strokeWidth="1.2" />
+          <line x1={PAD.l} y1={PAD.t + ih} x2={W - PAD.r} y2={PAD.t + ih} stroke="#9ca3af" strokeWidth="1.2" />
+
+          {/* x ticks + date labels */}
+          {xTickIdx.map(i => {
+            const c = coords[i];
+            return (
+              <g key={`x${i}`}>
+                <line x1={c.cx} y1={PAD.t + ih} x2={c.cx} y2={PAD.t + ih + 4} stroke="#9ca3af" strokeWidth="1" />
+                <text x={c.cx} y={PAD.t + ih + 14} textAnchor="middle" className="wg-axis">{c.date.slice(5)}</text>
+              </g>
+            );
+          })}
+
+          {/* axis titles */}
+          <text
+            className="wg-axis-title"
+            transform={`translate(13 ${PAD.t + ih / 2}) rotate(-90)`}
+            textAnchor="middle"
+          >Weight (kg)</text>
+          <text className="wg-axis-title" x={PAD.l + iw / 2} y={H - 6} textAnchor="middle">Date</text>
 
           {trend && (
             <line x1={trend.x1} y1={trend.y1} x2={trend.x2} y2={trend.y2}
@@ -1533,11 +1566,38 @@ function WeightGraphPopup({ history, onClose }) {
           )}
           <path d={path} fill="none" stroke="#2B50A1" strokeWidth="1.8"
                 strokeLinejoin="round" strokeLinecap="round" />
-          {coords.map(c => (
-            <circle key={c.date} cx={c.cx} cy={c.cy} r="2.6" fill="#fff" stroke="#2B50A1" strokeWidth="1.4">
-              <title>{`${c.date} — ${c.kg.toFixed(1)} kg`}</title>
-            </circle>
-          ))}
+
+          {coords.map(c => {
+            const on = hover?.date === c.date;
+            return (
+              <g key={c.date}>
+                <circle cx={c.cx} cy={c.cy} r={on ? 4 : 2.6}
+                        fill={on ? '#2B50A1' : '#fff'} stroke="#2B50A1" strokeWidth="1.4" />
+                {/* generous invisible hit area — the dots are far too small to aim at */}
+                <circle cx={c.cx} cy={c.cy} r="11" fill="transparent" style={{ cursor: 'pointer' }}
+                        onMouseEnter={() => setHover(c)}
+                        onTouchStart={() => setHover(c)} />
+              </g>
+            );
+          })}
+
+          {/* tooltip — flips to the left near the right edge so it never runs off */}
+          {hover && (() => {
+            const w = 78, h = 30;
+            const flip = hover.cx + 10 + w > W - PAD.r;
+            const bx = flip ? hover.cx - 10 - w : hover.cx + 10;
+            const by = Math.min(Math.max(hover.cy - h / 2, PAD.t), PAD.t + ih - h);
+            return (
+              <g pointerEvents="none">
+                <line x1={hover.cx} y1={PAD.t} x2={hover.cx} y2={PAD.t + ih}
+                      stroke="#2B50A1" strokeWidth="0.8" strokeDasharray="2 2" opacity="0.5" />
+                <rect x={bx} y={by} width={w} height={h} rx="4"
+                      fill="#1a1a2e" stroke="#FFCB05" strokeWidth="1" />
+                <text x={bx + w / 2} y={by + 12} textAnchor="middle" className="wg-tip-date">{hover.date}</text>
+                <text x={bx + w / 2} y={by + 23} textAnchor="middle" className="wg-tip-kg">{hover.kg.toFixed(1)} kg</text>
+              </g>
+            );
+          })()}
         </svg>
 
         <div className="wg-legend">
