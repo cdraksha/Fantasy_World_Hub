@@ -269,8 +269,14 @@ const SINGAPORE_DATE_LABEL = 'Oct 12, 2026';
 
 const WEIGHT_LOG_START = '2026-08-01';   // weight log in the Log tab starts here
 
-const GANJI_TARGET_DAYS = 100;
-const GANJI_DAYS_ALREADY_DONE = 5;   // days completed before the tracker existed
+// 100-day manual-log challenges. seedDays = days completed before the tracker existed.
+const DAY_CHALLENGES = {
+  ganji: { icon: '🍚', title: '100 Day Ganji',   subtitle: 'one meal a day', target: 100, seedDays: 5 },
+  acv:   { icon: '🍶', title: '100 Day ACV PQR +', subtitle: 'every day',      target: 100, seedDays: 6 },
+};
+const initDayChallenge = key => ({
+  daysDone: DAY_CHALLENGES[key].seedDays, lastLogDate: null, log: [], claimedReward: false,
+});
 
 function initWeddingChallenge() {
   return {
@@ -926,7 +932,8 @@ function defaultState(steps) {
     prudhviChallenge: { claimedReward: false, penaltyApplied: false },
     prudhviWeddingChallenge: { claimedReward: false, penaltyApplied: false },
     singaporeTrip: { claimedReward: false, penaltyApplied: false },
-    ganji: { daysDone: GANJI_DAYS_ALREADY_DONE, lastLogDate: null, log: [], claimedReward: false },
+    ganji: initDayChallenge('ganji'),
+    acv: initDayChallenge('acv'),
   };
 }
 
@@ -976,7 +983,8 @@ function loadState() {
     if (!saved.prudhviChallenge) saved.prudhviChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.prudhviWeddingChallenge) saved.prudhviWeddingChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.singaporeTrip) saved.singaporeTrip = { claimedReward: false, penaltyApplied: false };
-    if (!saved.ganji) saved.ganji = { daysDone: GANJI_DAYS_ALREADY_DONE, lastLogDate: null, log: [], claimedReward: false };
+    if (!saved.ganji) saved.ganji = initDayChallenge('ganji');
+    if (!saved.acv) saved.acv = initDayChallenge('acv');
     if (saved.water.milestonesCleared === undefined) saved.water = { ...saved.water, milestonesCleared: 0 };
     if (saved.eggQueue === undefined) saved.eggQueue = 0;
     if (!saved.claimedStarterRegions) saved.claimedStarterRegions = [];
@@ -1661,6 +1669,93 @@ function WeightGraphPopup({ history, onClose }) {
   );
 }
 
+// ─── 100-day manual-log challenge card ────────────────────────────────────
+
+function DayChallengeCard({ cfg, state, open, onToggle, onLog, onUndo, onClaim }) {
+  const c = state || { daysDone: 0, lastLogDate: null, log: [] };
+  if (c.claimedReward) return null;
+
+  const today = todayString();
+  const done = Math.min(c.daysDone || 0, cfg.target);
+  const left = Math.max(0, cfg.target - done);
+  const pct = (done / cfg.target) * 100;
+  const loggedToday = c.lastLogDate === today;
+  const complete = done >= cfg.target;
+
+  return (
+    <div className="gba-section">
+      <button className="wc-toggle-btn" onClick={onToggle}>
+        {cfg.icon} {cfg.title}
+        {complete
+          ? <span className="obj-updated-badge">Claim!</span>
+          : loggedToday
+            ? <span className="obj-updated-badge">Logged Today</span>
+            : <span className="obj-pending-badge">Log Today</span>}
+      </button>
+
+      {open && (
+        <div style={{ padding: '4px 0' }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            <div style={{ flex: 1, background: '#fef3c7', borderRadius: 6, padding: '6px 8px', border: '1px solid #fcd34d' }}>
+              <div style={{ fontSize: 8, color: '#92400e', fontWeight: 700 }}>GOAL</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#78350f' }}>{cfg.target} days</div>
+              <div style={{ fontSize: 8, color: '#b45309' }}>{cfg.subtitle}</div>
+            </div>
+            <div style={{ flex: 1, background: complete ? '#dcfce7' : '#f0f9ff', borderRadius: 6, padding: '6px 8px', border: `1px solid ${complete ? '#86efac' : '#bae6fd'}` }}>
+              <div style={{ fontSize: 8, color: '#374151', fontWeight: 700 }}>DONE</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: complete ? '#15803d' : '#0369a1' }}>{done}</div>
+              <div style={{ fontSize: 8, color: '#6b7280' }}>{complete ? '✓ Complete!' : `${left} to go`}</div>
+            </div>
+            <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 6, padding: '6px 8px', border: '1px solid #bbf7d0' }}>
+              <div style={{ fontSize: 8, color: '#166534', fontWeight: 700 }}>🏆 WIN</div>
+              <div style={{ fontSize: 11, fontWeight: 900, color: '#15803d' }}>10 Epic</div>
+              <div style={{ fontSize: 8, color: '#6b7280' }}>Pokémon</div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: '#6b7280', marginBottom: 3 }}>
+              <span>{done} / {cfg.target}</span>
+              <span>{Math.floor(pct)}%</span>
+            </div>
+            <div style={{ height: 7, background: '#e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{ width: `${pct}%`, height: '100%', background: complete ? '#16a34a' : '#f59e0b', borderRadius: 4, transition: 'width .3s ease' }} />
+            </div>
+          </div>
+
+          {complete ? (
+            <button style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
+              onClick={onClaim}>
+              🏆 You did it! Claim 10 Epic
+            </button>
+          ) : (
+            <button
+              style={{ width: '100%', padding: '8px', background: loggedToday ? '#e5e7eb' : '#16a34a', color: loggedToday ? '#6b7280' : '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: loggedToday ? 'default' : 'pointer', marginBottom: 6 }}
+              onClick={onLog}
+              disabled={loggedToday}
+            >
+              {loggedToday ? '✓ Logged today' : `${cfg.icon} Log today`}
+            </button>
+          )}
+
+          {loggedToday && !complete && (
+            <button style={{ width: '100%', padding: '5px', background: 'none', color: '#9ca3af', border: '1px solid #e5e7eb', borderRadius: 5, fontWeight: 700, fontSize: 8, cursor: 'pointer' }}
+              onClick={onUndo}>
+              Undo today's log
+            </button>
+          )}
+
+          {(c.log || []).length > 0 && (
+            <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center', marginTop: 8 }}>
+              Last logged: {c.log[0]}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Pack Opening Screen ──────────────────────────────────────────────────
 
 function PackOpeningScreen({ tier, isEgg, onClose, onCatch }) {
@@ -1965,7 +2060,7 @@ export default function PokemonWalker({ onStop }) {
   const [showPrudhviPanel, setShowPrudhviPanel] = useState(false);
   const [showPrudhviWeddingPanel, setShowPrudhviWeddingPanel] = useState(false);
   const [showSingaporePanel, setShowSingaporePanel] = useState(false);
-  const [showGanjiPanel, setShowGanjiPanel] = useState(false);
+  const [openDayChallenge, setOpenDayChallenge] = useState(null);   // 'ganji' | 'acv' | null
   const [generatingWeddingImage, setGeneratingWeddingImage] = useState(false);
   const [weddingImage, setWeddingImage] = useState(null);
   const [claimingWeddingReward, setClaimingWeddingReward] = useState(false);
@@ -3303,35 +3398,31 @@ export default function PokemonWalker({ onStop }) {
     });
   };
 
-  // ─── 100 Day Ganji — manual daily log ────────────────────────────────
-  const handleLogGanji = () => {
+  // ─── 100-day manual-log challenges (Ganji, ACV) ──────────────────────
+  const handleLogDayChallenge = (key) => {
+    const { target } = DAY_CHALLENGES[key];
     setAppState(prev => {
       const today = todayString();
-      const g = prev.ganji || { daysDone: GANJI_DAYS_ALREADY_DONE, lastLogDate: null, log: [], claimedReward: false };
-      if (g.lastLogDate === today) return prev;           // already logged today
-      if (g.daysDone >= GANJI_TARGET_DAYS) return prev;   // target already reached
-      return {
-        ...prev,
-        ganji: { ...g, daysDone: g.daysDone + 1, lastLogDate: today, log: [today, ...(g.log || [])] },
-      };
+      const c = prev[key] || initDayChallenge(key);
+      if (c.lastLogDate === today) return prev;   // already logged today
+      if (c.daysDone >= target) return prev;      // target already reached
+      return { ...prev, [key]: { ...c, daysDone: c.daysDone + 1, lastLogDate: today, log: [today, ...(c.log || [])] } };
     });
   };
 
   // undo an accidental log for today
-  const handleUndoGanji = () => {
+  const handleUndoDayChallenge = (key) => {
     setAppState(prev => {
       const today = todayString();
-      const g = prev.ganji;
-      if (!g || g.lastLogDate !== today) return prev;
-      const log = (g.log || []).filter(d => d !== today);
-      return {
-        ...prev,
-        ganji: { ...g, daysDone: Math.max(0, g.daysDone - 1), lastLogDate: log[0] || null, log },
-      };
+      const c = prev[key];
+      if (!c || c.lastLogDate !== today) return prev;
+      const log = (c.log || []).filter(d => d !== today);
+      return { ...prev, [key]: { ...c, daysDone: Math.max(0, c.daysDone - 1), lastLogDate: log[0] || null, log } };
     });
   };
 
-  const handleClaimGanjiReward = async () => {
+  const handleClaimDayChallenge = async (key) => {
+    const { title } = DAY_CHALLENGES[key];
     const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
     const pool = POOLS.epic.filter(id => !ownedDexIds.has(id));
     const src = pool.length >= 10 ? pool : POOLS.epic;
@@ -3341,10 +3432,10 @@ export default function PokemonWalker({ onStop }) {
       ...prev,
       pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
       caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
-      ganji: { ...prev.ganji, claimedReward: true },
-      challengeLog: [{ date: todayString(), type: 'ganji', tier: 'epic', outcome: `Completed 100 Day Ganji — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+      [key]: { ...prev[key], claimedReward: true },
+      challengeLog: [{ date: todayString(), type: key, tier: 'epic', outcome: `Completed ${title} — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
     }));
-    setDeltaFlash(`100 Day Ganji complete! ${pokes.map(p => p.name).join(', ')} claimed!`);
+    setDeltaFlash(`${title} complete! ${pokes.map(p => p.name).join(', ')} claimed!`);
     setTimeout(() => setDeltaFlash(null), 5000);
   };
 
@@ -6294,86 +6385,18 @@ export default function PokemonWalker({ onStop }) {
                       })()}
                     </div>}
 
-                    {!appState.ganji?.claimedReward && <div className="gba-section">
-                      <button className="wc-toggle-btn" onClick={() => setShowGanjiPanel(p => !p)}>
-                        🍚 100 Day Ganji
-                        {(() => {
-                          const g = appState.ganji || {};
-                          const done = g.daysDone || 0;
-                          if (done >= GANJI_TARGET_DAYS) return <span className="obj-updated-badge">Claim!</span>;
-                          return g.lastLogDate === todayString()
-                            ? <span className="obj-updated-badge">Logged Today</span>
-                            : <span className="obj-pending-badge">Log Today</span>;
-                        })()}
-                      </button>
-                      {showGanjiPanel && (() => {
-                        const g = appState.ganji || { daysDone: 0, lastLogDate: null, log: [] };
-                        const done = Math.min(g.daysDone || 0, GANJI_TARGET_DAYS);
-                        const left = Math.max(0, GANJI_TARGET_DAYS - done);
-                        const pct = (done / GANJI_TARGET_DAYS) * 100;
-                        const loggedToday = g.lastLogDate === todayString();
-                        const complete = done >= GANJI_TARGET_DAYS;
-                        return (
-                          <div style={{ padding: '4px 0' }}>
-                            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-                              <div style={{ flex: 1, background: '#fef3c7', borderRadius: 6, padding: '6px 8px', border: '1px solid #fcd34d' }}>
-                                <div style={{ fontSize: 8, color: '#92400e', fontWeight: 700 }}>GOAL</div>
-                                <div style={{ fontSize: 13, fontWeight: 900, color: '#78350f' }}>{GANJI_TARGET_DAYS} days</div>
-                                <div style={{ fontSize: 8, color: '#b45309' }}>one meal a day</div>
-                              </div>
-                              <div style={{ flex: 1, background: complete ? '#dcfce7' : '#f0f9ff', borderRadius: 6, padding: '6px 8px', border: `1px solid ${complete ? '#86efac' : '#bae6fd'}` }}>
-                                <div style={{ fontSize: 8, color: '#374151', fontWeight: 700 }}>DONE</div>
-                                <div style={{ fontSize: 13, fontWeight: 900, color: complete ? '#15803d' : '#0369a1' }}>{done}</div>
-                                <div style={{ fontSize: 8, color: '#6b7280' }}>{complete ? '✓ Complete!' : `${left} to go`}</div>
-                              </div>
-                              <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 6, padding: '6px 8px', border: '1px solid #bbf7d0' }}>
-                                <div style={{ fontSize: 8, color: '#166534', fontWeight: 700 }}>🏆 WIN</div>
-                                <div style={{ fontSize: 11, fontWeight: 900, color: '#15803d' }}>10 Epic</div>
-                                <div style={{ fontSize: 8, color: '#6b7280' }}>Pokémon</div>
-                              </div>
-                            </div>
-
-                            <div style={{ marginBottom: 8 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: '#6b7280', marginBottom: 3 }}>
-                                <span>{done} / {GANJI_TARGET_DAYS}</span>
-                                <span>{Math.floor(pct)}%</span>
-                              </div>
-                              <div style={{ height: 7, background: '#e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
-                                <div style={{ width: `${pct}%`, height: '100%', background: complete ? '#16a34a' : '#f59e0b', borderRadius: 4, transition: 'width .3s ease' }} />
-                              </div>
-                            </div>
-
-                            {complete ? (
-                              <button style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
-                                onClick={handleClaimGanjiReward}>
-                                🏆 You did it! Claim 10 Epic
-                              </button>
-                            ) : (
-                              <button
-                                style={{ width: '100%', padding: '8px', background: loggedToday ? '#e5e7eb' : '#16a34a', color: loggedToday ? '#6b7280' : '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: loggedToday ? 'default' : 'pointer', marginBottom: 6 }}
-                                onClick={handleLogGanji}
-                                disabled={loggedToday}
-                              >
-                                {loggedToday ? '✓ Logged today' : '🍚 Log today — one meal done'}
-                              </button>
-                            )}
-
-                            {loggedToday && !complete && (
-                              <button style={{ width: '100%', padding: '5px', background: 'none', color: '#9ca3af', border: '1px solid #e5e7eb', borderRadius: 5, fontWeight: 700, fontSize: 8, cursor: 'pointer' }}
-                                onClick={handleUndoGanji}>
-                                Undo today's log
-                              </button>
-                            )}
-
-                            {(g.log || []).length > 0 && (
-                              <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center', marginTop: 8 }}>
-                                Last logged: {g.log[0]}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </div>}
+                    {Object.entries(DAY_CHALLENGES).map(([key, cfg]) => (
+                      <DayChallengeCard
+                        key={key}
+                        cfg={cfg}
+                        state={appState[key]}
+                        open={openDayChallenge === key}
+                        onToggle={() => setOpenDayChallenge(o => (o === key ? null : key))}
+                        onLog={() => handleLogDayChallenge(key)}
+                        onUndo={() => handleUndoDayChallenge(key)}
+                        onClaim={() => handleClaimDayChallenge(key)}
+                      />
+                    ))}
 
                     {!(appState.singaporeTrip?.claimedReward || appState.singaporeTrip?.penaltyApplied) && <div className="gba-section">
                       <button className="wc-toggle-btn" onClick={() => setShowSingaporePanel(p => !p)}>
@@ -6758,6 +6781,7 @@ export default function PokemonWalker({ onStop }) {
                         prudhviWeddingChallenge: '💒 Prudhvi\'s Wedding',
                         singaporeTrip: '✈️ Singapore Trip',
                         ganji: '🍚 100 Day Ganji',
+                        acv: '🍶 100 Day ACV PQR +',
                         water: '💧 Water Intake',
                       };
                       const allLog = appState.challengeLog || [];
