@@ -273,6 +273,7 @@ const WEIGHT_LOG_START = '2026-08-01';   // weight log in the Log tab starts her
 const DAY_CHALLENGES = {
   ganji: { icon: '🍚', title: '100 Day Ganji',   subtitle: 'one meal a day', target: 100, seedDays: 5 },
   acv:   { icon: '🍶', title: '100 Day ACV PQR +', subtitle: 'every day',      target: 100, seedDays: 6 },
+  twoMeals: { icon: '🍛', title: '100 Day 2 Meals', subtitle: 'two meals a day', target: 100, seedDays: 0 },
 };
 const initDayChallenge = key => ({
   daysDone: DAY_CHALLENGES[key].seedDays, lastLogDate: null, log: [], claimedReward: false,
@@ -934,6 +935,7 @@ function defaultState(steps) {
     singaporeTrip: { claimedReward: false, penaltyApplied: false },
     ganji: initDayChallenge('ganji'),
     acv: initDayChallenge('acv'),
+    twoMeals: initDayChallenge('twoMeals'),
   };
 }
 
@@ -985,6 +987,7 @@ function loadState() {
     if (!saved.singaporeTrip) saved.singaporeTrip = { claimedReward: false, penaltyApplied: false };
     if (!saved.ganji) saved.ganji = initDayChallenge('ganji');
     if (!saved.acv) saved.acv = initDayChallenge('acv');
+    if (!saved.twoMeals) saved.twoMeals = initDayChallenge('twoMeals');
     if (saved.water.milestonesCleared === undefined) saved.water = { ...saved.water, milestonesCleared: 0 };
     if (saved.eggQueue === undefined) saved.eggQueue = 0;
     if (!saved.claimedStarterRegions) saved.claimedStarterRegions = [];
@@ -6782,6 +6785,7 @@ export default function PokemonWalker({ onStop }) {
                         singaporeTrip: '✈️ Singapore Trip',
                         ganji: '🍚 100 Day Ganji',
                         acv: '🍶 100 Day ACV PQR +',
+                        twoMeals: '🍛 100 Day 2 Meals',
                         water: '💧 Water Intake',
                       };
                       const allLog = appState.challengeLog || [];
