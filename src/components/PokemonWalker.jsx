@@ -2080,6 +2080,7 @@ export default function PokemonWalker({ onStop }) {
     rare: POOLS.rare[Math.floor(Math.random() * POOLS.rare.length)],
     epic: POOLS.epic[Math.floor(Math.random() * POOLS.epic.length)],
   }));
+  const claimingMilestonesRef = useRef(new Set());   // milestone keys with a claim in flight
   const midnightChecked = useRef(false);
   const packWarningChecked = useRef({ '9pm': false, '11pm': false });
   const stepsWarningChecked = useRef(false);
@@ -2266,10 +2267,14 @@ export default function PokemonWalker({ onStop }) {
     const milestoneKey = `legendary:${ms.steps}`;
     if ((appState.stepVault || 0) < ms.steps) return;
     if ((appState.claimedVaultMilestones || []).includes(milestoneKey)) return;
+    if (claimingMilestonesRef.current.has(milestoneKey)) return;
+    claimingMilestonesRef.current.add(milestoneKey);
     try {
       const poke = await fetchPokemonById(ms.dexId);
       setAppState(prev => {
+        // re-check both against live state, not the stale closure above
         if ((prev.stepVault || 0) < ms.steps) return prev;
+        if ((prev.claimedVaultMilestones || []).includes(milestoneKey)) return prev;
         return {
           ...prev,
           stepVault: (prev.stepVault || 0) - ms.steps,
@@ -2282,6 +2287,7 @@ export default function PokemonWalker({ onStop }) {
       setDeltaFlash(`${poke.name} claimed!`);
       setTimeout(() => setDeltaFlash(null), 4000);
     } catch { /* silently fail */ }
+    finally { claimingMilestonesRef.current.delete(milestoneKey); }
   }, [appState?.stepVault, appState?.claimedVaultMilestones]);
 
   // ─── Check achievements ─────────────────────────────────────────────
@@ -2647,10 +2653,18 @@ export default function PokemonWalker({ onStop }) {
       : ms.reward === 'gym' ? `gym:${ms.trainer}`
       : `elite:${ms.trainer}`;
     if ((appState.claimedVaultMilestones || []).includes(milestoneKey)) return;
+    // the guards above read a stale closure and there is an await before the
+    // write, so without this a double tap claims twice and double-deducts
+    if (claimingMilestonesRef.current.has(milestoneKey)) return;
+    claimingMilestonesRef.current.add(milestoneKey);
 
+    try {
     if (ms.reward === 'starter') {
       const poke = await fetchPokemonById(ms.starter.toLowerCase());
       setAppState(prev => {
+        // re-check against live state — this is the only atomic place to do it
+        if ((prev.stepVault || 0) < ms.threshold) return prev;
+        if ((prev.claimedVaultMilestones || []).includes(milestoneKey)) return prev;
         const existingIdx = prev.pokemon.findIndex(p => p.dexId === poke.dexId);
         const updatedPokemon = existingIdx !== -1
           ? prev.pokemon.map((p, i) => i === existingIdx ? { ...p, count: (p.count || 1) + 1 } : p)
@@ -2686,6 +2700,9 @@ export default function PokemonWalker({ onStop }) {
       return;
     }
     setTimeout(() => setDeltaFlash(null), 4000);
+    } finally {
+      claimingMilestonesRef.current.delete(milestoneKey);
+    }
   };
 
   // ─── Confirm milestone team reveal → add Pokémon to collection ───────
