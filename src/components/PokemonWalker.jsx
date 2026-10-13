@@ -829,6 +829,20 @@ function daysBetween(a, b) {
   return Math.floor((db - da) / 86400000);
 }
 
+// Consecutive days up to today whose steps met a threshold, read straight from
+// history so it can never drift from the logged data. Counting starts at
+// yesterday when today has not reached the threshold yet, so a day still in
+// progress doesn't read as a broken streak.
+function liveStreak(stepHistory, todayDate, todaySteps, min) {
+  const map = {};
+  (stepHistory || []).forEach(e => { map[e.date] = e.steps; });
+  if (todaySteps) map[todayDate] = todaySteps;
+  let d = (map[todayDate] || 0) >= min ? todayDate : addDays(todayDate, -1);
+  let n = 0;
+  while ((map[d] || 0) >= min) { n++; d = addDays(d, -1); }
+  return n;
+}
+
 // How long a vault freeze still has to run. The freeze is purely time-based —
 // nothing clears it early, so this is the only thing that lifts it.
 function vaultFreezeLeft(until) {
@@ -4035,24 +4049,15 @@ export default function PokemonWalker({ onStop }) {
                           {appState.bestDayDate && <span className="pw-stat-box-sub">{appState.bestDayDate}</span>}
                         </div>
                         <div className="pw-stat-box-sm">
-                          {(() => {
-                            const histMap = {};
-                            (appState.stepHistory || []).forEach(e => { histMap[e.date] = e.steps; });
-                            const today = todayString();
-                            if (appState.todaySteps) histMap[today] = appState.todaySteps;
-                            let streak = 0;
-                            const startFrom = (histMap[today] || 0) >= 8000 ? today : addDays(today, -1);
-                            let d = startFrom;
-                            while (true) {
-                              const s = histMap[d] || 0;
-                              if (s >= 8000) { streak++; d = addDays(d, -1); } else break;
-                            }
-                            return <span className="pw-stat-box-val">{streak}d</span>;
-                          })()}
+                          <span className="pw-stat-box-val">
+                            {liveStreak(appState.stepHistory, todayString(), appState.todaySteps, 8000)}d
+                          </span>
                           <span className="pw-stat-box-label">8K Streak</span>
                         </div>
                         <div className="pw-stat-box-sm">
-                          <span className="pw-stat-box-val">{appState.streak10k || 0}d</span>
+                          <span className="pw-stat-box-val">
+                            {liveStreak(appState.stepHistory, todayString(), appState.todaySteps, 10000)}d
+                          </span>
                           <span className="pw-stat-box-label">10K Streak</span>
                         </div>
                         <div className="pw-stat-box-sm">
