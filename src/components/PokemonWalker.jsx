@@ -2083,6 +2083,7 @@ export default function PokemonWalker({ onStop }) {
   const [claimingWeddingReward, setClaimingWeddingReward] = useState(false);
   const [claimingTrainer, setClaimingTrainer] = useState(null);
   const [showLogStepsDropdown, setShowLogStepsDropdown] = useState(false);
+  const [showLogMonthlyDropdown, setShowLogMonthlyDropdown] = useState(false);
   const [showLogMilestonesDropdown, setShowLogMilestonesDropdown] = useState(false);
   const [showLogDistanceDropdown, setShowLogDistanceDropdown] = useState(false);
   const [showLogChallengesDropdown, setShowLogChallengesDropdown] = useState(false);
@@ -6791,6 +6792,51 @@ export default function PokemonWalker({ onStop }) {
                         </table>
                       )
                     )}
+
+                    {/* Monthly steps — stepHistory rolled up by month */}
+                    {(() => {
+                      const totals = {};
+                      (appState.stepHistory || []).forEach(e => {
+                        const m = e.date.slice(0, 7);
+                        totals[m] = (totals[m] || 0) + e.steps;
+                      });
+                      // today isn't in history until the midnight rollover
+                      if (appState.todayDate && appState.todaySteps) {
+                        const m = appState.todayDate.slice(0, 7);
+                        totals[m] = (totals[m] || 0) + appState.todaySteps;
+                      }
+                      const months = Object.keys(totals).sort().reverse();
+                      return (
+                        <>
+                          <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowLogMonthlyDropdown(p => !p)}>
+                            👣 Monthly Steps · {months.length}
+                            <span className="log-section-chevron">{showLogMonthlyDropdown ? '▲' : '▼'}</span>
+                          </button>
+                          {showLogMonthlyDropdown && (
+                            months.length === 0
+                              ? <div className="sh-empty">No history yet.</div>
+                              : (
+                                <table className="sh-table">
+                                  <thead>
+                                    <tr>
+                                      <th className="sh-th">Month</th>
+                                      <th className="sh-th sh-th-right">Steps</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {months.map(m => (
+                                      <tr key={m} className="sh-row">
+                                        <td className="sh-td">{monthLabel(m)}</td>
+                                        <td className="sh-td sh-td-right">{totals[m].toLocaleString()}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              )
+                          )}
+                        </>
+                      );
+                    })()}
 
                     {/* Completed challenges dropdown */}
                     {(() => {
