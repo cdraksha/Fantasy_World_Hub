@@ -17,8 +17,9 @@ const LOAN_REPAY_DAYS     = 10;
 const LOAN_PREVIEW_WINDOW = 20_000;
 
 // ─── Egg constants ────────────────────────────────────────────────────────────
-const EGG_BASE            = 10_000;   // new egg every 10k vault steps since last hatch
-const EGG_CLAIM_HOURS     = 24;       // claim window after vault milestone hit
+// the vault must actually hold this much — it is spent on claim, so eggs
+// compete with milestones for the same banked steps
+const EGG_BASE            = 10_000;
 
 function eggTier(_index) {
   return 'common';
@@ -1216,14 +1217,10 @@ function loadState() {
         saved.loan = { ...saved.loan, daysCompleted: newDays, lastPaidDate: saved.todayDate };
       }
     }
-    // Auto-unlock egg on load if vault threshold already met
-    if (saved.egg?.status === 'waiting') {
-      const lifetime = saved.lifetimeVaultDeposits || 0;
-      const baseline = saved.egg.vaultBaseline || 0;
-      if (lifetime - baseline >= EGG_BASE) {
-        saved.egg = { ...saved.egg, status: 'available', tier: eggTier(saved.egg.index), availableUntil: Date.now() + EGG_CLAIM_HOURS * 60 * 60 * 1000 };
-      }
-    }
+    // Egg availability is derived from the live vault balance at render time,
+    // so there is nothing to unlock here. A stored 'available' flag would go
+    // stale the moment the vault was spent on a milestone.
+    if (saved.egg?.status === 'available') saved.egg = { ...saved.egg, status: 'waiting' };
     // Credit debt trap if today's steps already meet the daily target
     if (saved.debtTrap?.status === 'active' && saved.todaySteps >= saved.debtTrap.dailyTarget && saved.debtTrap.lastPaidDate !== saved.todayDate) {
       const newDays = (saved.debtTrap.daysCompleted || 0) + 1;
@@ -2615,14 +2612,18 @@ export default function PokemonWalker({ onStop }) {
 
   // ─── Claim egg — instant hatch ───────────────────────────────────────
   const handleClaimEgg = () => {
-    const egg = appState?.egg;
-    if (egg?.status !== 'available') return;
-    const tier = egg.tier || 'common';
+    if ((appState?.stepVault || 0) < EGG_BASE) return;
+    const tier = eggTier(appState.egg?.index || 0);
     setEggOpening(tier);
-    setAppState(prev => ({
-      ...prev,
-      egg: { ...initEgg(prev.lifetimeVaultDeposits || 0), index: (prev.egg.index || 0) + 1 },
-    }));
+    setAppState(prev => {
+      // re-check against live state — the vault may have been spent meanwhile
+      if ((prev.stepVault || 0) < EGG_BASE) return prev;
+      return {
+        ...prev,
+        stepVault: prev.stepVault - EGG_BASE,
+        egg: { ...initEgg(prev.lifetimeVaultDeposits || 0), index: (prev.egg.index || 0) + 1 },
+      };
+    });
   };
 
   // ─── Unlock pack ─────────────────────────────────────────────────────
@@ -2646,11 +2647,8 @@ export default function PokemonWalker({ onStop }) {
       const deposit = prev.spendableSteps;
       const newVault = prev.stepVault + deposit;
       const newLifetime = prev.lifetimeVaultDeposits + deposit;
-      // Check if vault milestone crossed for egg
-      let newEgg = prev.egg;
-      if (newEgg.status === 'waiting' && newLifetime - (newEgg.vaultBaseline || 0) >= EGG_BASE) {
-        newEgg = { ...newEgg, status: 'available', tier: eggTier(newEgg.index), availableUntil: Date.now() + EGG_CLAIM_HOURS * 60 * 60 * 1000 };
-      }
+      // egg availability is derived from the vault balance, nothing to flip here
+      const newEgg = prev.egg;
       return {
         ...prev,
         spendableSteps: 0,
@@ -4831,23 +4829,22 @@ export default function PokemonWalker({ onStop }) {
                     <div className="gba-section">
                       <button className="egg-eligible-btn" onClick={() => setShowEggPanel(p => !p)}>
                         🥚 {showEggPanel ? 'Hide egg info' : 'Egg Progress'}
-                        {appState.egg?.status === 'available' && <span className="obj-updated-badge">Claim!</span>}
-                        {appState.egg?.status === 'hatching' && <span className="obj-active-badge">Hatching…</span>}
+                        {(appState.stepVault || 0) >= EGG_BASE && <span className="obj-updated-badge">Claim!</span>}
                       </button>
                       {showEggPanel && (() => {
-                        const egg = appState.egg;
-                        const vaultLifetime = appState.lifetimeVaultDeposits || 0;
-                        const baseline = egg.vaultBaseline || 0;
-                        const deposited = Math.min(vaultLifetime - baseline, EGG_BASE);
-                        const pct = Math.min(100, (deposited / EGG_BASE) * 100);
-                        if (egg.status === 'hatching') {
-                          return <div className="egg-panel egg-active"><div className="egg-visual"><span className="egg-icon egg-glow">🥚</span></div><div className="egg-avail-title">Hatching…</div></div>;
-                        }
-                        if (egg.status === 'available') {
+                        // the vault must actually hold the steps — spending them
+                        // on milestones takes the egg away again
+                        const vault = appState.stepVault || 0;
+                        const held = Math.min(vault, EGG_BASE);
+                        const pct = Math.min(100, (held / EGG_BASE) * 100);
+                        const tier = eggTier(appState.egg?.index || 0);
+
+                        if (vault >= EGG_BASE) {
                           return (
                             <div className="egg-panel egg-available">
-                              <div className="egg-visual"><span className="egg-icon egg-glow">🥚</span><div className="egg-tier-badge">{egg.tier}</div></div>
+                              <div className="egg-visual"><span className="egg-icon egg-glow">🥚</span><div className="egg-tier-badge">{tier}</div></div>
                               <div className="egg-avail-title">An egg has appeared!</div>
+                              <div className="egg-locked-desc">Costs {fmtNum(EGG_BASE)} vault steps</div>
                               <button className="egg-claim-btn" onClick={handleClaimEgg}>🤲 Claim &amp; Hatch</button>
                             </div>
                           );
@@ -4855,7 +4852,7 @@ export default function PokemonWalker({ onStop }) {
                         return (
                           <div className="egg-panel egg-locked">
                             <div className="egg-visual"><span className="egg-icon egg-dim">🥚</span></div>
-                            <div className="egg-locked-desc">{fmtNum(deposited)} / {fmtNum(EGG_BASE)} vault steps · {eggTier(egg.index)} next</div>
+                            <div className="egg-locked-desc">{fmtNum(held)} / {fmtNum(EGG_BASE)} vault steps · {tier} next</div>
                             <div className="loan-bar loan-bar-muted"><div className="loan-bar-fill egg-bar-fill" style={{ width: `${pct}%` }} /></div>
                           </div>
                         );
