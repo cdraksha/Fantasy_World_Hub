@@ -2004,6 +2004,7 @@ function WeightGraph({ history }) {
 export default function PokemonWalker({ onStop }) {
   const [appState, setAppState] = useState(() => loadState());
   const [stepInput, setStepInput] = useState('');
+  const [stepVaultCut, setStepVaultCut] = useState('');   // optional slice of the new steps sent straight to the vault
   const [deltaFlash, setDeltaFlash] = useState(null);
   const [packOpening, setPackOpening] = useState(null); // tier string or null
   const [milestoneReveal, setMilestoneReveal] = useState(null);
@@ -2335,7 +2336,12 @@ export default function PokemonWalker({ onStop }) {
       const delta = Math.max(0, newTotal - prev.todaySteps);
       const newTodaySteps = newTotal;
       const newTotalWalked = prev.totalStepsWalked + delta;
-      const newSpendable = prev.spendableSteps + delta;
+
+      // optional: send part of the new steps straight to the vault instead of
+      // spendable. capped at the delta, and refused while the vault is frozen.
+      const vaultFrozen = prev.vaultFrozenUntil && Date.now() < prev.vaultFrozenUntil;
+      const toVault = vaultFrozen ? 0 : Math.min(Math.max(0, parseInt(stepVaultCut, 10) || 0), delta);
+      const newSpendable = prev.spendableSteps + (delta - toVault);
       const newLevel = getCollectorLevel(newTotalWalked);
       const newAch = checkAchievements({ ...prev, totalStepsWalked: newTotalWalked });
       const isNewRecord = newTodaySteps > (prev.bestDay || 0);
@@ -2440,6 +2446,8 @@ export default function PokemonWalker({ onStop }) {
         ...prev,
         todaySteps: newTodaySteps,
         spendableSteps: newSpendable,
+        stepVault: (prev.stepVault || 0) + toVault,
+        lifetimeVaultDeposits: (prev.lifetimeVaultDeposits || 0) + toVault,
         totalStepsWalked: newTotalWalked,
         collectorLevel: newLevel,
         achievements: newAch,
@@ -2459,12 +2467,15 @@ export default function PokemonWalker({ onStop }) {
         challengeLog: completedDTLog ? [completedDTLog, ...(prev.challengeLog || [])] : prev.challengeLog,
       };
       if (delta > 0) {
-        setDeltaFlash(`+${fmtFull(delta)} new steps`);
+        setDeltaFlash(toVault > 0
+          ? `+${fmtFull(delta)} new steps · ${fmtFull(toVault)} → vault, ${fmtFull(delta - toVault)} spendable`
+          : `+${fmtFull(delta)} new steps`);
         setTimeout(() => setDeltaFlash(null), 3000);
       }
       return next;
     });
     setStepInput('');
+    setStepVaultCut('');
   };
 
   // ─── Start Day Care ──────────────────────────────────────────────────
@@ -4220,6 +4231,47 @@ export default function PokemonWalker({ onStop }) {
                     />
                     <button className="gba-save-btn" onClick={handleSaveSteps}>Save</button>
                   </div>
+
+                  {/* optional slice of the new steps straight into the vault */}
+                  {(() => {
+                    const frozen = appState.vaultFrozenUntil && Date.now() < appState.vaultFrozenUntil;
+                    const newSteps = Math.max(0, (parseInt(stepInput, 10) || 0) - (appState.todaySteps || 0));
+                    const cut = Math.min(Math.max(0, parseInt(stepVaultCut, 10) || 0), newSteps);
+                    if (frozen) {
+                      return (
+                        <div className="sv-row sv-frozen">
+                          🏦 Vault frozen — {vaultFreezeLeft(appState.vaultFrozenUntil)}, all steps stay spendable
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="sv-row">
+                        <span className="sv-label">🏦 To vault</span>
+                        <input
+                          className="sv-input"
+                          type="number"
+                          min="0"
+                          max={newSteps || undefined}
+                          placeholder="0"
+                          value={stepVaultCut}
+                          onChange={e => setStepVaultCut(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && handleSaveSteps()}
+                        />
+                        {newSteps > 0 && (
+                          <>
+                            <button className="sv-quick" onClick={() => setStepVaultCut(String(Math.floor(newSteps / 2)))}>½</button>
+                            <button className="sv-quick" onClick={() => setStepVaultCut(String(newSteps))}>All</button>
+                          </>
+                        )}
+                        <span className="sv-split">
+                          {newSteps > 0
+                            ? <>{fmtNum(cut)} banked · {fmtNum(newSteps - cut)} spendable</>
+                            : <>of this entry's new steps</>}
+                        </span>
+                      </div>
+                    );
+                  })()}
+
                   {deltaFlash && <div className="gba-delta-flash">{deltaFlash}</div>}
                 </div>
 

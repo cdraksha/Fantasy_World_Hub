@@ -5921,3 +5921,66 @@
   font-weight: 800;
   fill: #FFCB05;
 }
+
+/* ── Split new steps into the vault at entry time ── */
+.sv-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.sv-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: #5a5a6a;
+  flex-shrink: 0;
+}
+
+.sv-input {
+  width: 68px;
+  border: 1.5px solid #d0cbc0;
+  border-radius: 5px;
+  padding: 4px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a1a2e;
+  box-sizing: border-box;
+}
+.sv-input:focus { outline: none; border-color: #2B50A1; }
+
+.sv-quick {
+  border: 1.5px solid #d0cbc0;
+  background: #fff;
+  border-radius: 5px;
+  padding: 3px 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  color: #2B50A1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.sv-quick:hover { background: #eef2fb; border-color: #2B50A1; }
+
+.sv-split {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: #9ca3af;
+  margin-left: auto;
+}
+
+.sv-frozen {
+  margin-top: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #7a7a8a;
+  background: rgba(14,165,233,0.08);
+  border: 1px solid rgba(14,165,233,0.25);
+  border-radius: 5px;
+  padding: 4px 7px;
+}
