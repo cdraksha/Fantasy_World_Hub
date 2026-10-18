@@ -4224,7 +4224,7 @@ export default function PokemonWalker({ onStop }) {
                       className="gba-step-input"
                       type="number"
                       min="0"
-                      placeholder="Enter today's total steps"
+                      placeholder="Today's total steps"
                       value={stepInput}
                       onChange={e => setStepInput(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleSaveSteps()}

@@ -1873,10 +1873,13 @@
   margin-bottom: 6px;
 }
 
-.gba-step-row { display: flex; gap: 6px; }
+.gba-step-row { display: flex; gap: 6px; align-items: center; }
 
 .gba-step-input {
   flex: 1;
+  /* without this the input keeps its intrinsic width as a flex item, overflows
+     the row on narrow screens and pushes Save outside the clipped container */
+  min-width: 0;
   border: 2px solid #e0dbd0;
   border-radius: 8px;
   padding: 7px 10px;
@@ -1900,6 +1903,7 @@
   border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;   /* never let the input squeeze Save out of the row */
 }
 
 .gba-delta-flash {
@@ -5984,3 +5988,14 @@
   border-radius: 5px;
   padding: 4px 7px;
 }
+
+/* Inputs are flex items with an intrinsic min-width, so in a non-wrapping row
+   they refuse to shrink and push the adjacent button outside the clipped
+   container. Same failure that hid the step Save button. */
+.cal-input-group,
+.gba-spendable-edit-input,
+.wt-input { min-width: 0; }
+
+.wt-submit-btn,
+.gba-spendable-save-btn,
+.gba-spendable-cancel-btn { flex-shrink: 0; }
