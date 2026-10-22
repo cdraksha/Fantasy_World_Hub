@@ -2094,6 +2094,7 @@ export default function PokemonWalker({ onStop }) {
     epic: POOLS.epic[Math.floor(Math.random() * POOLS.epic.length)],
   }));
   const claimingMilestonesRef = useRef(new Set());   // milestone keys with a claim in flight
+  const claimingRewardRef = useRef(new Set());       // challenge keys with a reward claim in flight
   const midnightChecked = useRef(false);
   const packWarningChecked = useRef({ '9pm': false, '11pm': false });
   const stepsWarningChecked = useRef(false);
@@ -3236,16 +3237,20 @@ export default function PokemonWalker({ onStop }) {
       const pokes = await Promise.all(picked.map(id => fetchPokemonById(id)));
       const newPokes = pokes.map(p => ({ ...p, uid: `wc-${month}-${p.dexId}-${Date.now()}${Math.random()}`, packTier: 'epic', buddySteps: 0 }));
       const monthLabel2 = new Date(month + '-02').toLocaleString('default', { month: 'long', year: 'numeric' });
-      setAppState(prev => ({
-        ...prev,
-        pokemon: [...prev.pokemon, ...newPokes],
-        caughtDex: [...new Set([...(prev.caughtDex || []), ...newPokes.map(p => p.dexId)])],
-        wifeChallenge: {
-          ...prev.wifeChallenge,
-          claimedMonths: [...(prev.wifeChallenge?.claimedMonths || []), month],
-        },
-        challengeLog: [{ date: todayString(), type: 'wifeChallenge', tier: 'epic', outcome: `Won ${monthLabel2} · 3 Starter Eggs: ${newPokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
-      }));
+      setAppState(prev => {
+        // this one is claimable per month, so key the check on the month
+        if ((prev.wifeChallenge?.claimedMonths || []).includes(month)) return prev;
+        return {
+          ...prev,
+          pokemon: [...prev.pokemon, ...newPokes],
+          caughtDex: [...new Set([...(prev.caughtDex || []), ...newPokes.map(p => p.dexId)])],
+          wifeChallenge: {
+            ...prev.wifeChallenge,
+            claimedMonths: [...(prev.wifeChallenge?.claimedMonths || []), month],
+          },
+          challengeLog: [{ date: todayString(), type: 'wifeChallenge', tier: 'epic', outcome: `Won ${monthLabel2} · 3 Starter Eggs: ${newPokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+        };
+      });
       setVictoryStarters(newPokes);
     } catch {}
     setClaimingVictory(false);
@@ -3284,13 +3289,16 @@ export default function PokemonWalker({ onStop }) {
       const src = pool.length >= 20 ? pool : POOLS.epic;
       const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 20);
       const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
-      setAppState(prev => ({
-        ...prev,
-        pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
-        caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
-        weddingChallenge: { ...prev.weddingChallenge, claimedReward: true },
-        challengeLog: [{ date: todayString(), type: 'wedding', tier: 'epic', outcome: `Won Prashast's Wedding Challenge — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
-      }));
+      setAppState(prev => {
+        if (prev.weddingChallenge?.claimedReward) return prev;   // beaten to it
+        return {
+          ...prev,
+          pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
+          caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
+          weddingChallenge: { ...prev.weddingChallenge, claimedReward: true },
+          challengeLog: [{ date: todayString(), type: 'wedding', tier: 'epic', outcome: `Won Prashast's Wedding Challenge — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+        };
+      });
       setDeltaFlash(`Wedding challenge won! ${pokes.map(p => p.name).join(', ')} are yours!`);
       setTimeout(() => setDeltaFlash(null), 5000);
     } catch { /* silently fail */ }
@@ -3313,6 +3321,10 @@ export default function PokemonWalker({ onStop }) {
 
   // ─── Rakshit & Neha Challenge ─────────────────────────────────────────
   const handleClaimRNReward = async () => {
+    if (appState.rnChallenge?.claimedReward) return;
+    if (claimingRewardRef.current.has('rnChallenge')) return;
+    claimingRewardRef.current.add('rnChallenge');
+    try {
     const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
     const RARE_IDS = [4, 7, 25, 39, 54, 60, 63, 66, 79, 92, 116, 129, 131, 133, 147];
     const pool = RARE_IDS.filter(id => !ownedDexIds.has(id));
@@ -3320,6 +3332,7 @@ export default function PokemonWalker({ onStop }) {
     const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 5);
     const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
     setAppState(prev => {
+      if (prev.rnChallenge?.claimedReward) return prev;   // beaten to it
       let ns = {
         ...prev,
         pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'rare', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
@@ -3334,6 +3347,7 @@ export default function PokemonWalker({ onStop }) {
     });
     setDeltaFlash('🎉 Rakshit & Neha challenge won! 5 Rares + 30k buddy steps!');
     setTimeout(() => setDeltaFlash(null), 5000);
+    } finally { claimingRewardRef.current.delete('rnChallenge'); }
   };
 
   const handleApplyRNPenalty = () => {
@@ -3352,6 +3366,10 @@ export default function PokemonWalker({ onStop }) {
 
   // ─── Prudhvi Engagement Challenge ────────────────────────────────────
   const handleClaimPrudhviReward = async () => {
+    if (appState.prudhviChallenge?.claimedReward) return;
+    if (claimingRewardRef.current.has('prudhviChallenge')) return;
+    claimingRewardRef.current.add('prudhviChallenge');
+    try {
     const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
     const RARE_IDS = [4, 7, 25, 39, 54, 60, 63, 66, 79, 92, 116, 129, 131, 133, 147];
     const pool = RARE_IDS.filter(id => !ownedDexIds.has(id));
@@ -3359,6 +3377,7 @@ export default function PokemonWalker({ onStop }) {
     const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 5);
     const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
     setAppState(prev => {
+      if (prev.prudhviChallenge?.claimedReward) return prev;   // beaten to it
       let ns = {
         ...prev,
         pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'rare', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
@@ -3373,6 +3392,7 @@ export default function PokemonWalker({ onStop }) {
     });
     setDeltaFlash("🎉 Prudhvi's Engagement challenge won! 5 Rares + 30k buddy steps!");
     setTimeout(() => setDeltaFlash(null), 5000);
+    } finally { claimingRewardRef.current.delete('prudhviChallenge'); }
   };
 
   const handleApplyPrudhviPenalty = () => {
@@ -3390,20 +3410,28 @@ export default function PokemonWalker({ onStop }) {
   };
 
   const handleClaimPrudhviWeddingReward = async () => {
-    const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
-    const pool = POOLS.epic.filter(id => !ownedDexIds.has(id));
-    const src = pool.length >= 10 ? pool : POOLS.epic;
-    const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 10);
-    const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
-    setAppState(prev => ({
-      ...prev,
-      pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
-      caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
-      prudhviWeddingChallenge: { ...prev.prudhviWeddingChallenge, claimedReward: true },
-      challengeLog: [{ date: todayString(), type: 'prudhviWeddingChallenge', tier: 'epic', outcome: `Won Prudhvi's Wedding challenge — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
-    }));
-    setDeltaFlash(`Prudhvi's Wedding challenge won! ${pokes.map(p => p.name).join(', ')} claimed!`);
-    setTimeout(() => setDeltaFlash(null), 5000);
+    if (appState.prudhviWeddingChallenge?.claimedReward) return;
+    if (claimingRewardRef.current.has('prudhviWeddingChallenge')) return;
+    claimingRewardRef.current.add('prudhviWeddingChallenge');
+    try {
+      const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
+      const pool = POOLS.epic.filter(id => !ownedDexIds.has(id));
+      const src = pool.length >= 10 ? pool : POOLS.epic;
+      const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 10);
+      const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
+      setAppState(prev => {
+        if (prev.prudhviWeddingChallenge?.claimedReward) return prev;
+        return {
+          ...prev,
+          pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
+          caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
+          prudhviWeddingChallenge: { ...prev.prudhviWeddingChallenge, claimedReward: true },
+          challengeLog: [{ date: todayString(), type: 'prudhviWeddingChallenge', tier: 'epic', outcome: `Won Prudhvi's Wedding challenge — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+        };
+      });
+      setDeltaFlash(`Prudhvi's Wedding challenge won! ${pokes.map(p => p.name).join(', ')} claimed!`);
+      setTimeout(() => setDeltaFlash(null), 5000);
+    } finally { claimingRewardRef.current.delete('prudhviWeddingChallenge'); }
   };
 
   const handleApplyPrudhviWeddingPenalty = () => {
@@ -3421,20 +3449,28 @@ export default function PokemonWalker({ onStop }) {
   };
 
   const handleClaimSingaporeReward = async () => {
-    const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
-    const pool = POOLS.epic.filter(id => !ownedDexIds.has(id));
-    const src = pool.length >= 10 ? pool : POOLS.epic;
-    const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 10);
-    const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
-    setAppState(prev => ({
-      ...prev,
-      pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
-      caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
-      singaporeTrip: { ...prev.singaporeTrip, claimedReward: true },
-      challengeLog: [{ date: todayString(), type: 'singaporeTrip', tier: 'epic', outcome: `Won Singapore Trip challenge — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
-    }));
-    setDeltaFlash(`Singapore Trip challenge won! ${pokes.map(p => p.name).join(', ')} claimed!`);
-    setTimeout(() => setDeltaFlash(null), 5000);
+    if (appState.singaporeTrip?.claimedReward) return;
+    if (claimingRewardRef.current.has('singaporeTrip')) return;
+    claimingRewardRef.current.add('singaporeTrip');
+    try {
+      const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
+      const pool = POOLS.epic.filter(id => !ownedDexIds.has(id));
+      const src = pool.length >= 10 ? pool : POOLS.epic;
+      const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 10);
+      const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
+      setAppState(prev => {
+        if (prev.singaporeTrip?.claimedReward) return prev;   // beaten to it
+        return {
+          ...prev,
+          pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
+          caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
+          singaporeTrip: { ...prev.singaporeTrip, claimedReward: true },
+          challengeLog: [{ date: todayString(), type: 'singaporeTrip', tier: 'epic', outcome: `Won Singapore Trip challenge — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+        };
+      });
+      setDeltaFlash(`Singapore Trip challenge won! ${pokes.map(p => p.name).join(', ')} claimed!`);
+      setTimeout(() => setDeltaFlash(null), 5000);
+    } finally { claimingRewardRef.current.delete('singaporeTrip'); }
   };
 
   const handleApplySingaporePenalty = () => {
@@ -3475,21 +3511,30 @@ export default function PokemonWalker({ onStop }) {
   };
 
   const handleClaimDayChallenge = async (key) => {
-    const { title } = DAY_CHALLENGES[key];
-    const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
-    const pool = POOLS.epic.filter(id => !ownedDexIds.has(id));
-    const src = pool.length >= 10 ? pool : POOLS.epic;
-    const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 10);
-    const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
-    setAppState(prev => ({
-      ...prev,
-      pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
-      caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
-      [key]: { ...prev[key], claimedReward: true },
-      challengeLog: [{ date: todayString(), type: key, tier: 'epic', outcome: `Completed ${title} — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
-    }));
-    setDeltaFlash(`${title} complete! ${pokes.map(p => p.name).join(', ')} claimed!`);
-    setTimeout(() => setDeltaFlash(null), 5000);
+    const { title, target } = DAY_CHALLENGES[key];
+    if (appState[key]?.claimedReward) return;
+    if ((appState[key]?.daysDone || 0) < target) return;   // not actually finished
+    if (claimingRewardRef.current.has(key)) return;
+    claimingRewardRef.current.add(key);
+    try {
+      const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
+      const pool = POOLS.epic.filter(id => !ownedDexIds.has(id));
+      const src = pool.length >= 10 ? pool : POOLS.epic;
+      const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 10);
+      const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
+      setAppState(prev => {
+        if (prev[key]?.claimedReward) return prev;   // beaten to it
+        return {
+          ...prev,
+          pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
+          caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
+          [key]: { ...prev[key], claimedReward: true },
+          challengeLog: [{ date: todayString(), type: key, tier: 'epic', outcome: `Completed ${title} — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+        };
+      });
+      setDeltaFlash(`${title} complete! ${pokes.map(p => p.name).join(', ')} claimed!`);
+      setTimeout(() => setDeltaFlash(null), 5000);
+    } finally { claimingRewardRef.current.delete(key); }
   };
 
   const handleUndoFast = () => {
