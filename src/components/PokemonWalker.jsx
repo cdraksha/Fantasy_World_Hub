@@ -6,6 +6,9 @@ import '../styles/pokemon-walker.css';
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const LS_KEY = 'fw_pokemon_walker';
+// snapshot of the last save that loaded and parsed cleanly, so a truncated or
+// corrupt primary write cannot reset months of progress to a fresh save
+const LS_BACKUP_KEY = 'fw_pokemon_walker_backup';
 
 const PACK_COSTS = { common: 5000, rare: 10000, epic: 20000 };
 
@@ -954,12 +957,31 @@ function defaultState(steps) {
   };
 }
 
+// true when the primary save was unreadable and the backup was used instead
+let loadedFromBackup = false;
+
 function loadState() {
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return null;
-    let saved = JSON.parse(raw);
-    if (!saved.initialized) return null;
+    const readKey = (key) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);          // throws on a truncated write
+      return parsed?.initialized ? { parsed, raw } : null;
+    };
+
+    let hit = null;
+    try { hit = readKey(LS_KEY); } catch { hit = null; }
+    if (!hit) {
+      // primary missing or corrupt — fall back rather than starting fresh on top of it
+      try { hit = readKey(LS_BACKUP_KEY); } catch { hit = null; }
+      if (hit) loadedFromBackup = true;
+    }
+    if (!hit) return null;                      // genuinely no save yet
+
+    // this copy parsed cleanly, so promote it to the known-good snapshot
+    try { localStorage.setItem(LS_BACKUP_KEY, hit.raw); } catch {}
+
+    let saved = hit.parsed;
     // Migrate older saves
     if (!saved.loan) saved.loan = initLoan();
     if (!saved.egg)  saved.egg  = initEgg();
@@ -1243,10 +1265,15 @@ function loadState() {
   }
 }
 
+// Returns false when the write failed, so the caller can tell the user rather
+// than letting the app run happily on state that is never reaching disk.
 function saveState(state) {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(state));
-  } catch {}
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function tierGlow(tier) {
@@ -2095,6 +2122,10 @@ export default function PokemonWalker({ onStop }) {
   }));
   const claimingMilestonesRef = useRef(new Set());   // milestone keys with a claim in flight
   const claimingRewardRef = useRef(new Set());       // challenge keys with a reward claim in flight
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [backupNoticeSeen, setBackupNoticeSeen] = useState(false);
+  const [restoreMsg, setRestoreMsg] = useState(null);
+  const restoreInputRef = useRef(null);
   const midnightChecked = useRef(false);
   const packWarningChecked = useRef({ '9pm': false, '11pm': false });
   const stepsWarningChecked = useRef(false);
@@ -2142,9 +2173,55 @@ export default function PokemonWalker({ onStop }) {
     }
   }, [appState]);
 
+  // ─── Save file download / restore ───────────────────────────────────
+  const handleDownloadSave = () => {
+    try {
+      const raw = localStorage.getItem(LS_KEY) || JSON.stringify(appState);
+      const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pokemon-walker-save-${todayString()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setRestoreMsg('Save downloaded.');
+    } catch {
+      setRestoreMsg('Could not build the download.');
+    }
+    setTimeout(() => setRestoreMsg(null), 4000);
+  };
+
+  const handleRestoreSave = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        // only accept something that actually looks like a save
+        if (!parsed?.initialized || !Array.isArray(parsed.pokemon)) {
+          setRestoreMsg('That file is not a Pokémon Walker save.');
+          setTimeout(() => setRestoreMsg(null), 5000);
+          return;
+        }
+        const steps = (parsed.stepHistory || []).length;
+        if (!window.confirm(
+          `Restore this save?\n\n${parsed.pokemon.length} Pokémon · ${steps} logged days\n` +
+          `Vault ${(parsed.stepVault || 0).toLocaleString()}\n\nThis replaces everything currently in the app.`
+        )) return;
+        localStorage.setItem(LS_KEY, JSON.stringify(parsed));
+        localStorage.setItem(LS_BACKUP_KEY, JSON.stringify(parsed));
+        location.reload();
+      } catch {
+        setRestoreMsg('That file could not be read as JSON.');
+        setTimeout(() => setRestoreMsg(null), 5000);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   // ─── Persist ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (appState) saveState(appState);
+    if (!appState) return;
+    setSaveFailed(!saveState(appState));
   }, [appState]);
 
   // ─── Midnight warning timer ──────────────────────────────────────────
@@ -3985,6 +4062,17 @@ export default function PokemonWalker({ onStop }) {
           onDeposit={handleMidnightDeposit}
           onIgnore={handleMidnightIgnore}
         />
+      )}
+      {saveFailed && (
+        <div className="bk-alert bk-alert-bad">
+          <span>⚠️ Progress is not saving — this browser refused the write. Download a save from the Log tab before closing.</span>
+        </div>
+      )}
+      {loadedFromBackup && !backupNoticeSeen && (
+        <div className="bk-alert bk-alert-warn">
+          <span>⚠️ The main save was unreadable — restored from the last good backup. Some recent progress may be missing.</span>
+          <button className="pw-pack-warning-dismiss" onClick={() => setBackupNoticeSeen(true)}>✕</button>
+        </div>
       )}
       {packWarning && (
         <div className="pw-pack-warning-banner">
@@ -6894,6 +6982,20 @@ export default function PokemonWalker({ onStop }) {
                     )}
                   </div>
                   <div className="pw-ip-body">
+
+                    {/* Backup — the whole save lives in one browser key */}
+                    <div className="bk-row">
+                      <button className="bk-btn bk-dl" onClick={handleDownloadSave}>⬇ Download save</button>
+                      <button className="bk-btn" onClick={() => restoreInputRef.current?.click()}>⬆ Restore</button>
+                      <input
+                        ref={restoreInputRef}
+                        type="file"
+                        accept="application/json,.json"
+                        style={{ display: 'none' }}
+                        onChange={e => { handleRestoreSave(e.target.files?.[0]); e.target.value = ''; }}
+                      />
+                    </div>
+                    {restoreMsg && <div className="bk-msg">{restoreMsg}</div>}
 
                     {/* Steps dropdown */}
                     <button className="log-section-toggle" onClick={() => setShowLogStepsDropdown(p => !p)}>
