@@ -4790,6 +4790,19 @@ export default function PokemonWalker({ onStop }) {
                         const activeTierIdx = overPct !== null ? MONTHLY_STEP_TIERS.findIndex(t => overPct >= t.pct) : -1;
                         const effectiveIdx = streakBonus && activeTierIdx > 0 ? activeTierIdx - 1 : activeTierIdx;
                         const packLabel = packs => Object.entries(packs).map(([t, c]) => `${c}× ${t}`).join(' + ') || '—';
+
+                        // Next threshold to cross. Keyed off the tier actually reached,
+                        // not effectiveIdx — the streak bonus shifts the reward, not the
+                        // step counts, so using it here would point a tier too far.
+                        // Tier thresholds are percentages over the TARGET, because that is the
+                        // scale the reward is selected on (pctOver >= t.pct at claim time).
+                        // Deriving them from baseSteps advertised thresholds that triggered
+                        // earlier than they actually paid out.
+                        const tierStepsFor = t => Math.ceil(mc.target * (1 + t.pct / 100));
+                        const nextIdx = activeTierIdx === -1 ? MONTHLY_STEP_TIERS.length - 1 : activeTierIdx - 1;
+                        const nextTier = nextIdx >= 0 ? MONTHLY_STEP_TIERS[nextIdx] : null;
+                        const nextTierSteps = nextTier ? tierStepsFor(nextTier) : null;
+                        const toNextTier = nextTierSteps !== null ? nextTierSteps - currentSteps : null;
                         return (
                           <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
                             {mc.pendingClaim && (
@@ -4812,13 +4825,38 @@ export default function PokemonWalker({ onStop }) {
                                 ? <span style={{ color: '#22c55e', marginLeft: 4 }}>+{overPct}% over!</span>
                                 : <span style={{ marginLeft: 4 }}>{(mc.target - currentSteps).toLocaleString()} to go</span>}
                             </div>
+
+                            {/* once a tier is cleared, what the next one needs */}
+                            {activeTierIdx !== -1 && (
+                              <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                background: nextTier ? 'rgba(59,130,246,0.12)' : 'rgba(34,197,94,0.12)',
+                                border: `1px solid ${nextTier ? 'rgba(59,130,246,0.5)' : 'rgba(34,197,94,0.5)'}`,
+                                borderRadius: 5, padding: '5px 8px',
+                              }}>
+                                {nextTier ? (
+                                  <>
+                                    <span style={{ fontSize: 8, color: '#9ca3af' }}>Next</span>
+                                    <span style={{ fontSize: 10, fontWeight: 800, color: '#60a5fa' }}>{nextTier.label}</span>
+                                    <span style={{ fontSize: 8, color: '#6b7280' }}>at {nextTierSteps.toLocaleString()}</span>
+                                    <span style={{ fontSize: 9, fontWeight: 800, color: '#93c5fd', marginLeft: 'auto' }}>
+                                      {Math.max(0, toNextTier).toLocaleString()} to go
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span style={{ fontSize: 9, fontWeight: 800, color: '#22c55e' }}>
+                                    Top tier reached — {MONTHLY_STEP_TIERS[0].label}!
+                                  </span>
+                                )}
+                              </div>
+                            )}
                             {/* Reward tiers — thresholds shown as actual step counts */}
                             <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
                               {MONTHLY_STEP_TIERS.map((tier, idx) => {
-                                const tierSteps = Math.ceil(mc.baseSteps * (1 + tier.pct / 100));
+                                const tierSteps = tierStepsFor(tier);
                                 const isActive = idx === effectiveIdx && overPct !== null;
                                 const isPast = effectiveIdx !== -1 && idx > effectiveIdx && overPct !== null;
-                                const isNext = effectiveIdx === -1 ? idx === MONTHLY_STEP_TIERS.length - 1 : idx === effectiveIdx - 1;
+                                const isNext = idx === nextIdx;
                                 const stepsLeft = tierSteps - currentSteps;
                                 return (
                                   <div key={tier.pct} style={{
