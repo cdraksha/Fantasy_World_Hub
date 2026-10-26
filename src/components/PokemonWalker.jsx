@@ -271,6 +271,14 @@ const SINGAPORE_DATE = '2026-10-12';
 const SINGAPORE_GOAL_KG = 96;
 const SINGAPORE_DATE_LABEL = 'Oct 12, 2026';
 
+// November 2026: hit the step goal on at least REQUIRED of the month's days.
+// Auto-tracked from stepHistory — nothing to log by hand.
+const NOV_MONTH = '2026-11';
+const NOV_MONTH_LABEL = 'November 2026';
+const NOV_DAYS_IN_MONTH = 30;
+const NOV_DAYS_REQUIRED = 20;
+const NOV_STEP_GOAL = 10000;
+
 const WEIGHT_LOG_START = '2026-08-01';   // weight log in the Log tab starts here
 
 // 100-day manual-log challenges. seedDays = days completed before the tracker existed.
@@ -833,6 +841,18 @@ function daysBetween(a, b) {
   return Math.floor((db - da) / 86400000);
 }
 
+// Days in a month that met a step goal, counted from history. Today is folded
+// in separately because it does not reach stepHistory until the rollover, and
+// via a map so a day present in both cannot be counted twice.
+function daysMeetingGoal(stepHistory, month, goal, todayDate, todaySteps) {
+  const map = {};
+  (stepHistory || []).forEach(e => {
+    if (e.date.startsWith(month)) map[e.date] = e.steps;
+  });
+  if (todayDate && todayDate.startsWith(month) && todaySteps) map[todayDate] = todaySteps;
+  return Object.values(map).filter(s => s >= goal).length;
+}
+
 // Consecutive days up to today whose steps met a threshold, read straight from
 // history so it can never drift from the logged data. Counting starts at
 // yesterday when today has not reached the threshold yet, so a day still in
@@ -951,6 +971,7 @@ function defaultState(steps) {
     prudhviChallenge: { claimedReward: false, penaltyApplied: false },
     prudhviWeddingChallenge: { claimedReward: false, penaltyApplied: false },
     singaporeTrip: { claimedReward: false, penaltyApplied: false },
+    novChallenge: { claimedReward: false, penaltyApplied: false },
     ganji: initDayChallenge('ganji'),
     acv: initDayChallenge('acv'),
     twoMeals: initDayChallenge('twoMeals'),
@@ -1022,6 +1043,7 @@ function loadState() {
     if (!saved.prudhviChallenge) saved.prudhviChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.prudhviWeddingChallenge) saved.prudhviWeddingChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.singaporeTrip) saved.singaporeTrip = { claimedReward: false, penaltyApplied: false };
+    if (!saved.novChallenge) saved.novChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.ganji) saved.ganji = initDayChallenge('ganji');
     if (!saved.acv) saved.acv = initDayChallenge('acv');
     if (!saved.twoMeals) saved.twoMeals = initDayChallenge('twoMeals');
@@ -2102,6 +2124,7 @@ export default function PokemonWalker({ onStop }) {
   const [showPrudhviPanel, setShowPrudhviPanel] = useState(false);
   const [showPrudhviWeddingPanel, setShowPrudhviWeddingPanel] = useState(false);
   const [showSingaporePanel, setShowSingaporePanel] = useState(false);
+  const [showNovPanel, setShowNovPanel] = useState(false);
   const [openDayChallenge, setOpenDayChallenge] = useState(null);   // 'ganji' | 'acv' | null
   const [generatingWeddingImage, setGeneratingWeddingImage] = useState(false);
   const [weddingImage, setWeddingImage] = useState(null);
@@ -3548,6 +3571,46 @@ export default function PokemonWalker({ onStop }) {
       setDeltaFlash(`Singapore Trip challenge won! ${pokes.map(p => p.name).join(', ')} claimed!`);
       setTimeout(() => setDeltaFlash(null), 5000);
     } finally { claimingRewardRef.current.delete('singaporeTrip'); }
+  };
+
+  const handleClaimNovReward = async () => {
+    if (appState.novChallenge?.claimedReward) return;
+    if (claimingRewardRef.current.has('novChallenge')) return;
+    claimingRewardRef.current.add('novChallenge');
+    try {
+      const ownedDexIds = new Set(appState.pokemon.map(p => p.dexId));
+      const pool = POOLS.epic.filter(id => !ownedDexIds.has(id));
+      const src = pool.length >= 10 ? pool : POOLS.epic;
+      const ids = [...src].sort(() => Math.random() - 0.5).slice(0, 10);
+      const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
+      setAppState(prev => {
+        if (prev.novChallenge?.claimedReward) return prev;
+        return {
+          ...prev,
+          pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
+          caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
+          novChallenge: { ...prev.novChallenge, claimedReward: true },
+          challengeLog: [{ date: todayString(), type: 'novChallenge', tier: 'epic', outcome: `Won ${NOV_MONTH_LABEL} ${NOV_DAYS_REQUIRED}/${NOV_DAYS_IN_MONTH} challenge — ${pokes.length} epic Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+        };
+      });
+      setDeltaFlash(`${NOV_MONTH_LABEL} challenge won! ${pokes.map(p => p.name).join(', ')} claimed!`);
+      setTimeout(() => setDeltaFlash(null), 5000);
+    } finally { claimingRewardRef.current.delete('novChallenge'); }
+  };
+
+  const handleApplyNovPenalty = () => {
+    setAppState(prev => {
+      if (prev.novChallenge?.penaltyApplied) return prev;
+      const rares = prev.pokemon.filter(p => p.packTier === 'rare' && !p.isDTCollateral && !p.isDTLoan && !p.isLoan && p.uid !== prev.buddy);
+      const toRemove = [...rares].sort(() => Math.random() - 0.5).slice(0, 2);
+      const removeUids = new Set(toRemove.map(p => p.uid));
+      return {
+        ...prev,
+        pokemon: prev.pokemon.filter(p => !removeUids.has(p.uid)),
+        novChallenge: { ...prev.novChallenge, penaltyApplied: true },
+        challengeLog: [{ date: todayString(), type: 'novChallenge', tier: 'rare', outcome: `Lost ${NOV_MONTH_LABEL} challenge — ${toRemove.length} rare Pokémon released: ${toRemove.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+      };
+    });
   };
 
   const handleApplySingaporePenalty = () => {
@@ -6642,6 +6705,100 @@ export default function PokemonWalker({ onStop }) {
                       />
                     ))}
 
+                    {!(appState.novChallenge?.claimedReward || appState.novChallenge?.penaltyApplied) && (() => {
+                      const today = todayString();
+                      const hit = daysMeetingGoal(appState.stepHistory, NOV_MONTH, NOV_STEP_GOAL, today, appState.todaySteps);
+                      const monthOver = today.slice(0, 7) > NOV_MONTH;
+                      const notStarted = today.slice(0, 7) < NOV_MONTH;
+                      // Chances left to add a qualifying day. Today still counts as one
+                      // unless it has already cleared the goal, in which case it is in `hit`
+                      // — without that, the last day of the month reads as lost before it is over.
+                      const inMonth = today.slice(0, 7) === NOV_MONTH;
+                      const dayOfMonth = inMonth ? Number(today.slice(8, 10)) : (monthOver ? NOV_DAYS_IN_MONTH : 0);
+                      const todayHit = inMonth && (appState.todaySteps || 0) >= NOV_STEP_GOAL;
+                      const daysLeft = notStarted
+                        ? NOV_DAYS_IN_MONTH
+                        : Math.max(0, NOV_DAYS_IN_MONTH - dayOfMonth) + (inMonth && !todayHit ? 1 : 0);
+                      const needed = Math.max(0, NOV_DAYS_REQUIRED - hit);
+                      const won = hit >= NOV_DAYS_REQUIRED;
+                      const impossible = !won && needed > daysLeft;   // can no longer be reached
+                      const pct = Math.min(100, (hit / NOV_DAYS_REQUIRED) * 100);
+                      return (
+                        <div className="gba-section">
+                          <button className="wc-toggle-btn" onClick={() => setShowNovPanel(p => !p)}>
+                            📅 November 20/30
+                            {won
+                              ? <span className="obj-updated-badge">{monthOver ? 'Claim!' : 'Goal Reached!'}</span>
+                              : impossible
+                                ? <span className="obj-pending-badge">Penalty Due</span>
+                                : notStarted
+                                  ? <span className="obj-active-badge">Starts Nov 1</span>
+                                  : <span className="obj-active-badge">{hit}/{NOV_DAYS_REQUIRED}</span>}
+                          </button>
+                          {showNovPanel && (
+                            <div style={{ padding: '4px 0' }}>
+                              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                                <div style={{ flex: 1, background: '#fef3c7', borderRadius: 6, padding: '6px 8px', border: '1px solid #fcd34d' }}>
+                                  <div style={{ fontSize: 8, color: '#92400e', fontWeight: 700 }}>GOAL</div>
+                                  <div style={{ fontSize: 13, fontWeight: 900, color: '#78350f' }}>{NOV_DAYS_REQUIRED} / {NOV_DAYS_IN_MONTH} days</div>
+                                  <div style={{ fontSize: 8, color: '#b45309' }}>{fmtNum(NOV_STEP_GOAL)}+ steps each</div>
+                                </div>
+                                <div style={{ flex: 1, background: won ? '#dcfce7' : impossible ? '#fef2f2' : '#f0f9ff', borderRadius: 6, padding: '6px 8px', border: `1px solid ${won ? '#86efac' : impossible ? '#fca5a5' : '#bae6fd'}` }}>
+                                  <div style={{ fontSize: 8, color: '#374151', fontWeight: 700 }}>DONE</div>
+                                  <div style={{ fontSize: 13, fontWeight: 900, color: won ? '#15803d' : impossible ? '#dc2626' : '#0369a1' }}>{hit}</div>
+                                  <div style={{ fontSize: 8, color: '#6b7280' }}>
+                                    {won ? '✓ Goal hit!' : impossible ? 'Out of days' : `${needed} more needed`}
+                                  </div>
+                                </div>
+                                <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 6, padding: '6px 8px', border: '1px solid #bbf7d0' }}>
+                                  <div style={{ fontSize: 8, color: '#166534', fontWeight: 700 }}>CHANCES</div>
+                                  <div style={{ fontSize: 13, fontWeight: 900, color: '#15803d' }}>{daysLeft}</div>
+                                  <div style={{ fontSize: 8, color: '#6b7280' }}>days left to count</div>
+                                </div>
+                              </div>
+
+                              <div style={{ marginBottom: 8 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: '#6b7280', marginBottom: 3 }}>
+                                  <span>{hit} / {NOV_DAYS_REQUIRED} qualifying days</span>
+                                  <span>{Math.floor(pct)}%</span>
+                                </div>
+                                <div style={{ height: 7, background: '#e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
+                                  <div style={{ width: `${pct}%`, height: '100%', background: won ? '#16a34a' : impossible ? '#dc2626' : '#f59e0b', borderRadius: 4, transition: 'width .3s ease' }} />
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                                <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 6, padding: '6px 8px', border: '1px solid #bbf7d0' }}>
+                                  <div style={{ fontSize: 8, color: '#166534', fontWeight: 700 }}>🏆 WIN</div>
+                                  <div style={{ fontSize: 9, color: '#374151', fontWeight: 600 }}>10 Epic Pokémon</div>
+                                </div>
+                                <div style={{ flex: 1, background: '#fef2f2', borderRadius: 6, padding: '6px 8px', border: '1px solid #fca5a5' }}>
+                                  <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 700 }}>💀 LOSE</div>
+                                  <div style={{ fontSize: 9, color: '#374151', fontWeight: 600 }}>2 Rare Pokémon released</div>
+                                </div>
+                              </div>
+
+                              {won && (
+                                <button style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
+                                  onClick={handleClaimNovReward}>
+                                  🏆 {monthOver ? 'You won! Claim 10 Epic' : 'Claim Early — 10 Epic!'}
+                                </button>
+                              )}
+                              {impossible && (
+                                <button style={{ width: '100%', padding: '8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer', marginBottom: 6 }}
+                                  onClick={handleApplyNovPenalty}>
+                                  💀 Apply Penalty (release 2 rares)
+                                </button>
+                              )}
+                              <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center' }}>
+                                Auto-tracked from your daily steps — nothing to log
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
                     {!(appState.singaporeTrip?.claimedReward || appState.singaporeTrip?.penaltyApplied) && <div className="gba-section">
                       <button className="wc-toggle-btn" onClick={() => setShowSingaporePanel(p => !p)}>
                         ✈️ Singapore Trip
@@ -7083,6 +7240,7 @@ export default function PokemonWalker({ onStop }) {
                         prudhviChallenge: '💍 Prudhvi\'s Engagement',
                         prudhviWeddingChallenge: '💒 Prudhvi\'s Wedding',
                         singaporeTrip: '✈️ Singapore Trip',
+                        novChallenge: '📅 November 20/30 Challenge',
                         ganji: '🍚 100 Day Ganji',
                         acv: '🍶 100 Day ACV PQR +',
                         twoMeals: '🍛 100 Day 2 Meals',
