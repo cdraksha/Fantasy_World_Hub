@@ -1529,6 +1529,31 @@ function PokedexPopup({ caughtDex, tierByDexId, onClose }) {
   );
 }
 
+// ─── Header clock ─────────────────────────────────────────────────────────
+// Owns its own interval and state. Kept out of PokemonWalker because ticking
+// a second-resolution clock through the parent's state re-rendered the whole
+// ~5,400-line body once a second — including the 1,010-row Pokédex when open.
+function HeaderClock({ dateStr }) {
+  const [time, setTime] = useState('');
+
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      let h = now.getHours();
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      setTime(`${h}:${m}:${s} ${ampm}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return <div className="gba-screen-datetime">{dateStr} · {time}</div>;
+}
+
 // ─── Weight Graph ─────────────────────────────────────────────────────────
 
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -2063,7 +2088,6 @@ export default function PokemonWalker({ onStop }) {
   const [showMidnight, setShowMidnight] = useState(false);
   const [evolving, setEvolving] = useState(null); // uid of Pokémon being evolved
   const [launchInput, setLaunchInput] = useState('');
-  const [clockTime, setClockTime] = useState('');
   const [packWarning, setPackWarning] = useState(null); // '9pm' | '11pm' | null
   const [stepsWarning, setStepsWarning] = useState(false);
   const [editingSpendable, setEditingSpendable] = useState(false);
@@ -2173,20 +2197,6 @@ export default function PokemonWalker({ onStop }) {
     });
   }, [showMyPokemonPanel]);
 
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      let h = now.getHours();
-      const m = String(now.getMinutes()).padStart(2, '0');
-      const s = String(now.getSeconds()).padStart(2, '0');
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      h = h % 12 || 12;
-      setClockTime(`${h}:${m}:${s} ${ampm}`);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
 
   // ─── Keep window refs for PackOpeningScreen ───────────────────────────
   useEffect(() => {
@@ -4207,7 +4217,7 @@ export default function PokemonWalker({ onStop }) {
                   <span className="gba-ss-item">🏦 {fmtNum(appState.stepVault)}</span>
                   <span className="gba-ss-item">🎁 {totalPacks}</span>
                 </div>
-                <div className="gba-screen-datetime">{appState.todayDate} · {clockTime}</div>
+                <HeaderClock dateStr={appState.todayDate} />
               </div>
 
               <div className="gba-screen-main">
