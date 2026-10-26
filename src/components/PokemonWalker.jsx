@@ -279,6 +279,63 @@ const NOV_DAYS_IN_MONTH = 30;
 const NOV_DAYS_REQUIRED = 20;
 const NOV_STEP_GOAL = 10000;
 
+// ─── 50 Day No Sweets ─────────────────────────────────────────────────────
+// Sweets = anything with sugar as the main ingredient: Indian sweets, chocolate,
+// cakes, pastries. Rice, bread and milk do not count.
+const SWEETS_START = '2026-10-27';
+const SWEETS_DAYS = 50;
+const SWEETS_STREAK_BLOCK = 5;          // clean days per repeating reward
+const SWEETS_STREAK_REWARD = 5;         // common Pokémon per block
+
+// Harshest window that trips is the one applied — they are not stacked.
+const SWEETS_PENALTIES = [
+  { windowDays: 1, lose: 7, label: 'more than 1 in a day' },
+  { windowDays: 3, lose: 4, label: 'more than 1 within 3 days' },
+  { windowDays: 5, lose: 1, label: 'more than 1 within 5 days' },
+];
+
+// End-of-challenge tiers on total clean days, best match only.
+const SWEETS_FINAL_TIERS = [
+  { days: 30, grant: { common: 20, epic: 10, rare: 5 }, label: '20 common + 10 epic + 5 rare' },
+  { days: 20, grant: { common: 10, epic: 5 },           label: '10 common + 5 epic' },
+  { days: 10, grant: { common: 5 },                     label: '5 common' },
+];
+
+function initSweets() {
+  return {
+    log: {},                  // date -> number of sweets that day
+    lastRewardedStreak: 0,    // streak length already paid, so blocks repeat but don't double-pay
+    penalisedDates: [],       // dates already charged, so a re-log cannot charge twice
+    finalClaimed: false,
+  };
+}
+
+const sweetsEndDate = () => addDays(SWEETS_START, SWEETS_DAYS - 1);
+
+// Clean days, current streak, and the worst penalty a given day's entry trips.
+function sweetsStats(sw) {
+  const log = sw?.log || {};
+  const dates = Object.keys(log).sort();
+  const cleanDays = dates.filter(d => (log[d] || 0) === 0).length;
+
+  // streak of consecutive calendar days with a logged 0, ending at the latest entry
+  let streak = 0;
+  if (dates.length) {
+    let d = dates[dates.length - 1];
+    while (log[d] === 0) { streak++; d = addDays(d, -1); }
+  }
+  return { cleanDays, streak, logged: dates.length };
+}
+
+function sweetsPenaltyFor(log, date) {
+  for (const p of SWEETS_PENALTIES) {        // ordered harshest first
+    let total = 0;
+    for (let i = 0; i < p.windowDays; i++) total += log[addDays(date, -i)] || 0;
+    if (total > 1) return p;
+  }
+  return null;
+}
+
 const WEIGHT_LOG_START = '2026-08-01';   // weight log in the Log tab starts here
 
 // 100-day manual-log challenges. seedDays = days completed before the tracker existed.
@@ -972,6 +1029,7 @@ function defaultState(steps) {
     prudhviWeddingChallenge: { claimedReward: false, penaltyApplied: false },
     singaporeTrip: { claimedReward: false, penaltyApplied: false },
     novChallenge: { claimedReward: false, penaltyApplied: false },
+    sweets: initSweets(),
     ganji: initDayChallenge('ganji'),
     acv: initDayChallenge('acv'),
     twoMeals: initDayChallenge('twoMeals'),
@@ -1044,6 +1102,7 @@ function loadState() {
     if (!saved.prudhviWeddingChallenge) saved.prudhviWeddingChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.singaporeTrip) saved.singaporeTrip = { claimedReward: false, penaltyApplied: false };
     if (!saved.novChallenge) saved.novChallenge = { claimedReward: false, penaltyApplied: false };
+    if (!saved.sweets) saved.sweets = initSweets();
     if (!saved.ganji) saved.ganji = initDayChallenge('ganji');
     if (!saved.acv) saved.acv = initDayChallenge('acv');
     if (!saved.twoMeals) saved.twoMeals = initDayChallenge('twoMeals');
@@ -2149,6 +2208,8 @@ export default function PokemonWalker({ onStop }) {
   const [showPrudhviWeddingPanel, setShowPrudhviWeddingPanel] = useState(false);
   const [showSingaporePanel, setShowSingaporePanel] = useState(false);
   const [showNovPanel, setShowNovPanel] = useState(false);
+  const [showSweetsPanel, setShowSweetsPanel] = useState(false);
+  const [sweetsInput, setSweetsInput] = useState('');
   const [openDayChallenge, setOpenDayChallenge] = useState(null);   // 'ganji' | 'acv' | null
   const [generatingWeddingImage, setGeneratingWeddingImage] = useState(false);
   const [weddingImage, setWeddingImage] = useState(null);
@@ -3581,6 +3642,116 @@ export default function PokemonWalker({ onStop }) {
       setDeltaFlash(`Singapore Trip challenge won! ${pokes.map(p => p.name).join(', ')} claimed!`);
       setTimeout(() => setDeltaFlash(null), 5000);
     } finally { claimingRewardRef.current.delete('singaporeTrip'); }
+  };
+
+  // ─── 50 Day No Sweets ────────────────────────────────────────────────
+  // Grants n Pokémon of a tier, skipping species already owned where possible.
+  const grantPokemonByTier = async (tierCounts, ownedDexIds) => {
+    const owned = new Set(ownedDexIds);
+    const out = [];
+    for (const [tier, n] of Object.entries(tierCounts)) {
+      const all = POOLS[tier] || [];
+      const fresh = all.filter(id => !owned.has(id));
+      const src = fresh.length >= n ? fresh : all;
+      const ids = [...src].sort(() => Math.random() - 0.5).slice(0, n);
+      const pokes = await Promise.all(ids.map(id => fetchPokemonById(id)));
+      pokes.forEach(p => { owned.add(p.dexId); out.push({ ...p, packTier: tier }); });
+    }
+    return out;
+  };
+
+  const handleLogSweets = async (date, countRaw) => {
+    const count = Math.max(0, parseInt(countRaw, 10) || 0);
+    const sw = appState.sweets || initSweets();
+    const nextLog = { ...sw.log, [date]: count };
+    const penalty = sweetsPenaltyFor(nextLog, date);
+    const alreadyPenalised = (sw.penalisedDates || []).includes(date);
+
+    if (penalty && !alreadyPenalised) {
+      const ok = window.confirm(
+        `Log ${count} sweet${count !== 1 ? 's' : ''} for ${date}?\n\n` +
+        `That is ${penalty.label} — you lose ${penalty.lose} common Pokémon.`
+      );
+      if (!ok) return;
+    }
+
+    // streak reward is evaluated against the updated log
+    const after = sweetsStats({ ...sw, log: nextLog });
+    const blockHit = after.streak > 0
+      && after.streak % SWEETS_STREAK_BLOCK === 0
+      && after.streak !== sw.lastRewardedStreak;
+
+    let granted = [];
+    if (blockHit) {
+      granted = await grantPokemonByTier({ common: SWEETS_STREAK_REWARD }, appState.pokemon.map(p => p.dexId));
+    }
+
+    setAppState(prev => {
+      const s = prev.sweets || initSweets();
+      let pokemon = prev.pokemon;
+      const logLines = [];
+
+      if (penalty && !(s.penalisedDates || []).includes(date)) {
+        const commons = pokemon.filter(p => p.packTier === 'common' && !p.isDTCollateral && !p.isDTLoan && !p.isLoan && p.uid !== prev.buddy);
+        const toRemove = [...commons].sort(() => Math.random() - 0.5).slice(0, penalty.lose);
+        const gone = new Set(toRemove.map(p => p.uid));
+        pokemon = pokemon.filter(p => !gone.has(p.uid));
+        logLines.push({ date: todayString(), type: 'sweets', tier: null, outcome: `Sweets on ${date} — ${penalty.label} — ${toRemove.length} common released: ${toRemove.map(p => p.name).join(', ') || 'none left to release'}` });
+      }
+
+      if (granted.length) {
+        pokemon = [...pokemon, ...granted.map(p => ({ uid: makeUID(), ...p, buddySteps: 0, caughtDate: todayString(), onTeam: false }))];
+        logLines.push({ date: todayString(), type: 'sweets', tier: 'common', outcome: `${after.streak}-day clean streak — ${granted.length} common Pokémon: ${granted.map(p => p.name).join(', ')}` });
+      }
+
+      return {
+        ...prev,
+        pokemon,
+        caughtDex: [...new Set([...(prev.caughtDex || []), ...granted.map(p => p.dexId)])],
+        sweets: {
+          ...s,
+          log: { ...s.log, [date]: count },
+          lastRewardedStreak: blockHit ? after.streak : (after.streak === 0 ? 0 : s.lastRewardedStreak),
+          penalisedDates: penalty && !(s.penalisedDates || []).includes(date)
+            ? [...(s.penalisedDates || []), date]
+            : (s.penalisedDates || []),
+        },
+        challengeLog: [...logLines, ...(prev.challengeLog || [])],
+      };
+    });
+
+    setSweetsInput('');
+    setDeltaFlash(
+      penalty ? `${penalty.lose} common released — ${penalty.label}`
+      : blockHit ? `${after.streak}-day clean streak — ${SWEETS_STREAK_REWARD} common Pokémon!`
+      : count === 0 ? 'Clean day logged' : `${count} logged — no penalty, streak reset`
+    );
+    setTimeout(() => setDeltaFlash(null), 4000);
+  };
+
+  const handleClaimSweetsFinal = async () => {
+    const sw = appState.sweets;
+    if (!sw || sw.finalClaimed) return;
+    if (claimingRewardRef.current.has('sweets')) return;
+    const { cleanDays } = sweetsStats(sw);
+    const tier = SWEETS_FINAL_TIERS.find(t => cleanDays >= t.days);
+    if (!tier) return;
+    claimingRewardRef.current.add('sweets');
+    try {
+      const granted = await grantPokemonByTier(tier.grant, appState.pokemon.map(p => p.dexId));
+      setAppState(prev => {
+        if (prev.sweets?.finalClaimed) return prev;
+        return {
+          ...prev,
+          pokemon: [...prev.pokemon, ...granted.map(p => ({ uid: makeUID(), ...p, buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
+          caughtDex: [...new Set([...(prev.caughtDex || []), ...granted.map(p => p.dexId)])],
+          sweets: { ...prev.sweets, finalClaimed: true },
+          challengeLog: [{ date: todayString(), type: 'sweets', tier: 'epic', outcome: `50 Day No Sweets — ${cleanDays} clean days — ${tier.label}` }, ...(prev.challengeLog || [])],
+        };
+      });
+      setDeltaFlash(`No Sweets complete! ${tier.label} claimed!`);
+      setTimeout(() => setDeltaFlash(null), 5000);
+    } finally { claimingRewardRef.current.delete('sweets'); }
   };
 
   const handleClaimNovReward = async () => {
@@ -6715,6 +6886,111 @@ export default function PokemonWalker({ onStop }) {
                       />
                     ))}
 
+                    {!appState.sweets?.finalClaimed && (() => {
+                      const sw = appState.sweets || initSweets();
+                      const today = todayString();
+                      const endDate = sweetsEndDate();
+                      const { cleanDays, streak } = sweetsStats(sw);
+                      const notStarted = today < SWEETS_START;
+                      const over = today > endDate;
+                      const dayNo = notStarted ? 0 : Math.min(SWEETS_DAYS, daysBetween(SWEETS_START, today) + 1);
+                      const loggedToday = sw.log?.[today] !== undefined;
+                      const tier = SWEETS_FINAL_TIERS.find(t => cleanDays >= t.days);
+                      const nextTier = [...SWEETS_FINAL_TIERS].reverse().find(t => cleanDays < t.days);
+                      const toBlock = SWEETS_STREAK_BLOCK - (streak % SWEETS_STREAK_BLOCK);
+                      return (
+                        <div className="gba-section">
+                          <button className="wc-toggle-btn" onClick={() => setShowSweetsPanel(p => !p)}>
+                            🍫 50 Day No Sweets
+                            {notStarted ? <span className="obj-active-badge">Starts Oct 27</span>
+                              : over ? (tier ? <span className="obj-updated-badge">Claim!</span> : <span className="obj-pending-badge">Ended</span>)
+                              : loggedToday ? <span className="obj-updated-badge">Logged · {streak}d</span>
+                              : <span className="obj-pending-badge">Log Today</span>}
+                          </button>
+                          {showSweetsPanel && (
+                            <div style={{ padding: '4px 0' }}>
+                              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                                <div style={{ flex: 1, background: '#fef3c7', borderRadius: 6, padding: '6px 8px', border: '1px solid #fcd34d' }}>
+                                  <div style={{ fontSize: 8, color: '#92400e', fontWeight: 700 }}>DAY</div>
+                                  <div style={{ fontSize: 13, fontWeight: 900, color: '#78350f' }}>{dayNo} / {SWEETS_DAYS}</div>
+                                  <div style={{ fontSize: 8, color: '#b45309' }}>ends {endDate}</div>
+                                </div>
+                                <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 6, padding: '6px 8px', border: '1px solid #bbf7d0' }}>
+                                  <div style={{ fontSize: 8, color: '#166534', fontWeight: 700 }}>CLEAN DAYS</div>
+                                  <div style={{ fontSize: 13, fontWeight: 900, color: '#15803d' }}>{cleanDays}</div>
+                                  <div style={{ fontSize: 8, color: '#6b7280' }}>{nextTier ? `${nextTier.days - cleanDays} to ${nextTier.days}` : 'top tier'}</div>
+                                </div>
+                                <div style={{ flex: 1, background: '#f0f9ff', borderRadius: 6, padding: '6px 8px', border: '1px solid #bae6fd' }}>
+                                  <div style={{ fontSize: 8, color: '#0369a1', fontWeight: 700 }}>STREAK</div>
+                                  <div style={{ fontSize: 13, fontWeight: 900, color: '#0369a1' }}>{streak}</div>
+                                  <div style={{ fontSize: 8, color: '#6b7280' }}>{streak > 0 ? `${toBlock} to +${SWEETS_STREAK_REWARD}` : `${SWEETS_STREAK_BLOCK} for +${SWEETS_STREAK_REWARD}`}</div>
+                                </div>
+                              </div>
+
+                              {!notStarted && !over && (
+                                <div className="sw-log-row">
+                                  <span className="sw-log-label">Sweets today</span>
+                                  <input
+                                    className="sw-log-input"
+                                    type="number"
+                                    min="0"
+                                    placeholder={String(sw.log?.[today] ?? 0)}
+                                    value={sweetsInput}
+                                    onChange={e => setSweetsInput(e.target.value)}
+                                  />
+                                  <button className="sw-log-zero" onClick={() => handleLogSweets(today, 0)}>Clean day ✓</button>
+                                  <button className="sw-log-save" disabled={sweetsInput === ''} onClick={() => handleLogSweets(today, sweetsInput)}>Log</button>
+                                </div>
+                              )}
+                              {loggedToday && (
+                                <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center', marginBottom: 6 }}>
+                                  Today logged as {sw.log[today]} — logging again overwrites it
+                                </div>
+                              )}
+
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 6 }}>
+                                {SWEETS_FINAL_TIERS.map(t => (
+                                  <div key={t.days} style={{
+                                    display: 'flex', gap: 6, fontSize: 8, padding: '3px 6px', borderRadius: 4,
+                                    background: tier?.days === t.days ? '#14532d' : 'transparent',
+                                    border: tier?.days === t.days ? '1px solid #22c55e' : '1px solid transparent',
+                                    opacity: cleanDays >= t.days && tier?.days !== t.days ? 0.35 : 1,
+                                  }}>
+                                    <span style={{ minWidth: 54, fontWeight: 700, color: tier?.days === t.days ? '#22c55e' : '#9ca3af' }}>{t.days}/{SWEETS_DAYS} days</span>
+                                    <span style={{ flex: 1, color: tier?.days === t.days ? '#86efac' : '#6b7280' }}>{t.label}</span>
+                                  </div>
+                                ))}
+                              </div>
+
+                              <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 6, padding: '5px 7px', marginBottom: 6 }}>
+                                <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 700, marginBottom: 2 }}>💀 PENALTIES — harshest only</div>
+                                {SWEETS_PENALTIES.map(p => (
+                                  <div key={p.windowDays} style={{ fontSize: 8, color: '#374151' }}>
+                                    {p.label} → lose {p.lose} common
+                                  </div>
+                                ))}
+                              </div>
+
+                              {over && tier && (
+                                <button style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer' }}
+                                  onClick={handleClaimSweetsFinal}>
+                                  🏆 {cleanDays} clean days — claim {tier.label}
+                                </button>
+                              )}
+                              {over && !tier && (
+                                <div style={{ fontSize: 9, color: '#dc2626', textAlign: 'center', fontWeight: 700 }}>
+                                  Ended with {cleanDays} clean days — under the {SWEETS_FINAL_TIERS.at(-1).days}-day tier
+                                </div>
+                              )}
+                              <div style={{ fontSize: 7, color: '#6b7280', textAlign: 'center', marginTop: 4 }}>
+                                Sweets = sugar as the main ingredient — Indian sweets, chocolate, cake, pastry. Rice, bread and milk don't count.
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
                     {!(appState.novChallenge?.claimedReward || appState.novChallenge?.penaltyApplied) && (() => {
                       const today = todayString();
                       const hit = daysMeetingGoal(appState.stepHistory, NOV_MONTH, NOV_STEP_GOAL, today, appState.todaySteps);
@@ -7251,6 +7527,7 @@ export default function PokemonWalker({ onStop }) {
                         prudhviWeddingChallenge: '💒 Prudhvi\'s Wedding',
                         singaporeTrip: '✈️ Singapore Trip',
                         novChallenge: '📅 November 20/30 Challenge',
+                        sweets: '🍫 50 Day No Sweets',
                         ganji: '🍚 100 Day Ganji',
                         acv: '🍶 100 Day ACV PQR +',
                         twoMeals: '🍛 100 Day 2 Meals',
