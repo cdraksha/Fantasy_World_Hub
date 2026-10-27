@@ -287,12 +287,15 @@ const SWEETS_DAYS = 50;
 const SWEETS_STREAK_BLOCK = 5;          // clean days per repeating reward
 const SWEETS_STREAK_REWARD = 5;         // common Pokémon per block
 
-// Harshest window that trips is the one applied — they are not stacked.
+// 1 sweet a day is the quota and costs nothing. A day over quota is a
+// violation, and what it costs depends on how close the nearest other
+// violation is. Exactly one rule applies.
+const SWEETS_DAILY_QUOTA = 1;
 const SWEETS_PENALTIES = [
-  { windowDays: 1, lose: 7, label: 'more than 1 in a day' },
-  { windowDays: 3, lose: 4, label: 'more than 1 within 3 days' },
-  { windowDays: 5, lose: 1, label: 'more than 1 within 5 days' },
+  { windowDays: 3, lose: 4, label: 'another over-quota day within 3 days' },
+  { windowDays: 5, lose: 1, label: 'another over-quota day within 5 days' },
 ];
+const SWEETS_PENALTY_ISOLATED = { lose: 7, label: 'over quota' };
 
 // End-of-challenge tiers on total clean days, best match only.
 const SWEETS_FINAL_TIERS = [
@@ -328,12 +331,21 @@ function sweetsStats(sw) {
 }
 
 function sweetsPenaltyFor(log, date) {
-  for (const p of SWEETS_PENALTIES) {        // ordered harshest first
-    let total = 0;
-    for (let i = 0; i < p.windowDays; i++) total += log[addDays(date, -i)] || 0;
-    if (total > 1) return p;
+  if ((log[date] || 0) <= SWEETS_DAILY_QUOTA) return null;   // within quota, free
+
+  // how many over-quota days fall in the last n days, today included
+  const violationsIn = (n) => {
+    let c = 0;
+    for (let i = 0; i < n; i++) {
+      if ((log[addDays(date, -i)] || 0) > SWEETS_DAILY_QUOTA) c++;
+    }
+    return c;
+  };
+
+  for (const p of SWEETS_PENALTIES) {
+    if (violationsIn(p.windowDays) >= 2) return p;
   }
-  return null;
+  return SWEETS_PENALTY_ISOLATED;   // nothing nearby — a one-off slip
 }
 
 const WEIGHT_LOG_START = '2026-08-01';   // weight log in the Log tab starts here
@@ -3669,8 +3681,9 @@ export default function PokemonWalker({ onStop }) {
 
     if (penalty && !alreadyPenalised) {
       const ok = window.confirm(
-        `Log ${count} sweet${count !== 1 ? 's' : ''} for ${date}?\n\n` +
-        `That is ${penalty.label} — you lose ${penalty.lose} common Pokémon.`
+        `Log ${count} sweets for ${date}?\n\n` +
+        `Quota is ${SWEETS_DAILY_QUOTA} a day — ${penalty.label}.\n` +
+        `You lose ${penalty.lose} common Pokémon.`
       );
       if (!ok) return;
     }
@@ -3724,7 +3737,8 @@ export default function PokemonWalker({ onStop }) {
     setDeltaFlash(
       penalty ? `${penalty.lose} common released — ${penalty.label}`
       : blockHit ? `${after.streak}-day clean streak — ${SWEETS_STREAK_REWARD} common Pokémon!`
-      : count === 0 ? 'Clean day logged' : `${count} logged — no penalty, streak reset`
+      : count === 0 ? 'Clean day logged'
+      : `${count} logged — within quota, but the streak resets`
     );
     setTimeout(() => setDeltaFlash(null), 4000);
   };
@@ -6963,12 +6977,20 @@ export default function PokemonWalker({ onStop }) {
                               </div>
 
                               <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 6, padding: '5px 7px', marginBottom: 6 }}>
-                                <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 700, marginBottom: 2 }}>💀 PENALTIES — harshest only</div>
+                                <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 700, marginBottom: 2 }}>
+                                  🍬 QUOTA — {SWEETS_DAILY_QUOTA} a day is free
+                                </div>
+                                <div style={{ fontSize: 8, color: '#374151' }}>
+                                  Over quota, on its own → lose {SWEETS_PENALTY_ISOLATED.lose} common
+                                </div>
                                 {SWEETS_PENALTIES.map(p => (
                                   <div key={p.windowDays} style={{ fontSize: 8, color: '#374151' }}>
-                                    {p.label} → lose {p.lose} common
+                                    Over quota + {p.label} → lose {p.lose} common
                                   </div>
                                 ))}
+                                <div style={{ fontSize: 7, color: '#9ca3af', marginTop: 2 }}>
+                                  Only one rule applies. A quota day still breaks your streak.
+                                </div>
                               </div>
 
                               {over && tier && (
