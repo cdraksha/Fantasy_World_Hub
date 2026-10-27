@@ -290,12 +290,15 @@ const SWEETS_STREAK_REWARD = 5;         // common Pokémon per block
 // 1 sweet a day is the quota and costs nothing. A day over quota is a
 // violation, and what it costs depends on how close the nearest other
 // violation is. Exactly one rule applies.
+// The closer the nearest other violation, the harsher the cost. Ordered
+// harshest first; a slip with nothing near it falls through to the base.
 const SWEETS_DAILY_QUOTA = 1;
 const SWEETS_PENALTIES = [
+  { windowDays: 2, lose: 7, label: 'over quota two days running' },
   { windowDays: 3, lose: 4, label: 'another over-quota day within 3 days' },
-  { windowDays: 5, lose: 1, label: 'another over-quota day within 5 days' },
+  { windowDays: 5, lose: 2, label: 'another over-quota day within 5 days' },
 ];
-const SWEETS_PENALTY_ISOLATED = { lose: 7, label: 'over quota' };
+const SWEETS_PENALTY_BASE = { lose: 1, label: 'over quota, nothing near it' };
 
 // End-of-challenge tiers on total clean days, best match only.
 const SWEETS_FINAL_TIERS = [
@@ -345,7 +348,7 @@ function sweetsPenaltyFor(log, date) {
   for (const p of SWEETS_PENALTIES) {
     if (violationsIn(p.windowDays) >= 2) return p;
   }
-  return SWEETS_PENALTY_ISOLATED;   // nothing nearby — a one-off slip
+  return SWEETS_PENALTY_BASE;   // nothing nearby — a one-off slip, mildest
 }
 
 const WEIGHT_LOG_START = '2026-08-01';   // weight log in the Log tab starts here
@@ -6980,16 +6983,16 @@ export default function PokemonWalker({ onStop }) {
                                 <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 700, marginBottom: 2 }}>
                                   🍬 QUOTA — {SWEETS_DAILY_QUOTA} a day is free
                                 </div>
-                                <div style={{ fontSize: 8, color: '#374151' }}>
-                                  Over quota, on its own → lose {SWEETS_PENALTY_ISOLATED.lose} common
-                                </div>
                                 {SWEETS_PENALTIES.map(p => (
                                   <div key={p.windowDays} style={{ fontSize: 8, color: '#374151' }}>
-                                    Over quota + {p.label} → lose {p.lose} common
+                                    {p.label} → lose {p.lose} common
                                   </div>
                                 ))}
+                                <div style={{ fontSize: 8, color: '#374151' }}>
+                                  {SWEETS_PENALTY_BASE.label} → lose {SWEETS_PENALTY_BASE.lose} common
+                                </div>
                                 <div style={{ fontSize: 7, color: '#9ca3af', marginTop: 2 }}>
-                                  Only one rule applies. A quota day still breaks your streak.
+                                  Closest rule wins — slipping again soon costs more. A quota day still breaks your streak.
                                 </div>
                               </div>
 
