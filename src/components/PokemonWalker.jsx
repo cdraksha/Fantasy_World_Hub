@@ -3753,12 +3753,20 @@ export default function PokemonWalker({ onStop }) {
     const r = appState.rameez || initRameez();
     const HEADERS = ['Date', 'Day', ...RAMEEZ_FIELDS.map(f => f.record ? `${f.label} (${f.record})` : f.label)];
 
-    const rows = [];
+    const today = todayString();
+    const dateSet = new Set();
     for (let i = 0; i < RAMEEZ_DAYS; i++) {
-      const date = addDays(RAMEEZ_START, i);
-      if (date > todayString()) break;                 // don't export days that have not happened
+      const d = addDays(RAMEEZ_START, i);
+      if (d > today) break;                            // don't export days that have not happened
+      dateSet.add(d);
+    }
+    Object.keys(r.log || {}).forEach(d => { if (d <= today) dateSet.add(d); });
+
+    const rows = [];
+    for (const date of [...dateSet].sort()) {
       const e = r.log?.[date] || {};
-      const row = { 'Date': date, 'Day': i + 1 };
+      const n = daysBetween(RAMEEZ_START, date) + 1;
+      const row = { 'Date': date, 'Day': n >= 1 ? n : '' };
       RAMEEZ_FIELDS.forEach((f, idx) => {
         const logged = e[f.key];
         row[HEADERS[idx + 2]] = (logged !== undefined && logged !== null && logged !== '')
@@ -6592,14 +6600,19 @@ export default function PokemonWalker({ onStop }) {
                           ? rameezAutoValue(appState, k, editDate) : '';
                       };
                       const setVal = (k, v) => setRameezDraft(d => ({ ...(d || r.log?.[editDate] || {}), [k]: v }));
-                      // every elapsed day, newest first
-                      const pastDays = [];
+                      // every elapsed day, plus any date actually logged, so a day
+                      // recorded outside the official range is never invisible
+                      const dateSet = new Set();
                       for (let i = 0; i < RAMEEZ_DAYS; i++) {
                         const d = addDays(RAMEEZ_START, i);
                         if (d > today) break;
-                        pastDays.push({ date: d, dayNo: i + 1, entry: r.log?.[d] || null });
+                        dateSet.add(d);
                       }
-                      pastDays.reverse();
+                      Object.keys(r.log || {}).forEach(d => dateSet.add(d));
+                      const pastDays = [...dateSet].sort().reverse().map(d => {
+                        const n = daysBetween(RAMEEZ_START, d) + 1;
+                        return { date: d, dayNo: n >= 1 ? n : null, entry: r.log?.[d] || null };
+                      });
                       return (
                         <div className="gba-section">
                           <button className="rz-toggle-btn" onClick={() => setShowRameezPanel(p => !p)}>
@@ -6691,7 +6704,7 @@ export default function PokemonWalker({ onStop }) {
                                               className={`rz-hist-row${date === editDate ? ' rz-hist-on' : ''}${entry ? '' : ' rz-hist-empty'}`}
                                               onClick={() => { setRameezEditDate(date === today ? null : date); setRameezDraft(null); }}
                                             >
-                                              <span className="rz-hist-day">Day {n}</span>
+                                              <span className="rz-hist-day">{n ? `Day ${n}` : 'pre'}</span>
                                               <span className="rz-hist-date">{date}</span>
                                               <span className="rz-hist-sum">
                                                 {entry
