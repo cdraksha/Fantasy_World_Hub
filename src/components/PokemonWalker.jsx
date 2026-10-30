@@ -285,20 +285,24 @@ const NOV_STEP_GOAL = 10000;
 const RAMEEZ_START = '2026-10-31';
 const RAMEEZ_DAYS = 100;
 
-// Manual fields, in the order they appear in the form and the export.
+// Every parameter is entered by hand, in the order Rameez listed them.
+// `record` doubles as the placeholder, matching his "What to record" column.
 const RAMEEZ_FIELDS = [
-  { key: 'sleepHours',   label: 'Sleep duration',   unit: 'hours',   type: 'number', step: '0.5' },
-  { key: 'sleepQuality', label: 'Sleep quality',    type: 'choice',  choices: ['Poor', 'Average', 'Good'] },
-  { key: 'exerciseMins', label: 'Exercise',         unit: 'minutes', type: 'number' },
-  { key: 'meals',        label: 'Meal frequency',   unit: 'meals',   type: 'number' },
-  { key: 'fruitVeg',     label: 'Fruit & veg',      unit: 'servings', type: 'number' },
-  { key: 'protein',      label: 'Protein intake',   type: 'choice',  choices: ['Adequate', 'Needs attention'] },
-  { key: 'bowel',        label: 'Bowel movement',   type: 'choice',  choices: ['Regular', 'Irregular', 'Concern'] },
-  { key: 'energy',       label: 'Energy level',     type: 'scale' },
-  { key: 'hunger',       label: 'Hunger level',     type: 'scale' },
-  { key: 'stress',       label: 'Stress level',     type: 'scale' },
-  { key: 'herbalDrink',  label: 'Herbal drink',     type: 'text',    placeholder: 'as recommended' },
-  { key: 'notes',        label: 'Notes',            type: 'text',    placeholder: 'anything worth flagging' },
+  { key: 'water',        label: 'Water intake',     record: 'Glasses or litres',      type: 'number', step: '0.1' },
+  { key: 'sleepHours',   label: 'Sleep duration',   record: 'Hours',                  type: 'number', step: '0.5' },
+  { key: 'sleepQuality', label: 'Sleep quality',    record: 'Poor / Average / Good',  type: 'choice', choices: ['Poor', 'Average', 'Good'] },
+  { key: 'steps',        label: 'Physical activity', record: 'Steps per day',         type: 'number' },
+  { key: 'exerciseMins', label: 'Exercise',         record: 'Minutes',                type: 'number' },
+  { key: 'meals',        label: 'Meal frequency',   record: 'Number of meals',        type: 'number' },
+  { key: 'fruitVeg',     label: 'Fruit & vegetable', record: 'Servings',              type: 'number' },
+  { key: 'protein',      label: 'Protein intake',   record: 'Adequate / Needs attention', type: 'choice', choices: ['Adequate', 'Needs attention'] },
+  { key: 'bowel',        label: 'Bowel movement',   record: 'Regularity and any concerns', type: 'text' },
+  { key: 'energy',       label: 'Energy levels',    record: 'Scale of 1–10',          type: 'number', min: 1, max: 10 },
+  { key: 'hunger',       label: 'Hunger levels',    record: 'Scale of 1–10',          type: 'number', min: 1, max: 10 },
+  { key: 'stress',       label: 'Stress levels',    record: 'Scale of 1–10',          type: 'number', min: 1, max: 10 },
+  { key: 'weight',       label: 'Weight',           record: 'kg',                     type: 'number', step: '0.1' },
+  { key: 'herbalDrink',  label: 'Herbal drink',     record: 'As recommended',         type: 'text' },
+  { key: 'notes',        label: 'Notes',            record: 'Anything worth flagging', type: 'text' },
 ];
 
 function initRameez() {
@@ -307,27 +311,6 @@ function initRameez() {
 
 const rameezEndDate = () => addDays(RAMEEZ_START, RAMEEZ_DAYS - 1);
 
-// Everything the app already knows for a given date. Water is the exception:
-// only today's total is kept, so it is snapshotted into the entry on save.
-function rameezAutoFor(state, date) {
-  const steps = (state.stepHistory || []).find(e => e.date === date)?.steps
-    ?? (state.todayDate === date ? (state.todaySteps || 0) : null);
-  const weight = (state.weight?.history || []).find(e => e.date === date)?.kg ?? null;
-  const cal = (state.calories?.history || []).find(e => e.date === date) || null;
-  const km = (state.challengeLog || [])
-    .filter(e => e.type === 'distance' && e.date === date)
-    .reduce((sum, e) => {
-      const n = parseFloat(String(e.outcome).match(/([\d.]+)\s*km/i)?.[1]);
-      return isNaN(n) ? sum : sum + n;
-    }, 0);
-  return {
-    steps,
-    weight,
-    caloriesIn: cal?.consumed ?? null,
-    caloriesBurnt: cal?.burnt ?? null,
-    workoutKm: km || null,
-  };
-}
 
 // ─── 50 Day No Sweets ─────────────────────────────────────────────────────
 // Sweets = anything with sugar as the main ingredient: Indian sweets, chocolate,
@@ -3718,20 +3701,13 @@ export default function PokemonWalker({ onStop }) {
   const handleSaveRameezDay = (date, draft) => {
     setAppState(prev => {
       const r = prev.rameez || initRameez();
-      const auto = rameezAutoFor(prev, date);
       return {
         ...prev,
         rameez: {
           ...r,
           log: {
             ...r.log,
-            [date]: {
-              ...(r.log?.[date] || {}),
-              ...draft,
-              // water keeps no history, so capture it against this date now
-              waterMl: prev.water?.todayDate === date ? (prev.water.todayMl || 0) : (r.log?.[date]?.waterMl ?? null),
-              savedAt: new Date().toISOString(),
-            },
+            [date]: { ...(r.log?.[date] || {}), ...draft, savedAt: new Date().toISOString() },
           },
         },
       };
@@ -3750,41 +3726,16 @@ export default function PokemonWalker({ onStop }) {
 
   const handleExportRameez = () => {
     const r = appState.rameez || initRameez();
-    const HEADERS = [
-      'Date', 'Day', 'Weight (kg)', 'Steps', 'Water (L)', 'Sleep (hrs)', 'Sleep quality',
-      'Exercise (mins)', 'Workout (km)', 'Meals', 'Fruit & veg (servings)', 'Protein',
-      'Bowel movement', 'Energy (1-10)', 'Hunger (1-10)', 'Stress (1-10)',
-      'Calories in', 'Calories burnt', 'Herbal drink', 'Notes',
-    ];
+    const HEADERS = ['Date', 'Day', ...RAMEEZ_FIELDS.map(f => f.record ? `${f.label} (${f.record})` : f.label)];
 
     const rows = [];
     for (let i = 0; i < RAMEEZ_DAYS; i++) {
       const date = addDays(RAMEEZ_START, i);
-      if (date > todayString()) break;                 // don't export the future
+      if (date > todayString()) break;                 // don't export days that have not happened
       const e = r.log?.[date] || {};
-      const a = rameezAutoFor(appState, date);
-      rows.push({
-        'Date': date,
-        'Day': i + 1,
-        'Weight (kg)': a.weight ?? '',
-        'Steps': a.steps ?? '',
-        'Water (L)': e.waterMl != null ? +(e.waterMl / 1000).toFixed(2) : '',
-        'Sleep (hrs)': e.sleepHours ?? '',
-        'Sleep quality': e.sleepQuality ?? '',
-        'Exercise (mins)': e.exerciseMins ?? '',
-        'Workout (km)': a.workoutKm ?? '',
-        'Meals': e.meals ?? '',
-        'Fruit & veg (servings)': e.fruitVeg ?? '',
-        'Protein': e.protein ?? '',
-        'Bowel movement': e.bowel ?? '',
-        'Energy (1-10)': e.energy ?? '',
-        'Hunger (1-10)': e.hunger ?? '',
-        'Stress (1-10)': e.stress ?? '',
-        'Calories in': a.caloriesIn ?? '',
-        'Calories burnt': a.caloriesBurnt ?? '',
-        'Herbal drink': e.herbalDrink ?? '',
-        'Notes': e.notes ?? '',
-      });
+      const row = { 'Date': date, 'Day': i + 1 };
+      RAMEEZ_FIELDS.forEach((f, idx) => { row[HEADERS[idx + 2]] = e[f.key] ?? ''; });
+      rows.push(row);
     }
 
     const ws = XLSX.utils.json_to_sheet(rows, { header: HEADERS });
@@ -3792,7 +3743,7 @@ export default function PokemonWalker({ onStop }) {
       const cell = ws[XLSX.utils.encode_cell({ r: 0, c: i })];
       if (cell) cell.s = { font: { bold: true }, alignment: { vertical: 'center', wrapText: true } };
     });
-    ws['!cols'] = HEADERS.map(h => ({ wch: h === 'Notes' ? 32 : h === 'Date' ? 12 : Math.max(10, h.length + 2) }));
+    ws['!cols'] = HEADERS.map(h => ({ wch: Math.min(34, Math.max(11, h.length + 2)) }));
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Daily Tracking');
@@ -6607,7 +6558,6 @@ export default function PokemonWalker({ onStop }) {
                       const dayNo = notStarted ? 0 : Math.min(RAMEEZ_DAYS, daysBetween(RAMEEZ_START, today) + 1);
                       const logged = Object.keys(r.log || {}).length;
                       const loggedToday = !!r.log?.[today];
-                      const auto = rameezAutoFor(appState, today);
                       const draft = rameezDraft;
                       const val = k => (draft?.[k] ?? r.log?.[today]?.[k] ?? '');
                       const setVal = (k, v) => setRameezDraft(d => ({ ...(d || r.log?.[today] || {}), [k]: v }));
@@ -6639,54 +6589,36 @@ export default function PokemonWalker({ onStop }) {
                                 </div>
                               </div>
 
-                              {/* pulled automatically from the rest of the app */}
-                              <div className="rz-auto">
-                                <div className="rz-auto-title">Collected automatically for {today}</div>
-                                <div className="rz-auto-grid">
-                                  <span>Steps<strong>{auto.steps != null ? auto.steps.toLocaleString() : '—'}</strong></span>
-                                  <span>Weight<strong>{auto.weight != null ? `${auto.weight} kg` : '—'}</strong></span>
-                                  <span>Water<strong>{appState.water?.todayDate === today ? `${((appState.water.todayMl || 0) / 1000).toFixed(2)} L` : '—'}</strong></span>
-                                  <span>Workout<strong>{auto.workoutKm != null ? `${auto.workoutKm} km` : '—'}</strong></span>
-                                  <span>Cal in<strong>{auto.caloriesIn != null ? auto.caloriesIn : '—'}</strong></span>
-                                  <span>Cal burnt<strong>{auto.caloriesBurnt != null ? auto.caloriesBurnt : '—'}</strong></span>
-                                </div>
-                              </div>
-
-                              {!notStarted && (
+                              {/* every parameter is entered by hand, mirroring Rameez's list */}
+                              {!notStarted ? (
                                 <>
-                                  <div className="rz-form">
+                                  <div className="rz-table">
+                                    <div className="rz-head">
+                                      <span>Parameter</span><span>What to record</span>
+                                    </div>
                                     {RAMEEZ_FIELDS.map(f => (
-                                      <div className="rz-field" key={f.key}>
-                                        <label className="rz-label">{f.label}{f.unit ? ` (${f.unit})` : ''}</label>
+                                      <div className="rz-row" key={f.key}>
+                                        <span className="rz-param">{f.label}</span>
                                         {f.type === 'choice' ? (
-                                          <div className="rz-choices">
+                                          <span className="rz-choices">
                                             {f.choices.map(c => (
                                               <button
                                                 key={c}
                                                 className={`rz-choice${val(f.key) === c ? ' rz-choice-on' : ''}`}
-                                                onClick={() => setVal(f.key, c)}
+                                                onClick={() => setVal(f.key, val(f.key) === c ? '' : c)}
                                               >{c}</button>
                                             ))}
-                                          </div>
-                                        ) : f.type === 'scale' ? (
-                                          <div className="rz-scale">
-                                            {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
-                                              <button
-                                                key={n}
-                                                className={`rz-dot${Number(val(f.key)) === n ? ' rz-dot-on' : ''}`}
-                                                onClick={() => setVal(f.key, n)}
-                                              >{n}</button>
-                                            ))}
-                                          </div>
+                                          </span>
                                         ) : (
                                           <input
                                             className="rz-input"
                                             type={f.type === 'number' ? 'number' : 'text'}
-                                            min={f.type === 'number' ? '0' : undefined}
+                                            min={f.min ?? (f.type === 'number' ? 0 : undefined)}
+                                            max={f.max}
                                             step={f.step}
-                                            placeholder={f.placeholder || ''}
+                                            placeholder={f.record}
                                             value={val(f.key)}
-                                            onChange={e => setVal(f.key, f.type === 'number' ? e.target.value : e.target.value)}
+                                            onChange={e => setVal(f.key, e.target.value)}
                                           />
                                         )}
                                       </div>
@@ -6698,18 +6630,21 @@ export default function PokemonWalker({ onStop }) {
                                     disabled={!rameezDraft}
                                     onClick={() => handleSaveRameezDay(today, rameezDraft)}
                                   >
-                                    {loggedToday ? 'Update today' : 'Save today'}
+                                    {loggedToday ? `Update ${today}` : `Save ${today}`}
                                   </button>
                                 </>
+                              ) : (
+                                <div className="rz-waiting">
+                                  Tracking opens on {RAMEEZ_START}. Nothing recorded yet.
+                                </div>
                               )}
 
-                              {/* weekly routine — one field, not per day */}
+                              {/* the one weekly field */}
                               <div className="rz-routine">
-                                <div className="rz-auto-title">Weekly routine · waking to sleeping</div>
+                                <div className="rz-routine-title">Routine · weekly</div>
                                 <textarea
                                   className="rz-textarea"
                                   rows={4}
-                                  placeholder="6:30 wake, 7:00 walk, 8:30 breakfast…"
                                   value={rameezRoutineDraft ?? r.routine ?? ''}
                                   onChange={e => setRameezRoutineDraft(e.target.value)}
                                 />
@@ -6720,9 +6655,6 @@ export default function PokemonWalker({ onStop }) {
                                 )}
                               </div>
 
-                              <div style={{ fontSize: 7, color: '#6b7280', textAlign: 'center', marginTop: 6 }}>
-                                Steps, weight, water, workout distance and calories come from the rest of the app — the fields above are the ones only you can answer.
-                              </div>
                             </div>
                           )}
                         </div>
