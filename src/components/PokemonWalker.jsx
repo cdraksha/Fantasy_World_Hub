@@ -288,10 +288,10 @@ const RAMEEZ_DAYS = 100;
 // Every parameter is entered by hand, in the order Rameez listed them.
 // `record` doubles as the placeholder, matching his "What to record" column.
 const RAMEEZ_FIELDS = [
-  { key: 'water',        label: 'Water intake',     record: 'Glasses or litres',      type: 'number', step: '0.1' },
+  { key: 'water',        label: 'Water intake',     record: 'litres',                 type: 'number', step: '0.1', auto: true },
   { key: 'sleepHours',   label: 'Sleep duration',   record: 'Hours',                  type: 'number', step: '0.5' },
   { key: 'sleepQuality', label: 'Sleep quality',    record: 'Poor / Average / Good',  type: 'choice', choices: ['Poor', 'Average', 'Good'] },
-  { key: 'steps',        label: 'Physical activity', record: 'Steps per day',         type: 'number' },
+  { key: 'steps',        label: 'Physical activity', record: 'Steps per day',         type: 'number', auto: true },
   { key: 'exerciseMins', label: 'Exercise',         record: 'Minutes',                type: 'number' },
   { key: 'meals',        label: 'Meal frequency',   record: 'Number of meals',        type: 'number' },
   { key: 'fruitVeg',     label: 'Fruit & vegetable', record: 'Servings',              type: 'number' },
@@ -300,7 +300,7 @@ const RAMEEZ_FIELDS = [
   { key: 'energy',       label: 'Energy levels',    record: 'Scale of 1–10',          type: 'number', min: 1, max: 10 },
   { key: 'hunger',       label: 'Hunger levels',    record: 'Scale of 1–10',          type: 'number', min: 1, max: 10 },
   { key: 'stress',       label: 'Stress levels',    record: 'Scale of 1–10',          type: 'number', min: 1, max: 10 },
-  { key: 'weight',       label: 'Weight',           record: 'kg',                     type: 'number', step: '0.1' },
+  { key: 'weight',       label: 'Weight',           record: 'kg',                     type: 'number', step: '0.1', auto: true },
   { key: 'dailyRoutine', label: 'Daily routine',    record: 'workout, work...',       type: 'text' },
   { key: 'herbalDrink',  label: 'Herbal drink',     record: 'As recommended',         type: 'text' },
   { key: 'notes',        label: 'Notes',            record: 'Anything worth flagging', type: 'text' },
@@ -311,6 +311,27 @@ function initRameez() {
 }
 
 const rameezEndDate = () => addDays(RAMEEZ_START, RAMEEZ_DAYS - 1);
+
+// Values the app can answer for itself. Steps and weight are read live from
+// history so they stay correct if a day is corrected later; water has no
+// history at all — only today's running total — so it has to be captured
+// into the day's entry when it is saved.
+function rameezAutoValue(state, key, date) {
+  if (key === 'steps') {
+    const h = (state.stepHistory || []).find(e => e.date === date);
+    if (h) return h.steps;
+    return state.todayDate === date ? (state.todaySteps || 0) : '';
+  }
+  if (key === 'weight') {
+    return (state.weight?.history || []).find(e => e.date === date)?.kg ?? '';
+  }
+  if (key === 'water') {
+    return state.water?.todayDate === date
+      ? Number(((state.water.todayMl || 0) / 1000).toFixed(2))
+      : '';
+  }
+  return '';
+}
 
 
 // ─── 50 Day No Sweets ─────────────────────────────────────────────────────
@@ -3707,7 +3728,14 @@ export default function PokemonWalker({ onStop }) {
           ...r,
           log: {
             ...r.log,
-            [date]: { ...(r.log?.[date] || {}), ...draft, savedAt: new Date().toISOString() },
+            [date]: (() => {
+              const autoBase = {};
+              RAMEEZ_FIELDS.filter(f => f.auto).forEach(f => {
+                const v = rameezAutoValue(prev, f.key, date);
+                if (v !== '' && v != null) autoBase[f.key] = v;
+              });
+              return { ...autoBase, ...(r.log?.[date] || {}), ...draft, savedAt: new Date().toISOString() };
+            })(),
           },
         },
       };
@@ -3729,7 +3757,12 @@ export default function PokemonWalker({ onStop }) {
       if (date > todayString()) break;                 // don't export days that have not happened
       const e = r.log?.[date] || {};
       const row = { 'Date': date, 'Day': i + 1 };
-      RAMEEZ_FIELDS.forEach((f, idx) => { row[HEADERS[idx + 2]] = e[f.key] ?? ''; });
+      RAMEEZ_FIELDS.forEach((f, idx) => {
+        const logged = e[f.key];
+        row[HEADERS[idx + 2]] = (logged !== undefined && logged !== null && logged !== '')
+          ? logged
+          : (f.auto ? rameezAutoValue(appState, f.key, date) : '');
+      });
       rows.push(row);
     }
 
@@ -6547,7 +6580,12 @@ export default function PokemonWalker({ onStop }) {
                       const logged = Object.keys(r.log || {}).length;
                       const loggedToday = !!r.log?.[today];
                       const draft = rameezDraft;
-                      const val = k => (draft?.[k] ?? r.log?.[today]?.[k] ?? '');
+                      const val = k => {
+                        const v = draft?.[k] ?? r.log?.[today]?.[k];
+                        if (v !== undefined && v !== null && v !== '') return v;
+                        return RAMEEZ_FIELDS.find(f => f.key === k)?.auto
+                          ? rameezAutoValue(appState, k, today) : '';
+                      };
                       const setVal = (k, v) => setRameezDraft(d => ({ ...(d || r.log?.[today] || {}), [k]: v }));
                       return (
                         <div className="gba-section">
