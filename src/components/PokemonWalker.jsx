@@ -279,6 +279,56 @@ const NOV_DAYS_IN_MONTH = 30;
 const NOV_DAYS_REQUIRED = 20;
 const NOV_STEP_GOAL = 10000;
 
+// ─── Accountability: Rameez Sir 100 Day Fitness ───────────────────────────
+// A tracking programme rather than a game challenge — it has no reward, no
+// penalty, and is never hidden once complete, because the record is the point.
+const RAMEEZ_START = '2026-10-31';
+const RAMEEZ_DAYS = 100;
+
+// Manual fields, in the order they appear in the form and the export.
+const RAMEEZ_FIELDS = [
+  { key: 'sleepHours',   label: 'Sleep duration',   unit: 'hours',   type: 'number', step: '0.5' },
+  { key: 'sleepQuality', label: 'Sleep quality',    type: 'choice',  choices: ['Poor', 'Average', 'Good'] },
+  { key: 'exerciseMins', label: 'Exercise',         unit: 'minutes', type: 'number' },
+  { key: 'meals',        label: 'Meal frequency',   unit: 'meals',   type: 'number' },
+  { key: 'fruitVeg',     label: 'Fruit & veg',      unit: 'servings', type: 'number' },
+  { key: 'protein',      label: 'Protein intake',   type: 'choice',  choices: ['Adequate', 'Needs attention'] },
+  { key: 'bowel',        label: 'Bowel movement',   type: 'choice',  choices: ['Regular', 'Irregular', 'Concern'] },
+  { key: 'energy',       label: 'Energy level',     type: 'scale' },
+  { key: 'hunger',       label: 'Hunger level',     type: 'scale' },
+  { key: 'stress',       label: 'Stress level',     type: 'scale' },
+  { key: 'herbalDrink',  label: 'Herbal drink',     type: 'text',    placeholder: 'as recommended' },
+  { key: 'notes',        label: 'Notes',            type: 'text',    placeholder: 'anything worth flagging' },
+];
+
+function initRameez() {
+  return { log: {}, routine: '' };
+}
+
+const rameezEndDate = () => addDays(RAMEEZ_START, RAMEEZ_DAYS - 1);
+
+// Everything the app already knows for a given date. Water is the exception:
+// only today's total is kept, so it is snapshotted into the entry on save.
+function rameezAutoFor(state, date) {
+  const steps = (state.stepHistory || []).find(e => e.date === date)?.steps
+    ?? (state.todayDate === date ? (state.todaySteps || 0) : null);
+  const weight = (state.weight?.history || []).find(e => e.date === date)?.kg ?? null;
+  const cal = (state.calories?.history || []).find(e => e.date === date) || null;
+  const km = (state.challengeLog || [])
+    .filter(e => e.type === 'distance' && e.date === date)
+    .reduce((sum, e) => {
+      const n = parseFloat(String(e.outcome).match(/([\d.]+)\s*km/i)?.[1]);
+      return isNaN(n) ? sum : sum + n;
+    }, 0);
+  return {
+    steps,
+    weight,
+    caloriesIn: cal?.consumed ?? null,
+    caloriesBurnt: cal?.burnt ?? null,
+    workoutKm: km || null,
+  };
+}
+
 // ─── 50 Day No Sweets ─────────────────────────────────────────────────────
 // Sweets = anything with sugar as the main ingredient: Indian sweets, chocolate,
 // cakes, pastries. Rice, bread and milk do not count.
@@ -1045,6 +1095,7 @@ function defaultState(steps) {
     singaporeTrip: { claimedReward: false, penaltyApplied: false },
     novChallenge: { claimedReward: false, penaltyApplied: false },
     sweets: initSweets(),
+    rameez: initRameez(),
     ganji: initDayChallenge('ganji'),
     acv: initDayChallenge('acv'),
     twoMeals: initDayChallenge('twoMeals'),
@@ -1118,6 +1169,7 @@ function loadState() {
     if (!saved.singaporeTrip) saved.singaporeTrip = { claimedReward: false, penaltyApplied: false };
     if (!saved.novChallenge) saved.novChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.sweets) saved.sweets = initSweets();
+    if (!saved.rameez) saved.rameez = initRameez();
     if (!saved.ganji) saved.ganji = initDayChallenge('ganji');
     if (!saved.acv) saved.acv = initDayChallenge('acv');
     if (!saved.twoMeals) saved.twoMeals = initDayChallenge('twoMeals');
@@ -2224,6 +2276,9 @@ export default function PokemonWalker({ onStop }) {
   const [showSingaporePanel, setShowSingaporePanel] = useState(false);
   const [showNovPanel, setShowNovPanel] = useState(false);
   const [showSweetsPanel, setShowSweetsPanel] = useState(false);
+  const [showRameezPanel, setShowRameezPanel] = useState(false);
+  const [rameezDraft, setRameezDraft] = useState(null);   // null = form closed
+  const [rameezRoutineDraft, setRameezRoutineDraft] = useState(null);
   const [sweetsInput, setSweetsInput] = useState('');
   const [openDayChallenge, setOpenDayChallenge] = useState(null);   // 'ganji' | 'acv' | null
   const [generatingWeddingImage, setGeneratingWeddingImage] = useState(false);
@@ -3657,6 +3712,100 @@ export default function PokemonWalker({ onStop }) {
       setDeltaFlash(`Singapore Trip challenge won! ${pokes.map(p => p.name).join(', ')} claimed!`);
       setTimeout(() => setDeltaFlash(null), 5000);
     } finally { claimingRewardRef.current.delete('singaporeTrip'); }
+  };
+
+  // ─── Rameez Sir 100 Day Fitness ──────────────────────────────────────
+  const handleSaveRameezDay = (date, draft) => {
+    setAppState(prev => {
+      const r = prev.rameez || initRameez();
+      const auto = rameezAutoFor(prev, date);
+      return {
+        ...prev,
+        rameez: {
+          ...r,
+          log: {
+            ...r.log,
+            [date]: {
+              ...(r.log?.[date] || {}),
+              ...draft,
+              // water keeps no history, so capture it against this date now
+              waterMl: prev.water?.todayDate === date ? (prev.water.todayMl || 0) : (r.log?.[date]?.waterMl ?? null),
+              savedAt: new Date().toISOString(),
+            },
+          },
+        },
+      };
+    });
+    setRameezDraft(null);
+    setDeltaFlash(`Logged ${date} for Rameez Sir`);
+    setTimeout(() => setDeltaFlash(null), 3000);
+  };
+
+  const handleSaveRameezRoutine = (text) => {
+    setAppState(prev => ({ ...prev, rameez: { ...(prev.rameez || initRameez()), routine: text } }));
+    setRameezRoutineDraft(null);
+    setDeltaFlash('Routine saved');
+    setTimeout(() => setDeltaFlash(null), 3000);
+  };
+
+  const handleExportRameez = () => {
+    const r = appState.rameez || initRameez();
+    const HEADERS = [
+      'Date', 'Day', 'Weight (kg)', 'Steps', 'Water (L)', 'Sleep (hrs)', 'Sleep quality',
+      'Exercise (mins)', 'Workout (km)', 'Meals', 'Fruit & veg (servings)', 'Protein',
+      'Bowel movement', 'Energy (1-10)', 'Hunger (1-10)', 'Stress (1-10)',
+      'Calories in', 'Calories burnt', 'Herbal drink', 'Notes',
+    ];
+
+    const rows = [];
+    for (let i = 0; i < RAMEEZ_DAYS; i++) {
+      const date = addDays(RAMEEZ_START, i);
+      if (date > todayString()) break;                 // don't export the future
+      const e = r.log?.[date] || {};
+      const a = rameezAutoFor(appState, date);
+      rows.push({
+        'Date': date,
+        'Day': i + 1,
+        'Weight (kg)': a.weight ?? '',
+        'Steps': a.steps ?? '',
+        'Water (L)': e.waterMl != null ? +(e.waterMl / 1000).toFixed(2) : '',
+        'Sleep (hrs)': e.sleepHours ?? '',
+        'Sleep quality': e.sleepQuality ?? '',
+        'Exercise (mins)': e.exerciseMins ?? '',
+        'Workout (km)': a.workoutKm ?? '',
+        'Meals': e.meals ?? '',
+        'Fruit & veg (servings)': e.fruitVeg ?? '',
+        'Protein': e.protein ?? '',
+        'Bowel movement': e.bowel ?? '',
+        'Energy (1-10)': e.energy ?? '',
+        'Hunger (1-10)': e.hunger ?? '',
+        'Stress (1-10)': e.stress ?? '',
+        'Calories in': a.caloriesIn ?? '',
+        'Calories burnt': a.caloriesBurnt ?? '',
+        'Herbal drink': e.herbalDrink ?? '',
+        'Notes': e.notes ?? '',
+      });
+    }
+
+    const ws = XLSX.utils.json_to_sheet(rows, { header: HEADERS });
+    HEADERS.forEach((_, i) => {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c: i })];
+      if (cell) cell.s = { font: { bold: true }, alignment: { vertical: 'center', wrapText: true } };
+    });
+    ws['!cols'] = HEADERS.map(h => ({ wch: h === 'Notes' ? 32 : h === 'Date' ? 12 : Math.max(10, h.length + 2) }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Daily Tracking');
+
+    if (r.routine?.trim()) {
+      const rws = XLSX.utils.json_to_sheet([{ 'Weekly Routine': r.routine }], { header: ['Weekly Routine'] });
+      const rc = rws[XLSX.utils.encode_cell({ r: 0, c: 0 })];
+      if (rc) rc.s = { font: { bold: true } };
+      rws['!cols'] = [{ wch: 90 }];
+      XLSX.utils.book_append_sheet(wb, rws, 'Routine');
+    }
+
+    XLSX.writeFile(wb, `rameez-100day-${todayString()}.xlsx`);
   };
 
   // ─── 50 Day No Sweets ────────────────────────────────────────────────
@@ -6446,6 +6595,140 @@ export default function PokemonWalker({ onStop }) {
                     })()}
 
                     {/* ── Surprise Challenges ── */}
+                    {/* ── Accountability — tracking programmes, never hidden ── */}
+                    <div className="obj-category-label" style={{ marginTop: 10 }}>Accountability</div>
+
+                    {(() => {
+                      const r = appState.rameez || initRameez();
+                      const today = todayString();
+                      const endDate = rameezEndDate();
+                      const notStarted = today < RAMEEZ_START;
+                      const over = today > endDate;
+                      const dayNo = notStarted ? 0 : Math.min(RAMEEZ_DAYS, daysBetween(RAMEEZ_START, today) + 1);
+                      const logged = Object.keys(r.log || {}).length;
+                      const loggedToday = !!r.log?.[today];
+                      const auto = rameezAutoFor(appState, today);
+                      const draft = rameezDraft;
+                      const val = k => (draft?.[k] ?? r.log?.[today]?.[k] ?? '');
+                      const setVal = (k, v) => setRameezDraft(d => ({ ...(d || r.log?.[today] || {}), [k]: v }));
+                      return (
+                        <div className="gba-section">
+                          <button className="rz-toggle-btn" onClick={() => setShowRameezPanel(p => !p)}>
+                            🧭 Rameez Sir · 100 Day Fitness
+                            {notStarted ? <span className="obj-active-badge">Starts Oct 31</span>
+                              : loggedToday ? <span className="obj-updated-badge">Logged</span>
+                              : <span className="obj-pending-badge">Log Today</span>}
+                          </button>
+
+                          {showRameezPanel && (
+                            <div style={{ padding: '4px 0' }}>
+                              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                                <div style={{ flex: 1, background: '#eef2ff', borderRadius: 6, padding: '6px 8px', border: '1px solid #c7d2fe' }}>
+                                  <div style={{ fontSize: 8, color: '#3730a3', fontWeight: 700 }}>DAY</div>
+                                  <div style={{ fontSize: 13, fontWeight: 900, color: '#312e81' }}>{dayNo} / {RAMEEZ_DAYS}</div>
+                                  <div style={{ fontSize: 8, color: '#6366f1' }}>ends {endDate}</div>
+                                </div>
+                                <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 6, padding: '6px 8px', border: '1px solid #bbf7d0' }}>
+                                  <div style={{ fontSize: 8, color: '#166534', fontWeight: 700 }}>ENTRIES</div>
+                                  <div style={{ fontSize: 13, fontWeight: 900, color: '#15803d' }}>{logged}</div>
+                                  <div style={{ fontSize: 8, color: '#6b7280' }}>days recorded</div>
+                                </div>
+                                <div style={{ flex: 1, background: '#fffbeb', borderRadius: 6, padding: '6px 8px', border: '1px solid #fcd34d' }}>
+                                  <div style={{ fontSize: 8, color: '#92400e', fontWeight: 700 }}>SHARE</div>
+                                  <button className="rz-xl-btn" onClick={handleExportRameez}>⬇ Excel</button>
+                                </div>
+                              </div>
+
+                              {/* pulled automatically from the rest of the app */}
+                              <div className="rz-auto">
+                                <div className="rz-auto-title">Collected automatically for {today}</div>
+                                <div className="rz-auto-grid">
+                                  <span>Steps<strong>{auto.steps != null ? auto.steps.toLocaleString() : '—'}</strong></span>
+                                  <span>Weight<strong>{auto.weight != null ? `${auto.weight} kg` : '—'}</strong></span>
+                                  <span>Water<strong>{appState.water?.todayDate === today ? `${((appState.water.todayMl || 0) / 1000).toFixed(2)} L` : '—'}</strong></span>
+                                  <span>Workout<strong>{auto.workoutKm != null ? `${auto.workoutKm} km` : '—'}</strong></span>
+                                  <span>Cal in<strong>{auto.caloriesIn != null ? auto.caloriesIn : '—'}</strong></span>
+                                  <span>Cal burnt<strong>{auto.caloriesBurnt != null ? auto.caloriesBurnt : '—'}</strong></span>
+                                </div>
+                              </div>
+
+                              {!notStarted && (
+                                <>
+                                  <div className="rz-form">
+                                    {RAMEEZ_FIELDS.map(f => (
+                                      <div className="rz-field" key={f.key}>
+                                        <label className="rz-label">{f.label}{f.unit ? ` (${f.unit})` : ''}</label>
+                                        {f.type === 'choice' ? (
+                                          <div className="rz-choices">
+                                            {f.choices.map(c => (
+                                              <button
+                                                key={c}
+                                                className={`rz-choice${val(f.key) === c ? ' rz-choice-on' : ''}`}
+                                                onClick={() => setVal(f.key, c)}
+                                              >{c}</button>
+                                            ))}
+                                          </div>
+                                        ) : f.type === 'scale' ? (
+                                          <div className="rz-scale">
+                                            {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+                                              <button
+                                                key={n}
+                                                className={`rz-dot${Number(val(f.key)) === n ? ' rz-dot-on' : ''}`}
+                                                onClick={() => setVal(f.key, n)}
+                                              >{n}</button>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <input
+                                            className="rz-input"
+                                            type={f.type === 'number' ? 'number' : 'text'}
+                                            min={f.type === 'number' ? '0' : undefined}
+                                            step={f.step}
+                                            placeholder={f.placeholder || ''}
+                                            value={val(f.key)}
+                                            onChange={e => setVal(f.key, f.type === 'number' ? e.target.value : e.target.value)}
+                                          />
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  <button
+                                    className="rz-save-btn"
+                                    disabled={!rameezDraft}
+                                    onClick={() => handleSaveRameezDay(today, rameezDraft)}
+                                  >
+                                    {loggedToday ? 'Update today' : 'Save today'}
+                                  </button>
+                                </>
+                              )}
+
+                              {/* weekly routine — one field, not per day */}
+                              <div className="rz-routine">
+                                <div className="rz-auto-title">Weekly routine · waking to sleeping</div>
+                                <textarea
+                                  className="rz-textarea"
+                                  rows={4}
+                                  placeholder="6:30 wake, 7:00 walk, 8:30 breakfast…"
+                                  value={rameezRoutineDraft ?? r.routine ?? ''}
+                                  onChange={e => setRameezRoutineDraft(e.target.value)}
+                                />
+                                {rameezRoutineDraft != null && rameezRoutineDraft !== r.routine && (
+                                  <button className="rz-save-btn" onClick={() => handleSaveRameezRoutine(rameezRoutineDraft)}>
+                                    Save routine
+                                  </button>
+                                )}
+                              </div>
+
+                              <div style={{ fontSize: 7, color: '#6b7280', textAlign: 'center', marginTop: 6 }}>
+                                Steps, weight, water, workout distance and calories come from the rest of the app — the fields above are the ones only you can answer.
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
                     <div className="obj-category-label" style={{ marginTop: 10 }}>Surprise Challenges</div>
 
                     {/* Wife Challenge — August 2026 only */}
