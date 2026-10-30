@@ -307,7 +307,7 @@ const RAMEEZ_FIELDS = [
 ];
 
 function initRameez() {
-  return { log: {}, routine: '' };
+  return { log: {} };
 }
 
 const rameezEndDate = () => addDays(RAMEEZ_START, RAMEEZ_DAYS - 1);
@@ -2262,7 +2262,6 @@ export default function PokemonWalker({ onStop }) {
   const [showSweetsPanel, setShowSweetsPanel] = useState(false);
   const [showRameezPanel, setShowRameezPanel] = useState(false);
   const [rameezDraft, setRameezDraft] = useState(null);   // null = form closed
-  const [rameezRoutineDraft, setRameezRoutineDraft] = useState(null);
   const [sweetsInput, setSweetsInput] = useState('');
   const [openDayChallenge, setOpenDayChallenge] = useState(null);   // 'ganji' | 'acv' | null
   const [generatingWeddingImage, setGeneratingWeddingImage] = useState(false);
@@ -3718,12 +3717,7 @@ export default function PokemonWalker({ onStop }) {
     setTimeout(() => setDeltaFlash(null), 3000);
   };
 
-  const handleSaveRameezRoutine = (text) => {
-    setAppState(prev => ({ ...prev, rameez: { ...(prev.rameez || initRameez()), routine: text } }));
-    setRameezRoutineDraft(null);
-    setDeltaFlash('Routine saved');
-    setTimeout(() => setDeltaFlash(null), 3000);
-  };
+
 
   const handleExportRameez = () => {
     const r = appState.rameez || initRameez();
@@ -3749,13 +3743,6 @@ export default function PokemonWalker({ onStop }) {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Daily Tracking');
 
-    if (r.routine?.trim()) {
-      const rws = XLSX.utils.json_to_sheet([{ 'Weekly Routine': r.routine }], { header: ['Weekly Routine'] });
-      const rc = rws[XLSX.utils.encode_cell({ r: 0, c: 0 })];
-      if (rc) rc.s = { font: { bold: true } };
-      rws['!cols'] = [{ wch: 90 }];
-      XLSX.utils.book_append_sheet(wb, rws, 'Routine');
-    }
 
     XLSX.writeFile(wb, `rameez-100day-${todayString()}.xlsx`);
   };
@@ -6631,22 +6618,6 @@ export default function PokemonWalker({ onStop }) {
                                   >
                                     {loggedToday ? `Update ${today}` : `Save ${today}`}
                                   </button>
-
-                              {/* the one weekly field */}
-                              <div className="rz-routine">
-                                <div className="rz-routine-title">Routine · weekly</div>
-                                <textarea
-                                  className="rz-textarea"
-                                  rows={4}
-                                  value={rameezRoutineDraft ?? r.routine ?? ''}
-                                  onChange={e => setRameezRoutineDraft(e.target.value)}
-                                />
-                                {rameezRoutineDraft != null && rameezRoutineDraft !== r.routine && (
-                                  <button className="rz-save-btn" onClick={() => handleSaveRameezRoutine(rameezRoutineDraft)}>
-                                    Save routine
-                                  </button>
-                                )}
-                              </div>
 
                             </div>
                           )}

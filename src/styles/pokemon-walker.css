@@ -6191,21 +6191,9 @@
 .rz-save-btn:hover:not(:disabled) { background: #4f46e5; }
 .rz-save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.rz-routine { margin-top: 4px; }
-.rz-textarea {
-  width: 100%;
-  min-width: 0;
-  border: 1.5px solid #d0cbc0;
-  border-radius: 5px;
-  padding: 6px 7px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  color: #1a1a2e;
-  box-sizing: border-box;
-  resize: vertical;
-  margin-bottom: 5px;
-}
-.rz-textarea:focus { outline: none; border-color: #6366f1; }
+
+
+
 
 /* ── Rameez tracker: two-column parameter table ── */
 .rz-table {
@@ -6286,12 +6274,4 @@
 
 
 .rz-routine { margin-top: 2px; }
-.rz-routine-title {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 8px;
-  font-weight: 800;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 4px;
-}
+
