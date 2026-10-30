@@ -1660,6 +1660,58 @@ function PokedexPopup({ caughtDex, tierByDexId, onClose }) {
   );
 }
 
+// ─── Rameez: one day's full entry ─────────────────────────────────────────
+
+function RameezDayPopup({ date, dayNo, values, logged, onEdit, onClose }) {
+  const filled = RAMEEZ_FIELDS.filter(f => {
+    const v = values[f.key];
+    return v !== undefined && v !== null && v !== '';
+  }).length;
+
+  return (
+    <div className="pw-popup-overlay" onClick={onClose}>
+      <div className="rzd-modal" onClick={e => e.stopPropagation()}>
+        <div className="rzd-header">
+          <div className="rzd-head-main">
+            <span className="rzd-day">{dayNo ? `Day ${dayNo}` : 'Pre-start'}</span>
+            <span className="rzd-date">{date}</span>
+          </div>
+          <button className="rzd-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="rzd-sub">
+          {logged
+            ? `${filled} of ${RAMEEZ_FIELDS.length} parameters recorded`
+            : 'Nothing recorded for this day'}
+        </div>
+
+        <div className="rzd-body">
+          {RAMEEZ_FIELDS.map(f => {
+            const v = values[f.key];
+            const has = v !== undefined && v !== null && v !== '';
+            return (
+              <div className={`rzd-row${has ? '' : ' rzd-row-blank'}`} key={f.key}>
+                <span className="rzd-param">{f.label}</span>
+                <span className="rzd-value">
+                  {has ? String(v) : '—'}
+                  {has && f.record && !['Poor / Average / Good', 'Regularity and any concerns',
+                                        'Anything worth flagging', 'As recommended', 'workout, work...',
+                                        'Scale of 1–10'].includes(f.record)
+                    ? <em className="rzd-unit"> {f.record}</em> : null}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        <button className="rzd-edit" onClick={onEdit}>
+          {logged ? 'Edit this day' : 'Fill in this day'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Header clock ─────────────────────────────────────────────────────────
 // Owns its own interval and state. Kept out of PokemonWalker because ticking
 // a second-resolution clock through the parent's state re-rendered the whole
@@ -2285,6 +2337,7 @@ export default function PokemonWalker({ onStop }) {
   const [rameezDraft, setRameezDraft] = useState(null);   // null = form closed
   const [rameezEditDate, setRameezEditDate] = useState(null);   // null = today
   const [showRameezHistory, setShowRameezHistory] = useState(false);
+  const [rameezViewDate, setRameezViewDate] = useState(null);   // day popup
   const [sweetsInput, setSweetsInput] = useState('');
   const [openDayChallenge, setOpenDayChallenge] = useState(null);   // 'ganji' | 'acv' | null
   const [generatingWeddingImage, setGeneratingWeddingImage] = useState(false);
@@ -4492,6 +4545,33 @@ export default function PokemonWalker({ onStop }) {
           onClose={() => setShowWeightGraph(false)}
         />
       )}
+      {rameezViewDate && (() => {
+        const r = appState.rameez || initRameez();
+        const entry = r.log?.[rameezViewDate] || null;
+        // fall back to what the app knows, same as the form does
+        const values = {};
+        RAMEEZ_FIELDS.forEach(f => {
+          const v = entry?.[f.key];
+          values[f.key] = (v !== undefined && v !== null && v !== '')
+            ? v
+            : (f.auto ? rameezAutoValue(appState, f.key, rameezViewDate) : '');
+        });
+        const n = daysBetween(RAMEEZ_START, rameezViewDate) + 1;
+        return (
+          <RameezDayPopup
+            date={rameezViewDate}
+            dayNo={n >= 1 ? n : null}
+            values={values}
+            logged={!!entry}
+            onClose={() => setRameezViewDate(null)}
+            onEdit={() => {
+              setRameezEditDate(rameezViewDate === todayString() ? null : rameezViewDate);
+              setRameezDraft(null);
+              setRameezViewDate(null);
+            }}
+          />
+        );
+      })()}
       {showPokedex && (
         <PokedexPopup
           caughtDex={uniqueDex}
@@ -6702,7 +6782,7 @@ export default function PokemonWalker({ onStop }) {
                                             <button
                                               key={date}
                                               className={`rz-hist-row${date === editDate ? ' rz-hist-on' : ''}${entry ? '' : ' rz-hist-empty'}`}
-                                              onClick={() => { setRameezEditDate(date === today ? null : date); setRameezDraft(null); }}
+                                              onClick={() => setRameezViewDate(date)}
                                             >
                                               <span className="rz-hist-day">{n ? `Day ${n}` : 'pre'}</span>
                                               <span className="rz-hist-date">{date}</span>
