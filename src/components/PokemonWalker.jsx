@@ -282,7 +282,7 @@ const NOV_STEP_GOAL = 10000;
 // ─── Accountability: Rameez Sir 100 Day Fitness ───────────────────────────
 // A tracking programme rather than a game challenge — it has no reward, no
 // penalty, and is never hidden once complete, because the record is the point.
-const RAMEEZ_START = '2026-10-31';
+const RAMEEZ_START = '2026-10-30';
 const RAMEEZ_DAYS = 100;
 
 // Every parameter is entered by hand, in the order Rameez listed them.
@@ -6697,7 +6697,7 @@ export default function PokemonWalker({ onStop }) {
                         <div className="gba-section">
                           <button className="rz-toggle-btn" onClick={() => setShowRameezPanel(p => !p)}>
                             🧭 Rameez Sir · 100 Day Fitness
-                            {notStarted ? <span className="obj-active-badge">Starts Oct 31</span>
+                            {notStarted ? <span className="obj-active-badge">Starts {RAMEEZ_START}</span>
                               : loggedToday ? <span className="obj-updated-badge">Logged</span>
                               : <span className="obj-pending-badge">Log Today</span>}
                           </button>
