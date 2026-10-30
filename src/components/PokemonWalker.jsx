@@ -2283,6 +2283,8 @@ export default function PokemonWalker({ onStop }) {
   const [showSweetsPanel, setShowSweetsPanel] = useState(false);
   const [showRameezPanel, setShowRameezPanel] = useState(false);
   const [rameezDraft, setRameezDraft] = useState(null);   // null = form closed
+  const [rameezEditDate, setRameezEditDate] = useState(null);   // null = today
+  const [showRameezHistory, setShowRameezHistory] = useState(false);
   const [sweetsInput, setSweetsInput] = useState('');
   const [openDayChallenge, setOpenDayChallenge] = useState(null);   // 'ganji' | 'acv' | null
   const [generatingWeddingImage, setGeneratingWeddingImage] = useState(false);
@@ -6579,14 +6581,25 @@ export default function PokemonWalker({ onStop }) {
                       const dayNo = notStarted ? 0 : Math.min(RAMEEZ_DAYS, daysBetween(RAMEEZ_START, today) + 1);
                       const logged = Object.keys(r.log || {}).length;
                       const loggedToday = !!r.log?.[today];
+                      // the form edits today unless a past day was picked from the history list
+                      const editDate = rameezEditDate || today;
+                      const editingPast = editDate !== today;
                       const draft = rameezDraft;
                       const val = k => {
-                        const v = draft?.[k] ?? r.log?.[today]?.[k];
+                        const v = draft?.[k] ?? r.log?.[editDate]?.[k];
                         if (v !== undefined && v !== null && v !== '') return v;
                         return RAMEEZ_FIELDS.find(f => f.key === k)?.auto
-                          ? rameezAutoValue(appState, k, today) : '';
+                          ? rameezAutoValue(appState, k, editDate) : '';
                       };
-                      const setVal = (k, v) => setRameezDraft(d => ({ ...(d || r.log?.[today] || {}), [k]: v }));
+                      const setVal = (k, v) => setRameezDraft(d => ({ ...(d || r.log?.[editDate] || {}), [k]: v }));
+                      // every elapsed day, newest first
+                      const pastDays = [];
+                      for (let i = 0; i < RAMEEZ_DAYS; i++) {
+                        const d = addDays(RAMEEZ_START, i);
+                        if (d > today) break;
+                        pastDays.push({ date: d, dayNo: i + 1, entry: r.log?.[d] || null });
+                      }
+                      pastDays.reverse();
                       return (
                         <div className="gba-section">
                           <button className="rz-toggle-btn" onClick={() => setShowRameezPanel(p => !p)}>
@@ -6616,6 +6629,12 @@ export default function PokemonWalker({ onStop }) {
                               </div>
 
                               {/* every parameter is entered by hand, mirroring Rameez's list */}
+                                  {editingPast && (
+                                    <div className="rz-editing">
+                                      Editing {editDate}
+                                      <button onClick={() => { setRameezEditDate(null); setRameezDraft(null); }}>back to today</button>
+                                    </div>
+                                  )}
                                   <div className="rz-table">
                                     <div className="rz-head">
                                       <span>Parameter</span><span>What to record</span>
@@ -6652,10 +6671,43 @@ export default function PokemonWalker({ onStop }) {
                                   <button
                                     className="rz-save-btn"
                                     disabled={!rameezDraft}
-                                    onClick={() => handleSaveRameezDay(today, rameezDraft)}
+                                    onClick={() => handleSaveRameezDay(editDate, rameezDraft)}
                                   >
-                                    {loggedToday ? `Update ${today}` : `Save ${today}`}
+                                    {r.log?.[editDate] ? `Update ${editDate}` : `Save ${editDate}`}
                                   </button>
+
+                                  {/* previous entries */}
+                                  {pastDays.length > 0 && (
+                                    <div className="rz-history">
+                                      <button className="rz-hist-toggle" onClick={() => setShowRameezHistory(h => !h)}>
+                                        Previous entries · {logged} of {pastDays.length} days logged
+                                        <span className="log-section-chevron">{showRameezHistory ? '▲' : '▼'}</span>
+                                      </button>
+                                      {showRameezHistory && (
+                                        <div className="rz-hist-list">
+                                          {pastDays.map(({ date, dayNo: n, entry }) => (
+                                            <button
+                                              key={date}
+                                              className={`rz-hist-row${date === editDate ? ' rz-hist-on' : ''}${entry ? '' : ' rz-hist-empty'}`}
+                                              onClick={() => { setRameezEditDate(date === today ? null : date); setRameezDraft(null); }}
+                                            >
+                                              <span className="rz-hist-day">Day {n}</span>
+                                              <span className="rz-hist-date">{date}</span>
+                                              <span className="rz-hist-sum">
+                                                {entry
+                                                  ? [
+                                                      entry.weight ? `${entry.weight}kg` : null,
+                                                      entry.steps ? `${Number(entry.steps).toLocaleString()} steps` : null,
+                                                      entry.sleepHours ? `${entry.sleepHours}h sleep` : null,
+                                                    ].filter(Boolean).join(' · ') || 'logged'
+                                                  : 'not logged'}
+                                              </span>
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
 
                             </div>
                           )}
