@@ -6590,8 +6590,6 @@ export default function PokemonWalker({ onStop }) {
                               </div>
 
                               {/* every parameter is entered by hand, mirroring Rameez's list */}
-                              {!notStarted ? (
-                                <>
                                   <div className="rz-table">
                                     <div className="rz-head">
                                       <span>Parameter</span><span>What to record</span>
@@ -6632,12 +6630,6 @@ export default function PokemonWalker({ onStop }) {
                                   >
                                     {loggedToday ? `Update ${today}` : `Save ${today}`}
                                   </button>
-                                </>
-                              ) : (
-                                <div className="rz-waiting">
-                                  Tracking opens on {RAMEEZ_START}. Nothing recorded yet.
-                                </div>
-                              )}
 
                               {/* the one weekly field */}
                               <div className="rz-routine">
