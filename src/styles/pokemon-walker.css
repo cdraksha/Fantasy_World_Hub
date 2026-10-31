@@ -6460,3 +6460,41 @@
   cursor: pointer;
 }
 .rzd-edit:hover { background: #4f46e5; }
+
+/* ── Rameez: Google Sheets row ── */
+.rz-sheet-row { display: flex; gap: 5px; margin-bottom: 4px; }
+
+.rz-sheet-copy, .rz-sheet-open {
+  flex: 1;
+  text-align: center;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+.rz-sheet-copy {
+  background: #0f9d58;
+  color: #fff;
+  border: 1.5px solid #0b8043;
+}
+.rz-sheet-copy:hover { background: #0b8043; }
+.rz-sheet-open {
+  background: #fff;
+  color: #0b8043;
+  border: 1.5px solid #0f9d58;
+  line-height: 1.5;
+}
+.rz-sheet-open:hover { background: #e9f6ef; }
+
+.rz-sheet-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7.5px;
+  color: #9ca3af;
+  text-align: center;
+  margin-bottom: 8px;
+}

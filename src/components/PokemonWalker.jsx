@@ -283,6 +283,7 @@ const NOV_STEP_GOAL = 10000;
 // A tracking programme rather than a game challenge — it has no reward, no
 // penalty, and is never hidden once complete, because the record is the point.
 const RAMEEZ_START = '2026-10-30';
+const RAMEEZ_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1jkKxABD4GAHdXteuOLg6Ba1DI9c0aptDMf_o5Ah8dL8/edit?usp=sharing';
 const RAMEEZ_DAYS = 100;
 
 // Every parameter is entered by hand, in the order Rameez listed them.
@@ -294,6 +295,10 @@ const RAMEEZ_FIELDS = [
   { key: 'steps',        label: 'Physical activity', record: 'Steps per day',         type: 'number', auto: true },
   { key: 'exerciseMins', label: 'Exercise',         record: 'Minutes',                type: 'number' },
   { key: 'meals',        label: 'Meal frequency',   record: 'Number of meals',        type: 'number' },
+  { key: 'breakfastAt',  label: 'Breakfast time',   record: '--:--',                  type: 'time' },
+  { key: 'lunchAt',      label: 'Lunch time',       record: '--:--',                  type: 'time' },
+  { key: 'dinnerAt',     label: 'Dinner time',      record: '--:--',                  type: 'time' },
+  { key: 'snackAt',      label: 'Snack time',       record: 'if any',                 type: 'time' },
   { key: 'fruitVeg',     label: 'Fruit & vegetable', record: 'Servings',              type: 'number' },
   { key: 'protein',      label: 'Protein intake',   record: 'gms',                    type: 'number' },
   { key: 'bowel',        label: 'Bowel movement',   record: 'Regularity and any concerns', type: 'text' },
@@ -3802,32 +3807,51 @@ export default function PokemonWalker({ onStop }) {
 
 
 
-  const handleExportRameez = () => {
+  // One place that turns the log into rows, so the Excel and the Sheets copy
+  // can never disagree about what a day contains.
+  const buildRameezRows = () => {
     const r = appState.rameez || initRameez();
-    const HEADERS = ['Date', 'Day', ...RAMEEZ_FIELDS.map(f => f.record ? `${f.label} (${f.record})` : f.label)];
-
+    const headers = ['Date', 'Day', ...RAMEEZ_FIELDS.map(f => f.record ? `${f.label} (${f.record})` : f.label)];
     const today = todayString();
     const dateSet = new Set();
     for (let i = 0; i < RAMEEZ_DAYS; i++) {
       const d = addDays(RAMEEZ_START, i);
-      if (d > today) break;                            // don't export days that have not happened
+      if (d > today) break;
       dateSet.add(d);
     }
     Object.keys(r.log || {}).forEach(d => { if (d <= today) dateSet.add(d); });
 
-    const rows = [];
-    for (const date of [...dateSet].sort()) {
+    const rows = [...dateSet].sort().map(date => {
       const e = r.log?.[date] || {};
       const n = daysBetween(RAMEEZ_START, date) + 1;
       const row = { 'Date': date, 'Day': n >= 1 ? n : '' };
       RAMEEZ_FIELDS.forEach((f, idx) => {
         const logged = e[f.key];
-        row[HEADERS[idx + 2]] = (logged !== undefined && logged !== null && logged !== '')
+        row[headers[idx + 2]] = (logged !== undefined && logged !== null && logged !== '')
           ? logged
           : (f.auto ? rameezAutoValue(appState, f.key, date) : '');
       });
-      rows.push(row);
+      return row;
+    });
+    return { headers, rows };
+  };
+
+  // Tab-separated, which is what Sheets expects from a paste.
+  const handleCopyRameezForSheets = async () => {
+    const { headers, rows } = buildRameezRows();
+    const tsv = [headers.join('\t'), ...rows.map(r => headers.map(h => String(r[h] ?? '')).join('\t'))].join('\n');
+    try {
+      await navigator.clipboard.writeText(tsv);
+      setDeltaFlash(`${rows.length} day${rows.length !== 1 ? 's' : ''} copied — paste into the sheet at A1`);
+    } catch {
+      setDeltaFlash('Could not reach the clipboard — use the Excel button instead');
     }
+    setTimeout(() => setDeltaFlash(null), 5000);
+  };
+
+  const handleExportRameez = () => {
+    const r = appState.rameez || initRameez();
+    const { headers: HEADERS, rows } = buildRameezRows();
 
     const ws = XLSX.utils.json_to_sheet(rows, { header: HEADERS });
     HEADERS.forEach((_, i) => {
@@ -6721,6 +6745,19 @@ export default function PokemonWalker({ onStop }) {
                                 </div>
                               </div>
 
+                              {/* Google Sheets — Rameez wants the data queryable online */}
+                              <div className="rz-sheet-row">
+                                <button className="rz-sheet-copy" onClick={handleCopyRameezForSheets}>
+                                  📋 Copy for Sheets
+                                </button>
+                                <a className="rz-sheet-open" href={RAMEEZ_SHEET_URL} target="_blank" rel="noreferrer">
+                                  📊 Open Google Sheet ↗
+                                </a>
+                              </div>
+                              <div className="rz-sheet-hint">
+                                Copy, then paste into cell A1 of the sheet — it replaces the whole table each time.
+                              </div>
+
                               {/* every parameter is entered by hand, mirroring Rameez's list */}
                                   {editingPast && (
                                     <div className="rz-editing">
@@ -6748,7 +6785,7 @@ export default function PokemonWalker({ onStop }) {
                                         ) : (
                                           <input
                                             className="rz-input"
-                                            type={f.type === 'number' ? 'number' : 'text'}
+                                            type={f.type === 'number' ? 'number' : f.type === 'time' ? 'time' : 'text'}
                                             min={f.min ?? (f.type === 'number' ? 0 : undefined)}
                                             max={f.max}
                                             step={f.step}
