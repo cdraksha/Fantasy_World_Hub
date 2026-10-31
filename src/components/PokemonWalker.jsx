@@ -284,6 +284,10 @@ const NOV_STEP_GOAL = 10000;
 // penalty, and is never hidden once complete, because the record is the point.
 const RAMEEZ_START = '2026-10-30';
 const RAMEEZ_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1jkKxABD4GAHdXteuOLg6Ba1DI9c0aptDMf_o5Ah8dL8/edit?usp=sharing';
+// Apps Script web app bound to that sheet. Posted as text/plain so the browser
+// treats it as a simple request — Apps Script sends no CORS headers, and a
+// preflight would be rejected outright.
+const RAMEEZ_SYNC_URL = 'https://script.google.com/macros/s/AKfycbziSDBiihaREXPpL0KUyVsJ8UJAsUwVw9zAiY5Bdgd-46k91vDpuiPo1xwHX8Gwqnjamw/exec';
 const RAMEEZ_DAYS = 100;
 
 // Every parameter is entered by hand, in the order Rameez listed them.
@@ -2343,6 +2347,7 @@ export default function PokemonWalker({ onStop }) {
   const [rameezEditDate, setRameezEditDate] = useState(null);   // null = today
   const [showRameezHistory, setShowRameezHistory] = useState(false);
   const [rameezViewDate, setRameezViewDate] = useState(null);   // day popup
+  const [rameezSync, setRameezSync] = useState({ state: 'idle', msg: '' });
   const [sweetsInput, setSweetsInput] = useState('');
   const [openDayChallenge, setOpenDayChallenge] = useState(null);   // 'ganji' | 'acv' | null
   const [generatingWeddingImage, setGeneratingWeddingImage] = useState(false);
@@ -3836,17 +3841,42 @@ export default function PokemonWalker({ onStop }) {
     return { headers, rows };
   };
 
-  // Tab-separated, which is what Sheets expects from a paste.
-  const handleCopyRameezForSheets = async () => {
+  const handleSyncRameezToSheets = async () => {
+    if (rameezSync.state === 'syncing') return;
     const { headers, rows } = buildRameezRows();
-    const tsv = [headers.join('\t'), ...rows.map(r => headers.map(h => String(r[h] ?? '')).join('\t'))].join('\n');
+    // the Apps Script writes with setValues, so rows go as arrays not objects
+    const payload = JSON.stringify({ headers, rows: rows.map(r => headers.map(h => r[h] ?? '')) });
+
+    setRameezSync({ state: 'syncing', msg: 'Sending…' });
     try {
-      await navigator.clipboard.writeText(tsv);
-      setDeltaFlash(`${rows.length} day${rows.length !== 1 ? 's' : ''} copied — paste into the sheet at A1`);
+      const res = await fetch(RAMEEZ_SYNC_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: payload,
+        redirect: 'follow',
+      });
+      const out = await res.json();
+      if (out?.ok) {
+        setRameezSync({ state: 'ok', msg: `Synced ${out.rows} day${out.rows !== 1 ? 's' : ''} · ${new Date().toLocaleTimeString()}` });
+      } else {
+        setRameezSync({ state: 'error', msg: 'The sheet rejected it — check the Apps Script deployment' });
+      }
     } catch {
-      setDeltaFlash('Could not reach the clipboard — use the Excel button instead');
+      // the response is often unreadable cross-origin even though the write lands,
+      // so resend blind rather than reporting a failure that did not happen
+      try {
+        await fetch(RAMEEZ_SYNC_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: payload,
+        });
+        setRameezSync({ state: 'ok', msg: `Sent ${rows.length} day${rows.length !== 1 ? 's' : ''} — open the sheet to confirm` });
+      } catch {
+        setRameezSync({ state: 'error', msg: 'Could not reach the sheet — offline, or the deployment URL is wrong' });
+      }
     }
-    setTimeout(() => setDeltaFlash(null), 5000);
+    setTimeout(() => setRameezSync(s => (s.state === 'syncing' ? s : { state: 'idle', msg: '' })), 8000);
   };
 
   const handleExportRameez = () => {
@@ -6745,18 +6775,22 @@ export default function PokemonWalker({ onStop }) {
                                 </div>
                               </div>
 
-                              {/* Google Sheets — Rameez wants the data queryable online */}
-                              <div className="rz-sheet-row">
-                                <button className="rz-sheet-copy" onClick={handleCopyRameezForSheets}>
-                                  📋 Copy for Sheets
-                                </button>
-                                <a className="rz-sheet-open" href={RAMEEZ_SHEET_URL} target="_blank" rel="noreferrer">
-                                  📊 Open Google Sheet ↗
-                                </a>
-                              </div>
-                              <div className="rz-sheet-hint">
-                                Copy, then paste into cell A1 of the sheet — it replaces the whole table each time.
-                              </div>
+                              {/* one deliberate button — nothing is sent until it is pressed */}
+                              <button
+                                className={`rz-drive-btn rz-sync-${rameezSync.state}`}
+                                onClick={handleSyncRameezToSheets}
+                                disabled={rameezSync.state === 'syncing'}
+                              >
+                                {rameezSync.state === 'syncing' ? '⏳ Saving…' : '💾 Save to Google Drive'}
+                              </button>
+                              {rameezSync.msg && (
+                                <div className={`rz-sync-msg rz-sync-msg-${rameezSync.state}`}>
+                                  {rameezSync.msg}
+                                  {rameezSync.state === 'ok' && (
+                                    <> · <a href={RAMEEZ_SHEET_URL} target="_blank" rel="noreferrer">open sheet ↗</a></>
+                                  )}
+                                </div>
+                              )}
 
                               {/* every parameter is entered by hand, mirroring Rameez's list */}
                                   {editingPast && (

@@ -6462,39 +6462,50 @@
 .rzd-edit:hover { background: #4f46e5; }
 
 /* ── Rameez: Google Sheets row ── */
-.rz-sheet-row { display: flex; gap: 5px; margin-bottom: 4px; }
 
-.rz-sheet-copy, .rz-sheet-open {
-  flex: 1;
-  text-align: center;
-  border-radius: 6px;
-  padding: 6px 8px;
+
+
+
+
+
+
+
+
+
+/* ── Rameez: sheet sync ── */
+
+
+
+
+
+.rz-sync-msg {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  font-weight: 800;
-  cursor: pointer;
-  text-decoration: none;
-  white-space: nowrap;
-  box-sizing: border-box;
+  font-size: 8px;
+  font-weight: 700;
+  text-align: center;
+  padding: 3px 6px;
+  border-radius: 4px;
+  margin-bottom: 4px;
 }
-.rz-sheet-copy {
+.rz-sync-msg-ok      { color: #15803d; background: rgba(34,197,94,0.12); }
+.rz-sync-msg-error   { color: #b91c1c; background: rgba(220,38,38,0.10); }
+.rz-sync-msg-syncing { color: #6b7280; background: rgba(0,0,0,0.04); }
+
+/* ── Rameez: single save-to-Drive button ── */
+.rz-drive-btn {
+  width: 100%;
   background: #0f9d58;
   color: #fff;
   border: 1.5px solid #0b8043;
-}
-.rz-sheet-copy:hover { background: #0b8043; }
-.rz-sheet-open {
-  background: #fff;
-  color: #0b8043;
-  border: 1.5px solid #0f9d58;
-  line-height: 1.5;
-}
-.rz-sheet-open:hover { background: #e9f6ef; }
-
-.rz-sheet-hint {
+  border-radius: 6px;
+  padding: 8px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 7.5px;
-  color: #9ca3af;
-  text-align: center;
-  margin-bottom: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-bottom: 4px;
 }
+.rz-drive-btn:hover:not(:disabled) { background: #0b8043; }
+.rz-drive-btn:disabled { opacity: 0.6; cursor: wait; }
+.rz-drive-btn.rz-sync-error { background: #dc2626; border-color: #b91c1c; }
+.rz-sync-msg a { color: inherit; font-weight: 800; }
