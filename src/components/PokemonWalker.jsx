@@ -3799,7 +3799,12 @@ export default function PokemonWalker({ onStop }) {
                 const v = rameezAutoValue(prev, f.key, date);
                 if (v !== '' && v != null) autoBase[f.key] = v;
               });
-              return { ...autoBase, ...(r.log?.[date] || {}), ...draft, savedAt: new Date().toISOString() };
+              // drop blanks so a half-typed or untouched field cannot wipe what is stored
+              const clean = {};
+              Object.entries(draft || {}).forEach(([k, v]) => {
+                if (v !== '' && v !== null && v !== undefined) clean[k] = v;
+              });
+              return { ...autoBase, ...(r.log?.[date] || {}), ...clean, savedAt: new Date().toISOString() };
             })(),
           },
         },
@@ -6728,7 +6733,11 @@ export default function PokemonWalker({ onStop }) {
                       const editingPast = editDate !== today;
                       const draft = rameezDraft;
                       const val = k => {
-                        const v = draft?.[k] ?? r.log?.[editDate]?.[k];
+                        // If the key is present in the draft, take it verbatim — including ''.
+                        // A <input type="time"> reports '' for every incomplete keystroke, and
+                        // treating that as "no value" made the fallback overwrite what was typed.
+                        if (draft && Object.prototype.hasOwnProperty.call(draft, k)) return draft[k];
+                        const v = r.log?.[editDate]?.[k];
                         if (v !== undefined && v !== null && v !== '') return v;
                         return RAMEEZ_FIELDS.find(f => f.key === k)?.auto
                           ? rameezAutoValue(appState, k, editDate) : '';
@@ -6826,6 +6835,7 @@ export default function PokemonWalker({ onStop }) {
                                             placeholder={f.record}
                                             value={val(f.key)}
                                             onChange={e => setVal(f.key, e.target.value)}
+                                            onBlur={e => { if (e.target.value !== '') setVal(f.key, e.target.value); }}
                                           />
                                         )}
                                       </div>
