@@ -335,9 +335,14 @@ function rameezAutoValue(state, key, date) {
     return (state.weight?.history || []).find(e => e.date === date)?.kg ?? '';
   }
   if (key === 'water') {
-    return state.water?.todayDate === date
-      ? Number(((state.water.todayMl || 0) / 1000).toFixed(2))
-      : '';
+    // the card stamps todayDate only when water is actually logged, so before
+    // the first glass of the day it still reads as yesterday
+    if (state.water?.todayDate === date) {
+      return Number(((state.water.todayMl || 0) / 1000).toFixed(2));
+    }
+    // for today with nothing logged yet that is genuinely zero, not unknown —
+    // matching how steps report 0 rather than blank
+    return state.todayDate === date ? 0 : '';
   }
   return '';
 }
