@@ -6747,7 +6747,17 @@ export default function PokemonWalker({ onStop }) {
                         return RAMEEZ_FIELDS.find(f => f.key === k)?.auto
                           ? rameezAutoValue(appState, k, editDate) : '';
                       };
-                      const setVal = (k, v) => setRameezDraft(d => ({ ...(d || r.log?.[editDate] || {}), [k]: v }));
+                      const setVal = (k, v) => setRameezDraft(d => {
+                        if (d) return { ...d, [k]: v };
+                        // Seed from the stored entry, but drop blanks. An older save can hold
+                        // water:'' or steps:'', and once those are in the draft they are taken
+                        // verbatim and beat the auto-filled value.
+                        const seed = {};
+                        Object.entries(r.log?.[editDate] || {}).forEach(([key, value]) => {
+                          if (value !== '' && value !== null && value !== undefined) seed[key] = value;
+                        });
+                        return { ...seed, [k]: v };
+                      });
                       // every elapsed day, plus any date actually logged, so a day
                       // recorded outside the official range is never invisible
                       const dateSet = new Set();
