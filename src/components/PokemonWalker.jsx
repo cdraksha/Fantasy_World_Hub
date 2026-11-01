@@ -3841,10 +3841,10 @@ export default function PokemonWalker({ onStop }) {
       const n = daysBetween(RAMEEZ_START, date) + 1;
       const row = { 'Date': date, 'Day': n >= 1 ? n : '' };
       RAMEEZ_FIELDS.forEach((f, idx) => {
+        const live = f.auto ? rameezAutoValue(appState, f.key, date) : '';
+        if (live !== '' && live !== null && live !== undefined) { row[headers[idx + 2]] = live; return; }
         const logged = e[f.key];
-        row[headers[idx + 2]] = (logged !== undefined && logged !== null && logged !== '')
-          ? logged
-          : (f.auto ? rameezAutoValue(appState, f.key, date) : '');
+        row[headers[idx + 2]] = (logged !== undefined && logged !== null && logged !== '') ? logged : '';
       });
       return row;
     });
@@ -4615,10 +4615,10 @@ export default function PokemonWalker({ onStop }) {
         // fall back to what the app knows, same as the form does
         const values = {};
         RAMEEZ_FIELDS.forEach(f => {
+          const live = f.auto ? rameezAutoValue(appState, f.key, rameezViewDate) : '';
+          if (live !== '' && live !== null && live !== undefined) { values[f.key] = live; return; }
           const v = entry?.[f.key];
-          values[f.key] = (v !== undefined && v !== null && v !== '')
-            ? v
-            : (f.auto ? rameezAutoValue(appState, f.key, rameezViewDate) : '');
+          values[f.key] = (v !== undefined && v !== null && v !== '') ? v : '';
         });
         const n = daysBetween(RAMEEZ_START, rameezViewDate) + 1;
         return (
@@ -6738,14 +6738,18 @@ export default function PokemonWalker({ onStop }) {
                       const editingPast = editDate !== today;
                       const draft = rameezDraft;
                       const val = k => {
-                        // If the key is present in the draft, take it verbatim — including ''.
-                        // A <input type="time"> reports '' for every incomplete keystroke, and
-                        // treating that as "no value" made the fallback overwrite what was typed.
+                        // Mid-edit the draft wins outright, including '' — a <input type="time">
+                        // reports '' for every incomplete keystroke.
                         if (draft && Object.prototype.hasOwnProperty.call(draft, k)) return draft[k];
+                        // An auto field tracks the app. Preferring the stored copy froze it at
+                        // whatever it was when the day was first saved.
+                        const f = RAMEEZ_FIELDS.find(x => x.key === k);
+                        if (f?.auto) {
+                          const live = rameezAutoValue(appState, k, editDate);
+                          if (live !== '' && live !== null && live !== undefined) return live;
+                        }
                         const v = r.log?.[editDate]?.[k];
-                        if (v !== undefined && v !== null && v !== '') return v;
-                        return RAMEEZ_FIELDS.find(f => f.key === k)?.auto
-                          ? rameezAutoValue(appState, k, editDate) : '';
+                        return (v !== undefined && v !== null && v !== '') ? v : '';
                       };
                       const setVal = (k, v) => setRameezDraft(d => {
                         if (d) return { ...d, [k]: v };
