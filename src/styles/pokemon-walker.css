@@ -6509,3 +6509,73 @@
 .rz-drive-btn:disabled { opacity: 0.6; cursor: wait; }
 .rz-drive-btn.rz-sync-error { background: #dc2626; border-color: #b91c1c; }
 .rz-sync-msg a { color: inherit; font-weight: 800; }
+
+/* ── Rameez: completion reward ── */
+.rz-reward {
+  background: #faf8f2;
+  border: 1.5px solid #e0dbd0;
+  border-radius: 7px;
+  padding: 7px 9px;
+  margin-bottom: 8px;
+}
+.rz-reward-ready { background: rgba(34,197,94,0.08); border-color: #16a34a; }
+
+.rz-reward-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.rz-reward-head span:first-child {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.rz-reward-count {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 700;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.rz-reward-sprites {
+  display: flex;
+  gap: 2px;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+.rz-reward-sprite {
+  width: 100%;
+  max-width: 38px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+.rz-reward-locked { filter: brightness(0); opacity: 0.22; }
+
+.rz-reward-btn {
+  width: 100%;
+  background: #16a34a;
+  color: #fff;
+  border: 1.5px solid #15803d;
+  border-radius: 6px;
+  padding: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.rz-reward-btn:hover { background: #15803d; }
+
+.rz-reward-left, .rz-reward-done {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #9ca3af;
+}
+.rz-reward-done { color: #15803d; }

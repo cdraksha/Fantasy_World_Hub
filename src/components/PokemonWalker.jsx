@@ -315,8 +315,12 @@ const RAMEEZ_FIELDS = [
   { key: 'notes',        label: 'Notes',            record: 'Anything worth flagging', type: 'text' },
 ];
 
+// Completing the 100 days unlocks every Eevee evolution.
+// Verified against PokeAPI evolution-chain 67 — there are exactly eight.
+const EEVEELUTION_DEX_IDS = [134, 135, 136, 196, 197, 470, 471, 700];
+
 function initRameez() {
-  return { log: {} };
+  return { log: {}, rewardClaimed: false };
 }
 
 const rameezEndDate = () => addDays(RAMEEZ_START, RAMEEZ_DAYS - 1);
@@ -1189,6 +1193,7 @@ function loadState() {
     if (!saved.novChallenge) saved.novChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.sweets) saved.sweets = initSweets();
     if (!saved.rameez) saved.rameez = initRameez();
+    if (saved.rameez.rewardClaimed === undefined) saved.rameez = { ...saved.rameez, rewardClaimed: false };
     if (!saved.ganji) saved.ganji = initDayChallenge('ganji');
     if (!saved.acv) saved.acv = initDayChallenge('acv');
     if (!saved.twoMeals) saved.twoMeals = initDayChallenge('twoMeals');
@@ -3789,6 +3794,29 @@ export default function PokemonWalker({ onStop }) {
   };
 
   // ─── Rameez Sir 100 Day Fitness ──────────────────────────────────────
+  const handleClaimRameezReward = async () => {
+    const r = appState.rameez || initRameez();
+    if (r.rewardClaimed) return;
+    if (todayString() <= rameezEndDate()) return;      // not finished yet
+    if (claimingRewardRef.current.has('rameez')) return;
+    claimingRewardRef.current.add('rameez');
+    try {
+      const pokes = await Promise.all(EEVEELUTION_DEX_IDS.map(id => fetchPokemonById(id)));
+      setAppState(prev => {
+        if (prev.rameez?.rewardClaimed) return prev;
+        return {
+          ...prev,
+          pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'epic', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
+          caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
+          rameez: { ...prev.rameez, rewardClaimed: true },
+          challengeLog: [{ date: todayString(), type: 'rameez', tier: 'epic', outcome: `Completed Rameez Sir 100 Day Fitness — all ${pokes.length} Eevee evolutions: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+        };
+      });
+      setDeltaFlash(`100 days done! All ${pokes.length} Eevee evolutions claimed!`);
+      setTimeout(() => setDeltaFlash(null), 6000);
+    } finally { claimingRewardRef.current.delete('rameez'); }
+  };
+
   const handleSaveRameezDay = (date, draft) => {
     setAppState(prev => {
       const r = prev.rameez || initRameez();
@@ -6801,6 +6829,36 @@ export default function PokemonWalker({ onStop }) {
                                   <div style={{ fontSize: 8, color: '#92400e', fontWeight: 700 }}>SHARE</div>
                                   <button className="rz-xl-btn" onClick={handleExportRameez}>⬇ Excel</button>
                                 </div>
+                              </div>
+
+                              {/* finishing the 100 days unlocks every Eevee evolution */}
+                              <div className={`rz-reward${over ? ' rz-reward-ready' : ''}`}>
+                                <div className="rz-reward-head">
+                                  <span>🏆 Reward on day {RAMEEZ_DAYS}</span>
+                                  <span className="rz-reward-count">all 8 Eevee evolutions</span>
+                                </div>
+                                <div className="rz-reward-sprites">
+                                  {EEVEELUTION_DEX_IDS.map(id => (
+                                    <img
+                                      key={id}
+                                      src={pokemonSpriteUrl(id)}
+                                      alt=""
+                                      className={`rz-reward-sprite${r.rewardClaimed ? '' : ' rz-reward-locked'}`}
+                                      loading="lazy"
+                                    />
+                                  ))}
+                                </div>
+                                {r.rewardClaimed ? (
+                                  <div className="rz-reward-done">✓ Claimed</div>
+                                ) : over ? (
+                                  <button className="rz-reward-btn" onClick={handleClaimRameezReward}>
+                                    🏆 100 days done — claim all 8
+                                  </button>
+                                ) : (
+                                  <div className="rz-reward-left">
+                                    {Math.max(0, RAMEEZ_DAYS - dayNo)} days to go
+                                  </div>
+                                )}
                               </div>
 
                               {/* one deliberate button — nothing is sent until it is pressed */}
