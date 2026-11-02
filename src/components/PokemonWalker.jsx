@@ -5,6 +5,13 @@ import '../styles/pokemon-walker.css';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
+// Growth caps. stepHistory was the only capped list at 365, which silently
+// dropped days the Monthly Steps log and the Excel export read from. A step
+// entry is ~36 bytes, so 5000 days is ~180KB against a ~5MB budget — the real
+// consumer is challengeLog, which grows per action rather than per day.
+const MAX_STEP_HISTORY = 5000;     // ~13 years
+const MAX_CHALLENGE_LOG = 3000;    // ~285KB
+
 const LS_KEY = 'fw_pokemon_walker';
 // snapshot of the last save that loaded and parsed cleanly, so a truncated or
 // corrupt primary write cannot reset months of progress to a fresh save
@@ -1183,6 +1190,10 @@ function loadState() {
     if (!saved.wifeChallenge.defeatedMonths) saved.wifeChallenge = { ...saved.wifeChallenge, defeatedMonths: [] };
     if (!saved.weddingChallenge) saved.weddingChallenge = initWeddingChallenge();
     if (!saved.challengeLog) saved.challengeLog = [];
+    // written from 29 places with no cap, so bound it here rather than at each
+    if (saved.challengeLog.length > MAX_CHALLENGE_LOG) {
+      saved.challengeLog = saved.challengeLog.slice(0, MAX_CHALLENGE_LOG);
+    }
     if (saved.freeEvolutionCredits === undefined) saved.freeEvolutionCredits = 0;
     if (!saved.water) saved.water = initWater();
     if (!saved.calories) saved.calories = { todayDate: null, consumed: 0, burnt: 0, logged: false, history: [] };
@@ -1371,7 +1382,7 @@ function loadState() {
         saved.stepHistory = [
           { date: saved.todayDate, steps: saved.todaySteps },
           ...(saved.stepHistory || []),
-        ].slice(0, 365);
+        ].slice(0, MAX_STEP_HISTORY);
       }
       // Monthly challenge month rollover
       if (saved.monthlyChallenge) {
