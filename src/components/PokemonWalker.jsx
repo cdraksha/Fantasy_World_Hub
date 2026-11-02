@@ -310,6 +310,7 @@ const RAMEEZ_FIELDS = [
   { key: 'lunchAt',      label: 'Lunch time',       record: '--:--',                  type: 'time' },
   { key: 'dinnerAt',     label: 'Dinner time',      record: '--:--',                  type: 'time' },
   { key: 'snackAt',      label: 'Snack time',       record: 'if any',                 type: 'time' },
+  { key: 'mealCalories', label: 'Meal calories',    record: 'kcal',                   type: 'number', auto: true },
   { key: 'fruitVeg',     label: 'Fruit & vegetable', record: 'Servings',              type: 'number' },
   { key: 'protein',      label: 'Protein intake',   record: 'gms',                    type: 'number' },
   { key: 'bowel',        label: 'Bowel movement',   record: 'Regularity and any concerns', type: 'text' },
@@ -344,6 +345,12 @@ function rameezAutoValue(state, key, date) {
   }
   if (key === 'weight') {
     return (state.weight?.history || []).find(e => e.date === date)?.kg ?? '';
+  }
+  if (key === 'mealCalories') {
+    const h = (state.calories?.history || []).find(e => e.date === date);
+    if (h) return h.consumed ?? '';
+    // the tracker keeps today's running total outside history until the day is logged
+    return state.calories?.todayDate === date ? (state.calories.consumed || 0) : '';
   }
   if (key === 'water') {
     // the card stamps todayDate only when water is actually logged, so before
