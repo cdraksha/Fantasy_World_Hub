@@ -3936,7 +3936,12 @@ export default function PokemonWalker({ onStop }) {
     if (rameezSync.state === 'syncing') return;
     const { headers, rows } = buildRameezRows();
     // the Apps Script writes with setValues, so rows go as arrays not objects
-    const payload = JSON.stringify({ headers, rows: rows.map(r => headers.map(h => r[h] ?? '')) });
+    const payload = JSON.stringify({
+      headers,
+      rows: rows.map(r => headers.map(h => r[h] ?? '')),
+      // local time, so the stamp matches the clock on the machine that synced
+      syncedAt: new Date().toLocaleString(),
+    });
 
     setRameezSync({ state: 'syncing', msg: 'Sending…' });
     try {
