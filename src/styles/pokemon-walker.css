@@ -6579,3 +6579,109 @@
   color: #9ca3af;
 }
 .rz-reward-done { color: #15803d; }
+
+/* ── Merged Packs & Vault panel ── */
+.pv-sec { margin-bottom: 10px; }
+
+.pv-sec-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+  border-bottom: 1.5px solid #e0dbd0;
+}
+
+.pv-sec-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  color: #1a1a2e;
+  letter-spacing: 0.03em;
+}
+
+.pv-sec-badge {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  color: #9ca3af;
+}
+.pv-badge-warn {
+  color: #b45309;
+  background: rgba(245,158,11,0.14);
+  border: 1px solid rgba(245,158,11,0.4);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.pv-pack-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+
+.pv-pack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: 1.5px solid #e5e0d6;
+  border-radius: 8px;
+  padding: 8px 4px 6px;
+  background: #fafaf8;
+}
+.pv-pack.common.pv-pack-has { border-color: rgba(61,158,66,0.55);  background: rgba(61,158,66,0.07); }
+.pv-pack.rare.pv-pack-has   { border-color: rgba(43,80,161,0.55);  background: rgba(43,80,161,0.07); }
+.pv-pack.epic.pv-pack-has   { border-color: rgba(124,58,237,0.55); background: rgba(124,58,237,0.07); }
+
+.pv-pack-tier {
+  font-size: 7.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+}
+.pv-pack.common.pv-pack-has .pv-pack-tier { color: #3d9e42; }
+.pv-pack.rare.pv-pack-has   .pv-pack-tier { color: #2B50A1; }
+.pv-pack.epic.pv-pack-has   .pv-pack-tier { color: #7c3aed; }
+
+.pv-pack-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  color: #d4cec2;
+}
+.pv-pack-has .pv-pack-count { color: #1a1a2e; }
+
+.pv-pack-open {
+  width: 100%;
+  margin-top: 3px;
+  background: #FFCB05;
+  border: 1.5px solid #1a1a2e;
+  border-radius: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  color: #1a1a2e;
+  padding: 3px;
+  cursor: pointer;
+}
+.pv-pack-open:hover { background: #f0be00; }
+
+.pv-pack-empty {
+  margin-top: 3px;
+  font-size: 10px;
+  color: #d4cec2;
+  line-height: 1.6;
+}
+
+.pv-expiry {
+  margin-top: 6px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  color: #b45309;
+}

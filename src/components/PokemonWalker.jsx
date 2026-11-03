@@ -2321,7 +2321,6 @@ export default function PokemonWalker({ onStop }) {
   const [acceptingDT, setAcceptingDT] = useState(false);
   const [selectedCollateral, setSelectedCollateral] = useState(null);
   const [showVaultPanel, setShowVaultPanel] = useState(false);
-  const [showPacksPanel, setShowPacksPanel] = useState(false);
   const [showMyPokemonPanel, setShowMyPokemonPanel] = useState(false);
   const [showSystemsPanel, setShowSystemsPanel] = useState(false);
   const [showFastingPanel, setShowFastingPanel] = useState(false);
@@ -3215,7 +3214,6 @@ export default function PokemonWalker({ onStop }) {
   // ─── Close all icon panels ───────────────────────────────────────────
   const closeAllPanels = () => {
     setShowVaultPanel(false);
-    setShowPacksPanel(false);
     setShowMyPokemonPanel(false);
     setShowSystemsPanel(false);
     setShowStepsHistoryPanel(false);
@@ -4733,7 +4731,7 @@ export default function PokemonWalker({ onStop }) {
               {/* ── Icon Sidebar ── */}
               <div className="pw-icon-sidebar">
                 <button
-                  className={`pw-icon-btn pw-icon-home${!showVaultPanel && !showPacksPanel && !showMyPokemonPanel && !showSystemsPanel && !showStepsHistoryPanel ? ' active' : ''}`}
+                  className={`pw-icon-btn pw-icon-home${!showVaultPanel && !showMyPokemonPanel && !showSystemsPanel && !showStepsHistoryPanel ? ' active' : ''}`}
                   onClick={closeAllPanels}
                 >
                   <span className="pw-icon-bubble"><span className="pw-icon-emoji">🏠</span></span>
@@ -4741,11 +4739,10 @@ export default function PokemonWalker({ onStop }) {
                 </button>
                 <div className="pw-sidebar-sep" />
                 {[
-                  { key: 'vault',         icon: '🏦', label: 'Vault',        active: showVaultPanel,          toggle: () => { setShowVaultPanel(p => !p); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
-                  { key: 'packs',         icon: '📦', label: 'Packs',        active: showPacksPanel,          toggle: () => { setShowPacksPanel(p => !p); setShowVaultPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
-                  { key: 'pokemon',       icon: '🎒', label: 'Pokémon',      active: showMyPokemonPanel,      toggle: () => { setShowMyPokemonPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
-                  { key: 'systems',       icon: '⚔️', label: 'Objectives',   active: showSystemsPanel,        toggle: () => { setShowSystemsPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowStepsHistoryPanel(false); } },
-                  { key: 'history',       icon: '📋', label: 'Log',         active: showStepsHistoryPanel,   toggle: () => { setShowStepsHistoryPanel(p => !p); setShowVaultPanel(false); setShowPacksPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); } },
+                  { key: 'vault',         icon: '🏦', label: 'Packs & Vault', active: showVaultPanel,         toggle: () => { setShowVaultPanel(p => !p); setShowMyPokemonPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
+                  { key: 'pokemon',       icon: '🎒', label: 'Pokémon',      active: showMyPokemonPanel,      toggle: () => { setShowMyPokemonPanel(p => !p); setShowVaultPanel(false); setShowSystemsPanel(false); setShowStepsHistoryPanel(false); } },
+                  { key: 'systems',       icon: '⚔️', label: 'Objectives',   active: showSystemsPanel,        toggle: () => { setShowSystemsPanel(p => !p); setShowVaultPanel(false); setShowMyPokemonPanel(false); setShowStepsHistoryPanel(false); } },
+                  { key: 'history',       icon: '📋', label: 'Log',         active: showStepsHistoryPanel,   toggle: () => { setShowStepsHistoryPanel(p => !p); setShowVaultPanel(false); setShowMyPokemonPanel(false); setShowSystemsPanel(false); } },
                 ].map(({ key, icon, label, active, toggle }) => (
                   <button key={key} className={`pw-icon-btn${active ? ' active' : ''}`} onClick={toggle}>
                     <span className="pw-icon-bubble"><span className="pw-icon-emoji">{icon}</span></span>
@@ -5026,9 +5023,45 @@ export default function PokemonWalker({ onStop }) {
                 return (
                   <div className="pw-icon-panel">
                     <div className="pw-ip-header">
-                      <span className="pw-ip-title">Vault</span>
+                      <span className="pw-ip-title">Packs &amp; Vault</span>
                     </div>
                     <div className="pw-ip-body">
+
+                      {/* ── Packs ── */}
+                      <div className="pv-sec">
+                        <div className="pv-sec-head">
+                          <span className="pv-sec-title">📦 Packs</span>
+                          {totalPacks > 0
+                            ? <span className="pv-sec-badge pv-badge-warn">{totalPacks} unopened</span>
+                            : <span className="pv-sec-badge">none yet</span>}
+                        </div>
+                        <div className="pv-pack-grid">
+                          {(['common', 'rare', 'epic']).map(tier => {
+                            const n = appState.packInventory[tier] || 0;
+                            return (
+                              <div className={`pv-pack ${tier}${n > 0 ? ' pv-pack-has' : ''}`} key={tier}>
+                                <span className="pv-pack-tier">{tier}</span>
+                                <span className="pv-pack-count">{n}</span>
+                                {n > 0 ? (
+                                  <button className="pv-pack-open" onClick={() => { closeAllPanels(); handleOpenPack(tier); }}>
+                                    Open
+                                  </button>
+                                ) : (
+                                  <span className="pv-pack-empty">—</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {totalPacks > 0 && (
+                          <div className="pv-expiry">⚠ Unopened packs are lost at midnight</div>
+                        )}
+                      </div>
+
+                      {/* ── Vault ── */}
+                      <div className="pv-sec-head" style={{ marginTop: 2 }}>
+                        <span className="pv-sec-title">🏦 Vault</span>
+                      </div>
                       <div className="pw-panel-hero">
                         <div className="pw-panel-hero-val">{fmtFull(appState.stepVault)}</div>
                         <div className="pw-panel-hero-label">steps banked</div>
@@ -5178,34 +5211,6 @@ export default function PokemonWalker({ onStop }) {
               })()}
 
               {/* ── Pack Inventory Panel ── */}
-              {showPacksPanel && (
-                <div className="pw-icon-panel">
-                  <div className="pw-ip-header">
-                    <span className="pw-ip-title">Pack Inventory</span>
-                  </div>
-                  <div className="pw-ip-body">
-                    <div className="pw-panel-hero">
-                      <div className="pw-panel-hero-val">{totalPacks}</div>
-                      <div className="pw-panel-hero-label">packs ready to open</div>
-                    </div>
-                    <div className="pw-panel-section-title">Your Packs</div>
-                    <div className="gba-pack-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                      {(['common', 'rare', 'epic']).map(tier => (
-                        <div className={`gba-pack-card ${tier}${appState.packInventory[tier] > 0 ? ' has-pack' : ''}`} key={tier}>
-                          <div className="gba-pack-tier">{tier}</div>
-                          <div className="gba-pack-count">×{appState.packInventory[tier]}</div>
-                          {appState.packInventory[tier] > 0 ? (
-                            <button className="gba-pack-btn" onClick={() => { closeAllPanels(); handleOpenPack(tier); }}>Open</button>
-                          ) : (
-                            <div className="gba-pack-need">Empty</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* ── My Pokémon Panel ── */}
               {showMyPokemonPanel && (
                 <div className="pw-icon-panel">
