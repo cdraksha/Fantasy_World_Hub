@@ -1142,6 +1142,63 @@ function defaultState(steps) {
 // true when the primary save was unreadable and the backup was used instead
 let loadedFromBackup = false;
 
+// ─── One missed day, applied to each system that counts them ─────────────
+// Extracted so the rollover can charge a day the app was never opened on.
+// Each takes the already-decided "this day was missed" and applies it once.
+
+function applyLoanMiss(saved) {
+  if (saved.loan?.status !== 'active') return saved;
+  if (!saved.loan.graceUsed) {
+    return { ...saved, loan: { ...saved.loan, graceUsed: true } };
+  }
+  // second miss — default, release the Pokémon, advance with the next-threshold penalty
+  return {
+    ...saved,
+    pokemon: (saved.pokemon || []).filter(p => p.uid !== saved.loan.pokemonUid),
+    loan: { index: saved.loan.index + 1, status: 'locked', pokemon: null, pokemonUid: null, startDate: null, daysCompleted: 0, graceUsed: false, lastPaidDate: null, prevDefaulted: true },
+  };
+}
+
+function applyDebtTrapMiss(saved, today) {
+  const dt = saved.debtTrap;
+  if (dt?.status !== 'active') return saved;
+  const missedDays = (dt.missedDays || 0) + 1;
+  const daysCompounded = dt.daysCompounded + dt.compoundRate;
+  const defaulted = missedDays >= 5
+    || dt.daysCompleted + (dt.duration - missedDays * dt.compoundRate) <= 0;
+
+  if (!defaulted) {
+    return { ...saved, debtTrap: { ...dt, missedDays, daysCompounded } };
+  }
+  const newDefaultCount = dt.defaultCount + 1;
+  const faction = dt.faction || 'Debt Trap';
+  const next = {
+    ...saved,
+    challengeLog: [{ date: today, type: 'debtTrap', tier: null, outcome: `Defaulted on ${faction} deal — ${dt.daysCompleted} day${dt.daysCompleted !== 1 ? 's' : ''} completed` }, ...(saved.challengeLog || [])],
+    pokemon: (saved.pokemon || []).filter(
+      p => p.uid !== dt.collateralUid && p.uid !== dt.legendaryCompanionUid
+    ),
+    debtTrap: generateDebtTrap(dt.index + 1, newDefaultCount),
+  };
+  if (dt.index >= 3) {
+    next.vaultFrozenUntil = Date.now() + (3 + newDefaultCount) * 24 * 60 * 60 * 1000;
+  }
+  return next;
+}
+
+function applyFastingMiss(saved, today) {
+  const fa = saved.fasting?.active;
+  if (fa?.status !== 'running') return saved;
+  const newMissed = (fa.missedDays || 0) + 1;
+  if (newMissed > (fa.graceDays ?? 1)) {
+    let next = applyFastingPenalty(saved, fa.penalty);
+    next.fasting = { ...next.fasting, active: { ...fa, status: 'failed' } };
+    next.challengeLog = [{ date: today, type: 'fasting', tier: fa.tier, outcome: `Failed — exceeded grace days` }, ...(next.challengeLog || [])];
+    return next;
+  }
+  return { ...saved, fasting: { ...saved.fasting, active: { ...fa, missedDays: newMissed } } };
+}
+
 function loadState() {
   try {
     const readKey = (key) => {
@@ -1277,42 +1334,14 @@ function loadState() {
     const today = todayString();
     if (saved.todayDate !== today) {
       // Check loan daily payment for the day that just ended
-      if (saved.loan.status === 'active') {
-        const yesterday = saved.todayDate;
-        if (saved.loan.lastPaidDate !== yesterday) {
-          if (!saved.loan.graceUsed) {
-            saved.loan = { ...saved.loan, graceUsed: true };
-          } else {
-            // Second miss — default, remove pokemon, advance with 50k penalty on next threshold
-            saved.pokemon = (saved.pokemon || []).filter(p => p.uid !== saved.loan.pokemonUid);
-            saved.loan = { index: saved.loan.index + 1, status: 'locked', pokemon: null, pokemonUid: null, startDate: null, daysCompleted: 0, graceUsed: false, lastPaidDate: null, prevDefaulted: true };
-          }
-        }
+      if (saved.loan.status === 'active' && saved.loan.lastPaidDate !== saved.todayDate) {
+        saved = applyLoanMiss(saved);
       }
       // Debt Trap miss check
-      if (saved.debtTrap?.status === 'active') {
-        const dtYesterday = saved.todayDate;
-        if (saved.debtTrap.lastPaidDate !== dtYesterday && saved.todaySteps < saved.debtTrap.dailyTarget) {
-          const missedDays = (saved.debtTrap.missedDays || 0) + 1;
-          const daysCompounded = saved.debtTrap.daysCompounded + saved.debtTrap.compoundRate;
-          const totalRequired = saved.debtTrap.duration + Math.ceil(daysCompounded);
-          if (missedDays >= 5 || saved.debtTrap.daysCompleted + (saved.debtTrap.duration - missedDays * saved.debtTrap.compoundRate) <= 0) {
-            // DEFAULT
-            const newDefaultCount = saved.debtTrap.defaultCount + 1;
-            const dtFaction = saved.debtTrap.faction || 'Debt Trap';
-            const dtDays = saved.debtTrap.daysCompleted;
-            saved.challengeLog = [{ date: today, type: 'debtTrap', tier: null, outcome: `Defaulted on ${dtFaction} deal — ${dtDays} day${dtDays !== 1 ? 's' : ''} completed` }, ...(saved.challengeLog || [])];
-            saved.pokemon = (saved.pokemon || []).filter(
-              p => p.uid !== saved.debtTrap.collateralUid && p.uid !== saved.debtTrap.legendaryCompanionUid
-            );
-            if (saved.debtTrap.index >= 3) {
-              saved.vaultFrozenUntil = Date.now() + (3 + newDefaultCount) * 24 * 60 * 60 * 1000;
-            }
-            saved.debtTrap = generateDebtTrap(saved.debtTrap.index + 1, newDefaultCount);
-          } else {
-            saved.debtTrap = { ...saved.debtTrap, missedDays, daysCompounded };
-          }
-        }
+      if (saved.debtTrap?.status === 'active'
+          && saved.debtTrap.lastPaidDate !== saved.todayDate
+          && saved.todaySteps < saved.debtTrap.dailyTarget) {
+        saved = applyDebtTrapMiss(saved, today);
       }
       // Break streaks if yesterday's steps fell short
       if (saved.todaySteps === 0) {
@@ -1331,14 +1360,7 @@ function loadState() {
         const yesterday = saved.todayDate; // saved.todayDate is yesterday at this point
         const lastRef = fa.lastLogDate || addDays(fa.startDate, -1);
         if (daysBetween(lastRef, yesterday) > 1) {
-          const newMissed = (fa.missedDays || 0) + 1;
-          if (newMissed > (fa.graceDays ?? 1)) {
-            saved = applyFastingPenalty(saved, fa.penalty);
-            saved.fasting = { ...saved.fasting, active: { ...fa, status: 'failed' } };
-            saved.challengeLog = [{ date: today, type: 'fasting', tier: fa.tier, outcome: `Failed — exceeded grace days` }, ...(saved.challengeLog || [])];
-          } else {
-            saved.fasting = { ...saved.fasting, active: { ...fa, missedDays: newMissed } };
-          }
+          saved = applyFastingMiss(saved, today);
         }
       }
       // Expire frozen Pokémon
@@ -1412,6 +1434,21 @@ function loadState() {
           };
         }
       }
+      // ── Days the app was never opened ──────────────────────────────
+      // Every check above charges exactly one day, so a three-day absence used
+      // to cost the same as a single missed day — making disappearing cheaper
+      // than showing up and failing. Charge the remaining days here. They are
+      // silent by definition: no steps logged, no payments, no fasts recorded.
+      {
+        const elapsed = daysBetween(saved.todayDate, today);
+        const silentDays = Math.min(Math.max(0, elapsed - 1), 365);   // bound a corrupt date
+        for (let i = 0; i < silentDays; i++) {
+          saved = applyLoanMiss(saved);
+          saved = applyDebtTrapMiss(saved, today);
+          saved = applyFastingMiss(saved, today);
+        }
+      }
+
       saved.todayDate = today;
       saved.todaySteps = 0;
       saved.spendableSteps = 0;
