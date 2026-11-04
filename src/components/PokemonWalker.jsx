@@ -298,6 +298,9 @@ const NOV_STEP_GOAL = 10000;
 // A tracking programme rather than a game challenge — it has no reward, no
 // penalty, and is never hidden once complete, because the record is the point.
 const RAMEEZ_START = '2026-10-30';
+// Written into any cell with nothing behind it, so a gap reads as a gap rather
+// than as a value someone forgot to notice was missing.
+const RAMEEZ_BLANK = 'DID NOT INPUT';
 const RAMEEZ_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1jkKxABD4GAHdXteuOLg6Ba1DI9c0aptDMf_o5Ah8dL8/edit?usp=sharing';
 // Apps Script web app bound to that sheet. Posted as text/plain so the browser
 // treats it as a simple request — Apps Script sends no CORS headers, and a
@@ -3947,7 +3950,7 @@ export default function PokemonWalker({ onStop }) {
         const live = f.auto ? rameezAutoValue(appState, f.key, date) : '';
         if (live !== '' && live !== null && live !== undefined) { row[headers[idx + 2]] = live; return; }
         const logged = e[f.key];
-        row[headers[idx + 2]] = (logged !== undefined && logged !== null && logged !== '') ? logged : '';
+        row[headers[idx + 2]] = (logged !== undefined && logged !== null && logged !== '') ? logged : RAMEEZ_BLANK;
       });
       return row;
     });
@@ -4002,11 +4005,47 @@ export default function PokemonWalker({ onStop }) {
     const { headers: HEADERS, rows } = buildRameezRows();
 
     const ws = XLSX.utils.json_to_sheet(rows, { header: HEADERS });
-    HEADERS.forEach((_, i) => {
-      const cell = ws[XLSX.utils.encode_cell({ r: 0, c: i })];
-      if (cell) cell.s = { font: { bold: true }, alignment: { vertical: 'center', wrapText: true } };
+
+    // ── presentation only — nothing here changes a value ──
+    const EDGE = { style: 'thin', color: { rgb: 'D9D9D9' } };
+    const BORDER = { top: EDGE, bottom: EDGE, left: EDGE, right: EDGE };
+
+    HEADERS.forEach((_, c) => {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
+      if (!cell) return;
+      cell.s = {
+        font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
+        fill: { patternType: 'solid', fgColor: { rgb: '1F3864' } },
+        alignment: { vertical: 'center', horizontal: 'center', wrapText: true },
+        border: BORDER,
+      };
     });
+
+    rows.forEach((_, i) => {
+      const r = i + 1;
+      const band = i % 2 === 1;
+      HEADERS.forEach((h, c) => {
+        const cell = ws[XLSX.utils.encode_cell({ r, c })];
+        if (!cell) return;
+        const missing = cell.v === RAMEEZ_BLANK;
+        cell.s = {
+          font: missing
+            ? { sz: 9, italic: true, color: { rgb: 'A6A6A6' } }
+            : { sz: 10, color: { rgb: '222222' }, bold: c <= 1 },
+          fill: { patternType: 'solid', fgColor: { rgb: band ? 'F4F6FA' : 'FFFFFF' } },
+          alignment: {
+            vertical: 'center',
+            horizontal: h === 'Date' || h === 'Day' ? 'center' : (typeof cell.v === 'number' ? 'right' : 'left'),
+            wrapText: false,
+          },
+          border: BORDER,
+        };
+      });
+    });
+
     ws['!cols'] = HEADERS.map(h => ({ wch: Math.min(34, Math.max(11, h.length + 2)) }));
+    ws['!rows'] = [{ hpt: 34 }, ...rows.map(() => ({ hpt: 18 }))];
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length, c: HEADERS.length - 1 } }) };
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Daily Tracking');
