@@ -8063,6 +8063,8 @@ export default function PokemonWalker({ onStop }) {
                     )}
                   </div>
                   <div className="pw-ip-body">
+                    {/* today only reaches stepHistory at midnight, so fold it in here —
+                        the weight, water and calorie logs already show the current day */}
 
                     {/* Backup — the whole save lives in one browser key */}
                     <div className="bk-row">
@@ -8079,13 +8081,22 @@ export default function PokemonWalker({ onStop }) {
                     {restoreMsg && <div className="bk-msg">{restoreMsg}</div>}
 
                     {/* Steps dropdown */}
+                    {(() => {
+                      const byDate = {};
+                      (appState.stepHistory || []).forEach(e => { byDate[e.date] = e.steps; });
+                      if (appState.todayDate && appState.todaySteps) byDate[appState.todayDate] = appState.todaySteps;
+                      const stepRows = Object.entries(byDate)
+                        .map(([date, steps]) => ({ date, steps }))
+                        .sort((a, b) => (a.date < b.date ? 1 : -1));
+                      return (
+                      <>
                     <button className="log-section-toggle" onClick={() => setShowLogStepsDropdown(p => !p)}>
-                      👣 Daily Steps · {(appState.stepHistory || []).length}
+                      Daily Steps · {stepRows.length}
                       <span className="log-section-chevron">{showLogStepsDropdown ? '▲' : '▼'}</span>
                     </button>
                     {showLogStepsDropdown && (
-                      (appState.stepHistory || []).length === 0 ? (
-                        <div className="sh-empty">No history yet — steps log at midnight.</div>
+                      stepRows.length === 0 ? (
+                        <div className="sh-empty">No steps logged yet.</div>
                       ) : (
                         <table className="sh-table">
                           <thead>
@@ -8095,7 +8106,7 @@ export default function PokemonWalker({ onStop }) {
                             </tr>
                           </thead>
                           <tbody>
-                            {(appState.stepHistory || []).map((entry, i) => (
+                            {stepRows.map((entry, i) => (
                               <tr key={i} className={`sh-row${entry.steps >= 10000 ? ' sh-row-10k' : ''}`}>
                                 <td className="sh-td">{entry.date}</td>
                                 <td className="sh-td sh-td-right">{entry.steps.toLocaleString()}</td>
@@ -8105,6 +8116,9 @@ export default function PokemonWalker({ onStop }) {
                         </table>
                       )
                     )}
+                      </>
+                      );
+                    })()}
 
                     {/* Monthly steps — stepHistory rolled up by month */}
                     {(() => {
@@ -8122,7 +8136,7 @@ export default function PokemonWalker({ onStop }) {
                       return (
                         <>
                           <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowLogMonthlyDropdown(p => !p)}>
-                            👣 Monthly Steps · {months.length}
+                            Monthly Steps · {months.length}
                             <span className="log-section-chevron">{showLogMonthlyDropdown ? '▲' : '▼'}</span>
                           </button>
                           {showLogMonthlyDropdown && (
@@ -8317,7 +8331,7 @@ export default function PokemonWalker({ onStop }) {
                                   return (
                                     <>
                                       <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowLogWaterDropdown(p => !p)}>
-                                        💧 Daily Water · {wRows.length}
+                                        Daily Water · {wRows.length}
                                         <span className="log-section-chevron">{showLogWaterDropdown ? '▲' : '▼'}</span>
                                       </button>
                                       {showLogWaterDropdown && (
