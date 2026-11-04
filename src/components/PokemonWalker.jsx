@@ -2446,6 +2446,7 @@ export default function PokemonWalker({ onStop }) {
   const [showLogChallengesDropdown, setShowLogChallengesDropdown] = useState(false);
   const [showLogCaloriesDropdown, setShowLogCaloriesDropdown] = useState(false);
   const [showLogWeightDropdown, setShowLogWeightDropdown] = useState(false);
+  const [showLogWaterDropdown, setShowLogWaterDropdown] = useState(false);
   const [showWeightGraph, setShowWeightGraph] = useState(false);
   const [mysteryIds] = useState(() => ({
     common: POOLS.common[Math.floor(Math.random() * POOLS.common.length)],
@@ -8308,6 +8309,42 @@ export default function PokemonWalker({ onStop }) {
                                       </>
                                     )
                                 )}
+
+                                {/* Daily water — from the history the card now keeps */}
+                                {(() => {
+                                  const wRows = [...(appState.water?.history || [])]
+                                    .sort((a, b) => (a.date < b.date ? 1 : -1));
+                                  return (
+                                    <>
+                                      <button className="log-section-toggle" style={{ marginTop: 6 }} onClick={() => setShowLogWaterDropdown(p => !p)}>
+                                        💧 Daily Water · {wRows.length}
+                                        <span className="log-section-chevron">{showLogWaterDropdown ? '▲' : '▼'}</span>
+                                      </button>
+                                      {showLogWaterDropdown && (
+                                        wRows.length === 0
+                                          ? <div className="sh-empty">No water logged yet.</div>
+                                          : (
+                                            <table className="sh-table">
+                                              <thead>
+                                                <tr>
+                                                  <th className="sh-th">Date</th>
+                                                  <th className="sh-th sh-th-right">Water</th>
+                                                </tr>
+                                              </thead>
+                                              <tbody>
+                                                {wRows.map(e => (
+                                                  <tr key={e.date} className={`sh-row${e.ml >= WATER_GOAL_ML ? ' sh-row-10k' : ''}`}>
+                                                    <td className="sh-td">{e.date}</td>
+                                                    <td className="sh-td sh-td-right">{(e.ml / 1000).toFixed(2)} L</td>
+                                                  </tr>
+                                                ))}
+                                              </tbody>
+                                            </table>
+                                          )
+                                      )}
+                                    </>
+                                  );
+                                })()}
                               </>
                             );
                           })()}
