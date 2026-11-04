@@ -6851,7 +6851,12 @@ export default function PokemonWalker({ onStop }) {
                         // verbatim and beat the auto-filled value.
                         const seed = {};
                         Object.entries(r.log?.[editDate] || {}).forEach(([key, value]) => {
-                          if (value !== '' && value !== null && value !== undefined) seed[key] = value;
+                          if (value === '' || value === null || value === undefined) return;
+                          // Never seed an auto field. A stored 0 survives the blank check and
+                          // would then beat the live value, so touching any field snapped
+                          // steps, water and weight back to whatever was saved.
+                          if (RAMEEZ_FIELDS.find(f => f.key === key)?.auto) return;
+                          seed[key] = value;
                         });
                         return { ...seed, [k]: v };
                       });
