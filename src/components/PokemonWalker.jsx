@@ -4036,7 +4036,7 @@ export default function PokemonWalker({ onStop }) {
           alignment: {
             vertical: 'center',
             horizontal: h === 'Date' || h === 'Day' ? 'center' : (typeof cell.v === 'number' ? 'right' : 'left'),
-            wrapText: false,
+            wrapText: true,
           },
           border: BORDER,
         };
@@ -4044,7 +4044,7 @@ export default function PokemonWalker({ onStop }) {
     });
 
     ws['!cols'] = HEADERS.map(h => ({ wch: Math.min(34, Math.max(11, h.length + 2)) }));
-    ws['!rows'] = [{ hpt: 34 }, ...rows.map(() => ({ hpt: 18 }))];
+    ws['!rows'] = [{ hpt: 34 }];   // header only; wrapped data rows size themselves
     ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length, c: HEADERS.length - 1 } }) };
 
     const wb = XLSX.utils.book_new();
