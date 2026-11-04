@@ -247,7 +247,15 @@ function initWeight() {
 }
 
 function initWater() {
-  return { todayMl: 0, todayDate: null, streak: 0, lastStreakDate: null, pendingReward: null, milestonesCleared: 0 };
+  // history keeps a per-day total so a past day can be read back. Without it the
+  // card held only todayMl, and anything not captured before midnight was gone.
+  return { todayMl: 0, todayDate: null, streak: 0, lastStreakDate: null, pendingReward: null, milestonesCleared: 0, history: [] };
+}
+
+// Upsert a day's running total, newest first.
+function waterHistoryWith(history, date, ml) {
+  const rest = (history || []).filter(e => e.date !== date);
+  return [{ date, ml }, ...rest].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, MAX_STEP_HISTORY);
 }
 
 function calcBollinger(history, window = 7) {
@@ -353,13 +361,13 @@ function rameezAutoValue(state, key, date) {
     return state.calories?.todayDate === date ? (state.calories.consumed || 0) : '';
   }
   if (key === 'water') {
-    // the card stamps todayDate only when water is actually logged, so before
-    // the first glass of the day it still reads as yesterday
+    // today's running total wins while the day is current
     if (state.water?.todayDate === date) {
       return Number(((state.water.todayMl || 0) / 1000).toFixed(2));
     }
-    // for today with nothing logged yet that is genuinely zero, not unknown —
-    // matching how steps report 0 rather than blank
+    const h = (state.water?.history || []).find(e => e.date === date);
+    if (h) return Number((h.ml / 1000).toFixed(2));
+    // today with nothing logged yet is genuinely zero, not unknown
     return state.todayDate === date ? 0 : '';
   }
   return '';
@@ -1260,6 +1268,19 @@ function loadState() {
     }
     if (saved.freeEvolutionCredits === undefined) saved.freeEvolutionCredits = 0;
     if (!saved.water) saved.water = initWater();
+    if (!saved.water.history) {
+      // One-time backfill. The Rameez log is the only place past water totals
+      // were ever written down, so seed from it rather than starting blank.
+      const seeded = Object.entries(saved.rameez?.log || {})
+        .filter(([, e]) => e && e.water !== '' && e.water != null)
+        .map(([date, e]) => ({ date, ml: Math.round(Number(e.water) * 1000) }))
+        .filter(e => !isNaN(e.ml));
+      if (saved.water.todayDate && saved.water.todayMl > 0
+          && !seeded.some(e => e.date === saved.water.todayDate)) {
+        seeded.push({ date: saved.water.todayDate, ml: saved.water.todayMl });
+      }
+      saved.water = { ...saved.water, history: seeded.sort((a, b) => (a.date < b.date ? 1 : -1)) };
+    }
     if (!saved.calories) saved.calories = { todayDate: null, consumed: 0, burnt: 0, logged: false, history: [] };
     if (!saved.rnChallenge) saved.rnChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.prudhviChallenge) saved.prudhviChallenge = { claimedReward: false, penaltyApplied: false };
@@ -1395,7 +1416,7 @@ function loadState() {
           const milestone = WATER_MILESTONES.find(m => m.days > mc && m.days <= newStreak);
           saved.water = { ...w, todayMl: 0, todayDate: today, streak: newStreak, lastStreakDate: w.todayDate, pendingReward: milestone ? milestone.days : w.pendingReward };
         } else if (wasYesterday && !goalMet) {
-          saved.water = { ...initWater(), todayDate: today };
+          saved.water = { ...initWater(), todayDate: today, history: w.history || [] };
         } else {
           saved.water = { ...w, todayMl: 0, todayDate: today };
         }
@@ -4336,7 +4357,8 @@ export default function PokemonWalker({ onStop }) {
       const today = todayString();
       const w = prev.water || initWater();
       const base = w.todayDate === today ? w.todayMl : 0;
-      return { ...prev, water: { ...w, todayMl: base + ml, todayDate: today } };
+      const total = base + ml;
+      return { ...prev, water: { ...w, todayMl: total, todayDate: today, history: waterHistoryWith(w.history, today, total) } };
     });
   };
 
