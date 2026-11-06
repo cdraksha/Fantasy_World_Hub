@@ -5570,6 +5570,20 @@ export default function PokemonWalker({ onStop }) {
                         const effectiveIdx = streakBonus && activeTierIdx > 0 ? activeTierIdx - 1 : activeTierIdx;
                         const packLabel = packs => Object.entries(packs).map(([t, c]) => `${c}× ${t}`).join(' + ') || '—';
 
+                        // Pace against the same point of the base month. Compares like for
+                        // like — days 1..N of each — rather than against the whole month,
+                        // which would always read as behind until the very end.
+                        const paceDay = mc.month === currentMonth
+                          ? Number(today.slice(8, 10))
+                          : new Date(Number(mc.month.slice(0, 4)), Number(mc.month.slice(5, 7)), 0).getDate();
+                        const baseToDate = (appState.stepHistory || [])
+                          .filter(e => e.date.startsWith(mc.baseMonth) && Number(e.date.slice(8, 10)) <= paceDay)
+                          .reduce((sum, e) => sum + e.steps, 0);
+                        const paceDelta = currentSteps - baseToDate;
+                        const pacePct = baseToDate > 0 ? paceDelta / baseToDate : 0;
+                        // half the bar each way, saturating at ±50%
+                        const paceFill = Math.min(50, Math.abs(pacePct) * 100);
+
                         // Next threshold to cross. Keyed off the tier actually reached,
                         // not effectiveIdx — the streak bonus shifts the reward, not the
                         // step counts, so using it here would point a tier too far.
@@ -5604,6 +5618,29 @@ export default function PokemonWalker({ onStop }) {
                                 ? <span style={{ color: '#22c55e', marginLeft: 4 }}>+{overPct}% over!</span>
                                 : <span style={{ marginLeft: 4 }}>{(mc.target - currentSteps).toLocaleString()} to go</span>}
                             </div>
+
+                            {/* pace vs the same day of the base month */}
+                            {baseToDate > 0 && (
+                              <div style={{ marginTop: 2 }}>
+                                <div style={{ position: 'relative', background: '#1f2937', borderRadius: 4, height: 7, overflow: 'hidden' }}>
+                                  <div style={{
+                                    position: 'absolute', top: 0, bottom: 0,
+                                    left: paceDelta >= 0 ? '50%' : `${50 - paceFill}%`,
+                                    width: `${paceFill}%`,
+                                    background: paceDelta >= 0 ? '#22c55e' : '#ef4444',
+                                    transition: 'all 0.3s',
+                                  }} />
+                                  <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: '#4b5563' }} />
+                                </div>
+                                <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center', marginTop: 2 }}>
+                                  <span style={{ color: paceDelta >= 0 ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+                                    {paceDelta >= 0 ? '+' : '−'}{Math.abs(paceDelta).toLocaleString()}
+                                  </span>
+                                  {' '}vs day {paceDay} of {monthLabel(mc.baseMonth)}
+                                  <span style={{ marginLeft: 4 }}>({baseToDate.toLocaleString()} by then)</span>
+                                </div>
+                              </div>
+                            )}
 
                             {/* once a tier is cleared, what the next one needs */}
                             {activeTierIdx !== -1 && (
