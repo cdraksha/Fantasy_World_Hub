@@ -5620,27 +5620,29 @@ export default function PokemonWalker({ onStop }) {
                             </div>
 
                             {/* pace vs the same day of the base month */}
-                            {baseToDate > 0 && (
-                              <div style={{ marginTop: 2 }}>
-                                <div style={{ position: 'relative', background: '#1f2937', borderRadius: 4, height: 7, overflow: 'hidden' }}>
-                                  <div style={{
-                                    position: 'absolute', top: 0, bottom: 0,
-                                    left: paceDelta >= 0 ? '50%' : `${50 - paceFill}%`,
-                                    width: `${paceFill}%`,
-                                    background: paceDelta >= 0 ? '#22c55e' : '#ef4444',
-                                    transition: 'all 0.3s',
-                                  }} />
-                                  <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: '#4b5563' }} />
-                                </div>
-                                <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center', marginTop: 2 }}>
-                                  <span style={{ color: paceDelta >= 0 ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
-                                    {paceDelta >= 0 ? '+' : '−'}{Math.abs(paceDelta).toLocaleString()}
+                            {baseToDate > 0 && (() => {
+                              const ahead = paceDelta >= 0;
+                              const tone = ahead ? '#22c55e' : '#f87171';
+                              return (
+                                <div style={{
+                                  display: 'flex', alignItems: 'center', gap: 6,
+                                  padding: '4px 8px', borderRadius: 4,
+                                  background: ahead ? 'rgba(34,197,94,0.10)' : 'rgba(248,113,113,0.10)',
+                                  border: `1px solid ${ahead ? 'rgba(34,197,94,0.30)' : 'rgba(248,113,113,0.30)'}`,
+                                }}>
+                                  <span style={{ color: tone, fontSize: 10, lineHeight: 1 }}>{ahead ? '▲' : '▼'}</span>
+                                  <span style={{ color: tone, fontSize: 10, fontWeight: 800 }}>
+                                    {Math.abs(paceDelta).toLocaleString()}
                                   </span>
-                                  {' '}vs day {paceDay} of {monthLabel(mc.baseMonth)}
-                                  <span style={{ marginLeft: 4 }}>({baseToDate.toLocaleString()} by then)</span>
+                                  <span style={{ fontSize: 8, color: '#9ca3af' }}>
+                                    {ahead ? 'ahead of' : 'behind'} {monthLabel(mc.baseMonth).split(' ')[0]} pace
+                                  </span>
+                                  <span style={{ marginLeft: 'auto', fontSize: 8, color: '#6b7280' }}>
+                                    {baseToDate.toLocaleString()} by day {paceDay}
+                                  </span>
                                 </div>
-                              </div>
-                            )}
+                              );
+                            })()}
 
                             {/* once a tier is cleared, what the next one needs */}
                             {activeTierIdx !== -1 && (
