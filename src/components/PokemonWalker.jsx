@@ -288,6 +288,23 @@ const SINGAPORE_DATE_LABEL = 'Oct 12, 2026';
 
 // November 2026: hit the step goal on at least REQUIRED of the month's days.
 // Auto-tracked from stepHistory — nothing to log by hand.
+// ─── December 2026: a spread of step days, nested ────────────────────────
+// A day counts toward every tier it clears, so a 15k day is also a 13k, a 10k
+// and an 8k. Twelve qualifying days in total, shaped by the harder tiers.
+const DEC_MONTH = '2026-12';
+const DEC_MONTH_LABEL = 'December 2026';
+const DEC_TIERS = [
+  { goal: 8000,  need: 12, label: '8K' },
+  { goal: 10000, need: 6,  label: '10K' },
+  { goal: 13000, need: 3,  label: '13K' },
+  { goal: 15000, need: 1,  label: '15K' },
+];
+// Unown, Larvesta, Spiritomb, Mr. Mime, Munchlax, Rotom, Riolu, Togepi, Gible, Porygon.
+// Rotom stands in for Phione, which is Mythical and already the 100k vault milestone.
+const DEC_REWARD_DEX = [201, 636, 442, 122, 446, 479, 447, 175, 443, 137];
+const DEC_PENALTY_EPICS = 3;
+const DEC_BUDDY_FREEZE_DAYS = 7;
+
 const NOV_MONTH = '2026-11';
 const NOV_MONTH_LABEL = 'November 2026';
 const NOV_DAYS_IN_MONTH = 30;
@@ -1142,6 +1159,8 @@ function defaultState(steps) {
     prudhviWeddingChallenge: { claimedReward: false, penaltyApplied: false },
     singaporeTrip: { claimedReward: false, penaltyApplied: false },
     novChallenge: { claimedReward: false, penaltyApplied: false },
+    decChallenge: { claimedReward: false, penaltyApplied: false },
+    buddyFrozenUntil: null,
     sweets: initSweets(),
     rameez: initRameez(),
     ganji: initDayChallenge('ganji'),
@@ -1290,6 +1309,8 @@ function loadState() {
     if (!saved.prudhviWeddingChallenge) saved.prudhviWeddingChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.singaporeTrip) saved.singaporeTrip = { claimedReward: false, penaltyApplied: false };
     if (!saved.novChallenge) saved.novChallenge = { claimedReward: false, penaltyApplied: false };
+    if (!saved.decChallenge) saved.decChallenge = { claimedReward: false, penaltyApplied: false };
+    if (saved.buddyFrozenUntil === undefined) saved.buddyFrozenUntil = null;
     if (!saved.sweets) saved.sweets = initSweets();
     if (!saved.rameez) saved.rameez = initRameez();
     if (saved.rameez.rewardClaimed === undefined) saved.rameez = { ...saved.rameez, rewardClaimed: false };
@@ -2429,6 +2450,7 @@ export default function PokemonWalker({ onStop }) {
   const [showPrudhviWeddingPanel, setShowPrudhviWeddingPanel] = useState(false);
   const [showSingaporePanel, setShowSingaporePanel] = useState(false);
   const [showNovPanel, setShowNovPanel] = useState(false);
+  const [showDecPanel, setShowDecPanel] = useState(false);
   const [showSweetsPanel, setShowSweetsPanel] = useState(false);
   const [showRameezPanel, setShowRameezPanel] = useState(false);
   const [rameezDraft, setRameezDraft] = useState(null);   // null = form closed
@@ -2770,7 +2792,10 @@ export default function PokemonWalker({ onStop }) {
       }
 
       // ── Buddy steps (per-Pokémon) ─────────────────────────────────────
-      let newPokemon = prev.buddy && delta > 0
+      // A frozen buddy earns nothing. The old buddyFreeze penalty set a flag
+      // nothing ever read, so the freeze had no effect at all.
+      const buddyFrozen = prev.buddyFrozenUntil && todayStr <= prev.buddyFrozenUntil;
+      let newPokemon = prev.buddy && delta > 0 && !buddyFrozen
         ? prev.pokemon.map(p => p.uid === prev.buddy ? { ...p, buddySteps: (p.buddySteps || 0) + delta } : p)
         : [...prev.pokemon];
 
@@ -4164,6 +4189,44 @@ export default function PokemonWalker({ onStop }) {
       setDeltaFlash(`No Sweets complete! ${tier.label} claimed!`);
       setTimeout(() => setDeltaFlash(null), 5000);
     } finally { claimingRewardRef.current.delete('sweets'); }
+  };
+
+  const handleClaimDecReward = async () => {
+    if (appState.decChallenge?.claimedReward) return;
+    if (claimingRewardRef.current.has('decChallenge')) return;
+    claimingRewardRef.current.add('decChallenge');
+    try {
+      const pokes = await Promise.all(DEC_REWARD_DEX.map(id => fetchPokemonById(id)));
+      setAppState(prev => {
+        if (prev.decChallenge?.claimedReward) return prev;
+        return {
+          ...prev,
+          pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'rare', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
+          caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
+          decChallenge: { ...prev.decChallenge, claimedReward: true },
+          challengeLog: [{ date: todayString(), type: 'decChallenge', tier: 'rare', outcome: `Won ${DEC_MONTH_LABEL} step spread — ${pokes.length} rare Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
+        };
+      });
+      setDeltaFlash(`${DEC_MONTH_LABEL} challenge won! ${pokes.map(p => p.name).join(', ')} claimed!`);
+      setTimeout(() => setDeltaFlash(null), 6000);
+    } finally { claimingRewardRef.current.delete('decChallenge'); }
+  };
+
+  const handleApplyDecPenalty = () => {
+    setAppState(prev => {
+      if (prev.decChallenge?.penaltyApplied) return prev;
+      const epics = prev.pokemon.filter(p => p.packTier === 'epic' && !p.isDTCollateral && !p.isDTLoan && !p.isLoan && p.uid !== prev.buddy);
+      const toRemove = [...epics].sort(() => Math.random() - 0.5).slice(0, DEC_PENALTY_EPICS);
+      const gone = new Set(toRemove.map(p => p.uid));
+      const until = addDays(todayString(), DEC_BUDDY_FREEZE_DAYS);
+      return {
+        ...prev,
+        pokemon: prev.pokemon.filter(p => !gone.has(p.uid)),
+        buddyFrozenUntil: until,
+        decChallenge: { ...prev.decChallenge, penaltyApplied: true },
+        challengeLog: [{ date: todayString(), type: 'decChallenge', tier: 'epic', outcome: `Lost ${DEC_MONTH_LABEL} step spread — ${toRemove.length} epic released: ${toRemove.map(p => p.name).join(', ') || 'none left'} · buddy frozen until ${until}` }, ...(prev.challengeLog || [])],
+      };
+    });
   };
 
   const handleClaimNovReward = async () => {
@@ -7707,6 +7770,94 @@ export default function PokemonWalker({ onStop }) {
                       );
                     })()}
 
+                    {!(appState.decChallenge?.claimedReward || appState.decChallenge?.penaltyApplied) && (() => {
+                      const today = todayString();
+                      const notStarted = today.slice(0, 7) < DEC_MONTH;
+                      const monthOver = today.slice(0, 7) > DEC_MONTH;
+                      const inMonth = today.slice(0, 7) === DEC_MONTH;
+                      const dim = 31;
+                      const dayOfMonth = inMonth ? Number(today.slice(8, 10)) : (monthOver ? dim : 0);
+                      const daysLeft = notStarted ? dim : Math.max(0, dim - dayOfMonth) + (inMonth ? 1 : 0);
+
+                      // a day counts toward every tier it clears
+                      const prog = DEC_TIERS.map(t => {
+                        const hit = daysMeetingGoal(appState.stepHistory, DEC_MONTH, t.goal, today, appState.todaySteps);
+                        return { ...t, hit, done: hit >= t.need, short: Math.max(0, t.need - hit) };
+                      });
+                      const won = prog.every(t => t.done);
+                      // the hardest unmet tier decides whether it is still reachable
+                      const impossible = !won && prog.some(t => t.short > daysLeft);
+                      const totalNeed = prog.reduce((s, t) => s + t.need, 0);
+                      const totalHit = prog.reduce((s, t) => s + Math.min(t.hit, t.need), 0);
+
+                      return (
+                        <div className="gba-section">
+                          <button className="wc-toggle-btn" onClick={() => setShowDecPanel(p => !p)}>
+                            🎄 December Step Spread
+                            {notStarted ? <span className="obj-active-badge">Starts Dec 1</span>
+                              : won ? <span className="obj-updated-badge">{monthOver ? 'Claim!' : 'All tiers hit!'}</span>
+                              : impossible ? <span className="obj-pending-badge">Penalty Due</span>
+                              : <span className="obj-active-badge">{totalHit}/{totalNeed}</span>}
+                          </button>
+                          {showDecPanel && (
+                            <div style={{ padding: '4px 0' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 8 }}>
+                                {prog.map(t => {
+                                  const pct = Math.min(100, (t.hit / t.need) * 100);
+                                  return (
+                                    <div key={t.goal} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <span style={{ minWidth: 30, fontSize: 9, fontWeight: 800, color: t.done ? '#15803d' : '#374151' }}>{t.label}</span>
+                                      <div style={{ flex: 1, height: 7, background: '#e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
+                                        <div style={{ width: `${pct}%`, height: '100%', borderRadius: 4, background: t.done ? '#16a34a' : '#f59e0b', transition: 'width .3s ease' }} />
+                                      </div>
+                                      <span style={{ minWidth: 40, textAlign: 'right', fontSize: 9, fontWeight: 700, color: t.done ? '#15803d' : '#6b7280' }}>
+                                        {Math.min(t.hit, t.need)}/{t.need}
+                                      </span>
+                                      <span style={{ width: 12, fontSize: 9, color: '#16a34a' }}>{t.done ? '✓' : ''}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center', marginBottom: 8 }}>
+                                A day counts toward every tier it clears · {notStarted ? dim : daysLeft} days left
+                              </div>
+
+                              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                                <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 6, padding: '6px 8px', border: '1px solid #bbf7d0' }}>
+                                  <div style={{ fontSize: 8, color: '#166534', fontWeight: 700 }}>🏆 WIN</div>
+                                  <div style={{ fontSize: 9, color: '#374151', fontWeight: 600 }}>10 rare Pokémon</div>
+                                </div>
+                                <div style={{ flex: 1, background: '#fef2f2', borderRadius: 6, padding: '6px 8px', border: '1px solid #fca5a5' }}>
+                                  <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 700 }}>💀 LOSE</div>
+                                  <div style={{ fontSize: 9, color: '#374151', fontWeight: 600 }}>3 epic released · buddy frozen 1 week</div>
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'flex', gap: 2, justifyContent: 'space-between', marginBottom: 8 }}>
+                                {DEC_REWARD_DEX.map(id => (
+                                  <img key={id} src={pokemonSpriteUrl(id)} alt="" loading="lazy"
+                                    style={{ width: '100%', maxWidth: 30, height: 'auto', filter: won ? 'none' : 'brightness(0)', opacity: won ? 1 : 0.2 }} />
+                                ))}
+                              </div>
+
+                              {won && (
+                                <button style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer' }}
+                                  onClick={handleClaimDecReward}>
+                                  🏆 {monthOver ? 'You won! Claim 10 rares' : 'Claim Early — 10 rares!'}
+                                </button>
+                              )}
+                              {impossible && (
+                                <button style={{ width: '100%', padding: '8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer' }}
+                                  onClick={handleApplyDecPenalty}>
+                                  💀 Apply Penalty (3 epic + buddy frozen)
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
                     {!(appState.novChallenge?.claimedReward || appState.novChallenge?.penaltyApplied) && (() => {
                       const today = todayString();
                       const hit = daysMeetingGoal(appState.stepHistory, NOV_MONTH, NOV_STEP_GOAL, today, appState.todaySteps);
@@ -8257,6 +8408,7 @@ export default function PokemonWalker({ onStop }) {
                         prudhviWeddingChallenge: '💒 Prudhvi\'s Wedding',
                         singaporeTrip: '✈️ Singapore Trip',
                         novChallenge: '📅 November 20/30 Challenge',
+                        decChallenge: '🎄 December Step Spread',
                         sweets: '🍫 50 Day No Sweets',
                         ganji: '🍚 100 Day Ganji',
                         acv: '🍶 100 Day ACV PQR +',
