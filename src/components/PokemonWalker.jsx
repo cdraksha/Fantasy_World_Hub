@@ -415,7 +415,7 @@ const QUOTA_CHALLENGES = {
   rice: {
     icon: '🍙',
     title: '50 Day White Rice',
-    start: '2026-11-10',
+    start: '2026-11-11',
     days: 50,
     quota: 0.25,
     step: '0.25',
