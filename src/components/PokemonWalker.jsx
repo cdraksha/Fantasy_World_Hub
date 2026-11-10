@@ -394,52 +394,70 @@ function rameezAutoValue(state, key, date) {
 }
 
 
-// ─── 50 Day No Sweets ─────────────────────────────────────────────────────
-// Sweets = anything with sugar as the main ingredient: Indian sweets, chocolate,
-// cakes, pastries. Rice, bread and milk do not count.
-const SWEETS_START = '2026-10-27';
-const SWEETS_DAYS = 50;
-const SWEETS_STREAK_BLOCK = 5;          // clean days per repeating reward
-const SWEETS_STREAK_REWARD = 5;         // common Pokémon per block
+// ─── Quota challenges: a daily allowance, penalties for exceeding it ─────
+// Same shape for each: an allowance that costs nothing, violations that cost
+// more the closer together they fall, a repeating reward for clean streaks and
+// one end-of-run tier on total clean days. A clean day is zero, not "within
+// quota" — the allowance keeps you out of trouble, it does not earn progress.
+const QUOTA_CHALLENGES = {
+  sweets: {
+    icon: '🍫',
+    title: '50 Day No Sweets',
+    start: '2026-10-27',
+    days: 50,
+    quota: 1,
+    step: '1',
+    unit: '',
+    inputLabel: 'Sweets today',
+    quotaLabel: '1 a day is free',
+    note: "Sweets = sugar as the main ingredient — Indian sweets, chocolate, cake, pastry. Rice, bread and milk don't count.",
+  },
+  rice: {
+    icon: '🍙',
+    title: '50 Day White Rice',
+    start: '2026-11-10',
+    days: 50,
+    quota: 0.25,
+    step: '0.25',
+    unit: 'cups',
+    inputLabel: 'Rice today',
+    quotaLabel: 'up to ¼ cup a day is free',
+    note: "White rice only — brown rice, millets and other grains don't count.",
+  },
+};
 
-// 1 sweet a day is the quota and costs nothing. A day over quota is a
-// violation, and what it costs depends on how close the nearest other
-// violation is. Exactly one rule applies.
-// The closer the nearest other violation, the harsher the cost. Ordered
-// harshest first; a slip with nothing near it falls through to the base.
-const SWEETS_DAILY_QUOTA = 1;
-const SWEETS_PENALTIES = [
+const QUOTA_STREAK_BLOCK = 5;    // clean days per repeating reward
+const QUOTA_STREAK_REWARD = 5;   // common Pokémon per block
+
+// Ordered harshest first; a slip with nothing near it falls through to the base.
+const QUOTA_PENALTIES = [
   { windowDays: 2, lose: 7, label: 'over quota two days running' },
   { windowDays: 3, lose: 4, label: 'another over-quota day within 3 days' },
   { windowDays: 5, lose: 2, label: 'another over-quota day within 5 days' },
 ];
-const SWEETS_PENALTY_BASE = { lose: 1, label: 'over quota, nothing near it' };
+const QUOTA_PENALTY_BASE = { lose: 1, label: 'over quota, nothing near it' };
 
-// End-of-challenge tiers on total clean days, best match only.
-const SWEETS_FINAL_TIERS = [
+const QUOTA_FINAL_TIERS = [
   { days: 30, grant: { common: 20, epic: 10, rare: 5 }, label: '20 common + 10 epic + 5 rare' },
   { days: 20, grant: { common: 10, epic: 5 },           label: '10 common + 5 epic' },
   { days: 10, grant: { common: 5 },                     label: '5 common' },
 ];
 
-function initSweets() {
+function initQuotaChallenge() {
   return {
-    log: {},                  // date -> number of sweets that day
+    log: {},                  // date -> amount consumed that day
     lastRewardedStreak: 0,    // streak length already paid, so blocks repeat but don't double-pay
     penalisedDates: [],       // dates already charged, so a re-log cannot charge twice
     finalClaimed: false,
   };
 }
 
-const sweetsEndDate = () => addDays(SWEETS_START, SWEETS_DAYS - 1);
+const quotaEndDate = key => addDays(QUOTA_CHALLENGES[key].start, QUOTA_CHALLENGES[key].days - 1);
 
-// Clean days, current streak, and the worst penalty a given day's entry trips.
-function sweetsStats(sw) {
-  const log = sw?.log || {};
+function quotaStats(c) {
+  const log = c?.log || {};
   const dates = Object.keys(log).sort();
   const cleanDays = dates.filter(d => (log[d] || 0) === 0).length;
-
-  // streak of consecutive calendar days with a logged 0, ending at the latest entry
   let streak = 0;
   if (dates.length) {
     let d = dates[dates.length - 1];
@@ -448,22 +466,21 @@ function sweetsStats(sw) {
   return { cleanDays, streak, logged: dates.length };
 }
 
-function sweetsPenaltyFor(log, date) {
-  if ((log[date] || 0) <= SWEETS_DAILY_QUOTA) return null;   // within quota, free
+function quotaPenaltyFor(key, log, date) {
+  const quota = QUOTA_CHALLENGES[key].quota;
+  if ((log[date] || 0) <= quota) return null;     // within the allowance, free
 
-  // how many over-quota days fall in the last n days, today included
   const violationsIn = (n) => {
-    let c = 0;
+    let count = 0;
     for (let i = 0; i < n; i++) {
-      if ((log[addDays(date, -i)] || 0) > SWEETS_DAILY_QUOTA) c++;
+      if ((log[addDays(date, -i)] || 0) > quota) count++;
     }
-    return c;
+    return count;
   };
-
-  for (const p of SWEETS_PENALTIES) {
+  for (const p of QUOTA_PENALTIES) {
     if (violationsIn(p.windowDays) >= 2) return p;
   }
-  return SWEETS_PENALTY_BASE;   // nothing nearby — a one-off slip, mildest
+  return QUOTA_PENALTY_BASE;
 }
 
 const WEIGHT_LOG_START = '2026-08-01';   // weight log in the Log tab starts here
@@ -1161,7 +1178,8 @@ function defaultState(steps) {
     novChallenge: { claimedReward: false, penaltyApplied: false },
     decChallenge: { claimedReward: false, penaltyApplied: false },
     buddyFrozenUntil: null,
-    sweets: initSweets(),
+    sweets: initQuotaChallenge(),
+    rice: initQuotaChallenge(),
     rameez: initRameez(),
     ganji: initDayChallenge('ganji'),
     acv: initDayChallenge('acv'),
@@ -1311,7 +1329,7 @@ function loadState() {
     if (!saved.novChallenge) saved.novChallenge = { claimedReward: false, penaltyApplied: false };
     if (!saved.decChallenge) saved.decChallenge = { claimedReward: false, penaltyApplied: false };
     if (saved.buddyFrozenUntil === undefined) saved.buddyFrozenUntil = null;
-    if (!saved.sweets) saved.sweets = initSweets();
+    Object.keys(QUOTA_CHALLENGES).forEach(k => { if (!saved[k]) saved[k] = initQuotaChallenge(); });
     if (!saved.rameez) saved.rameez = initRameez();
     if (saved.rameez.rewardClaimed === undefined) saved.rameez = { ...saved.rameez, rewardClaimed: false };
     if (!saved.ganji) saved.ganji = initDayChallenge('ganji');
@@ -2451,14 +2469,14 @@ export default function PokemonWalker({ onStop }) {
   const [showSingaporePanel, setShowSingaporePanel] = useState(false);
   const [showNovPanel, setShowNovPanel] = useState(false);
   const [showDecPanel, setShowDecPanel] = useState(false);
-  const [showSweetsPanel, setShowSweetsPanel] = useState(false);
+  const [openQuotaPanel, setOpenQuotaPanel] = useState(null);   // 'sweets' | 'rice' | null
   const [showRameezPanel, setShowRameezPanel] = useState(false);
   const [rameezDraft, setRameezDraft] = useState(null);   // null = form closed
   const [rameezEditDate, setRameezEditDate] = useState(null);   // null = today
   const [showRameezHistory, setShowRameezHistory] = useState(false);
   const [rameezViewDate, setRameezViewDate] = useState(null);   // day popup
   const [rameezSync, setRameezSync] = useState({ state: 'idle', msg: '' });
-  const [sweetsInput, setSweetsInput] = useState('');
+  const [quotaInput, setQuotaInput] = useState({});
   const [openDayChallenge, setOpenDayChallenge] = useState(null);   // 'ganji' | 'acv' | null
   const [generatingWeddingImage, setGeneratingWeddingImage] = useState(false);
   const [weddingImage, setWeddingImage] = useState(null);
@@ -4095,138 +4113,102 @@ export default function PokemonWalker({ onStop }) {
     return out;
   };
 
-  const handleLogSweets = async (date, countRaw) => {
-    const count = Math.max(0, parseInt(countRaw, 10) || 0);
-    const sw = appState.sweets || initSweets();
-    const nextLog = { ...sw.log, [date]: count };
-    const penalty = sweetsPenaltyFor(nextLog, date);
-    const alreadyPenalised = (sw.penalisedDates || []).includes(date);
+  const handleLogQuota = async (key, date, amountRaw) => {
+    const cfg = QUOTA_CHALLENGES[key];
+    const amount = Math.max(0, parseFloat(amountRaw) || 0);
+    const c = appState[key] || initQuotaChallenge();
+    const nextLog = { ...c.log, [date]: amount };
+    const penalty = quotaPenaltyFor(key, nextLog, date);
+    const alreadyPenalised = (c.penalisedDates || []).includes(date);
 
     if (penalty && !alreadyPenalised) {
       const ok = window.confirm(
-        `Log ${count} sweets for ${date}?\n\n` +
-        `Quota is ${SWEETS_DAILY_QUOTA} a day — ${penalty.label}.\n` +
+        `Log ${amount}${cfg.unit ? ' ' + cfg.unit : ''} for ${date}?\n\n` +
+        `Allowance is ${cfg.quotaLabel} — ${penalty.label}.\n` +
         `You lose ${penalty.lose} common Pokémon.`
       );
       if (!ok) return;
     }
 
-    // streak reward is evaluated against the updated log
-    const after = sweetsStats({ ...sw, log: nextLog });
+    const after = quotaStats({ ...c, log: nextLog });
     const blockHit = after.streak > 0
-      && after.streak % SWEETS_STREAK_BLOCK === 0
-      && after.streak !== sw.lastRewardedStreak;
+      && after.streak % QUOTA_STREAK_BLOCK === 0
+      && after.streak !== c.lastRewardedStreak;
 
     let granted = [];
     if (blockHit) {
-      granted = await grantPokemonByTier({ common: SWEETS_STREAK_REWARD }, appState.pokemon.map(p => p.dexId));
+      granted = await grantPokemonByTier({ common: QUOTA_STREAK_REWARD }, appState.pokemon.map(p => p.dexId));
     }
 
     setAppState(prev => {
-      const s = prev.sweets || initSweets();
+      const cur = prev[key] || initQuotaChallenge();
       let pokemon = prev.pokemon;
       const logLines = [];
 
-      if (penalty && !(s.penalisedDates || []).includes(date)) {
+      if (penalty && !(cur.penalisedDates || []).includes(date)) {
         const commons = pokemon.filter(p => p.packTier === 'common' && !p.isDTCollateral && !p.isDTLoan && !p.isLoan && p.uid !== prev.buddy);
         const toRemove = [...commons].sort(() => Math.random() - 0.5).slice(0, penalty.lose);
         const gone = new Set(toRemove.map(p => p.uid));
         pokemon = pokemon.filter(p => !gone.has(p.uid));
-        logLines.push({ date: todayString(), type: 'sweets', tier: null, outcome: `Sweets on ${date} — ${penalty.label} — ${toRemove.length} common released: ${toRemove.map(p => p.name).join(', ') || 'none left to release'}` });
+        logLines.push({ date: todayString(), type: key, tier: null, outcome: `${cfg.title} — over quota on ${date} — ${penalty.label} — ${toRemove.length} common released: ${toRemove.map(p => p.name).join(', ') || 'none left to release'}` });
       }
 
       if (granted.length) {
         pokemon = [...pokemon, ...granted.map(p => ({ uid: makeUID(), ...p, buddySteps: 0, caughtDate: todayString(), onTeam: false }))];
-        logLines.push({ date: todayString(), type: 'sweets', tier: 'common', outcome: `${after.streak}-day clean streak — ${granted.length} common Pokémon: ${granted.map(p => p.name).join(', ')}` });
+        logLines.push({ date: todayString(), type: key, tier: 'common', outcome: `${cfg.title} — ${after.streak}-day clean streak — ${granted.length} common Pokémon: ${granted.map(p => p.name).join(', ')}` });
       }
 
       return {
         ...prev,
         pokemon,
         caughtDex: [...new Set([...(prev.caughtDex || []), ...granted.map(p => p.dexId)])],
-        sweets: {
-          ...s,
-          log: { ...s.log, [date]: count },
-          lastRewardedStreak: blockHit ? after.streak : (after.streak === 0 ? 0 : s.lastRewardedStreak),
-          penalisedDates: penalty && !(s.penalisedDates || []).includes(date)
-            ? [...(s.penalisedDates || []), date]
-            : (s.penalisedDates || []),
+        [key]: {
+          ...cur,
+          log: { ...cur.log, [date]: amount },
+          lastRewardedStreak: blockHit ? after.streak : (after.streak === 0 ? 0 : cur.lastRewardedStreak),
+          penalisedDates: penalty && !(cur.penalisedDates || []).includes(date)
+            ? [...(cur.penalisedDates || []), date]
+            : (cur.penalisedDates || []),
         },
         challengeLog: [...logLines, ...(prev.challengeLog || [])],
       };
     });
 
-    setSweetsInput('');
+    setQuotaInput(q => ({ ...q, [key]: '' }));
     setDeltaFlash(
       penalty ? `${penalty.lose} common released — ${penalty.label}`
-      : blockHit ? `${after.streak}-day clean streak — ${SWEETS_STREAK_REWARD} common Pokémon!`
-      : count === 0 ? 'Clean day logged'
-      : `${count} logged — within quota, but the streak resets`
+      : blockHit ? `${after.streak}-day clean streak — ${QUOTA_STREAK_REWARD} common Pokémon!`
+      : amount === 0 ? 'Clean day logged'
+      : `${amount}${cfg.unit ? ' ' + cfg.unit : ''} logged — within quota, but the streak resets`
     );
     setTimeout(() => setDeltaFlash(null), 4000);
   };
 
-  const handleClaimSweetsFinal = async () => {
-    const sw = appState.sweets;
-    if (!sw || sw.finalClaimed) return;
-    if (claimingRewardRef.current.has('sweets')) return;
-    const { cleanDays } = sweetsStats(sw);
-    const tier = SWEETS_FINAL_TIERS.find(t => cleanDays >= t.days);
+  const handleClaimQuotaFinal = async (key) => {
+    const cfg = QUOTA_CHALLENGES[key];
+    const c = appState[key];
+    if (!c || c.finalClaimed) return;
+    if (todayString() <= quotaEndDate(key)) return;
+    if (claimingRewardRef.current.has(key)) return;
+    const { cleanDays } = quotaStats(c);
+    const tier = QUOTA_FINAL_TIERS.find(t => cleanDays >= t.days);
     if (!tier) return;
-    claimingRewardRef.current.add('sweets');
+    claimingRewardRef.current.add(key);
     try {
       const granted = await grantPokemonByTier(tier.grant, appState.pokemon.map(p => p.dexId));
       setAppState(prev => {
-        if (prev.sweets?.finalClaimed) return prev;
+        if (prev[key]?.finalClaimed) return prev;
         return {
           ...prev,
           pokemon: [...prev.pokemon, ...granted.map(p => ({ uid: makeUID(), ...p, buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
           caughtDex: [...new Set([...(prev.caughtDex || []), ...granted.map(p => p.dexId)])],
-          sweets: { ...prev.sweets, finalClaimed: true },
-          challengeLog: [{ date: todayString(), type: 'sweets', tier: 'epic', outcome: `50 Day No Sweets — ${cleanDays} clean days — ${tier.label}` }, ...(prev.challengeLog || [])],
+          [key]: { ...prev[key], finalClaimed: true },
+          challengeLog: [{ date: todayString(), type: key, tier: 'epic', outcome: `${cfg.title} — ${cleanDays} clean days — ${tier.label}` }, ...(prev.challengeLog || [])],
         };
       });
-      setDeltaFlash(`No Sweets complete! ${tier.label} claimed!`);
+      setDeltaFlash(`${cfg.title} complete! ${tier.label} claimed!`);
       setTimeout(() => setDeltaFlash(null), 5000);
-    } finally { claimingRewardRef.current.delete('sweets'); }
-  };
-
-  const handleClaimDecReward = async () => {
-    if (appState.decChallenge?.claimedReward) return;
-    if (claimingRewardRef.current.has('decChallenge')) return;
-    claimingRewardRef.current.add('decChallenge');
-    try {
-      const pokes = await Promise.all(DEC_REWARD_DEX.map(id => fetchPokemonById(id)));
-      setAppState(prev => {
-        if (prev.decChallenge?.claimedReward) return prev;
-        return {
-          ...prev,
-          pokemon: [...prev.pokemon, ...pokes.map(p => ({ uid: makeUID(), ...p, packTier: 'rare', buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
-          caughtDex: [...new Set([...(prev.caughtDex || []), ...pokes.map(p => p.dexId)])],
-          decChallenge: { ...prev.decChallenge, claimedReward: true },
-          challengeLog: [{ date: todayString(), type: 'decChallenge', tier: 'rare', outcome: `Won ${DEC_MONTH_LABEL} step spread — ${pokes.length} rare Pokémon: ${pokes.map(p => p.name).join(', ')}` }, ...(prev.challengeLog || [])],
-        };
-      });
-      setDeltaFlash(`${DEC_MONTH_LABEL} challenge won! ${pokes.map(p => p.name).join(', ')} claimed!`);
-      setTimeout(() => setDeltaFlash(null), 6000);
-    } finally { claimingRewardRef.current.delete('decChallenge'); }
-  };
-
-  const handleApplyDecPenalty = () => {
-    setAppState(prev => {
-      if (prev.decChallenge?.penaltyApplied) return prev;
-      const epics = prev.pokemon.filter(p => p.packTier === 'epic' && !p.isDTCollateral && !p.isDTLoan && !p.isLoan && p.uid !== prev.buddy);
-      const toRemove = [...epics].sort(() => Math.random() - 0.5).slice(0, DEC_PENALTY_EPICS);
-      const gone = new Set(toRemove.map(p => p.uid));
-      const until = addDays(todayString(), DEC_BUDDY_FREEZE_DAYS);
-      return {
-        ...prev,
-        pokemon: prev.pokemon.filter(p => !gone.has(p.uid)),
-        buddyFrozenUntil: until,
-        decChallenge: { ...prev.decChallenge, penaltyApplied: true },
-        challengeLog: [{ date: todayString(), type: 'decChallenge', tier: 'epic', outcome: `Lost ${DEC_MONTH_LABEL} step spread — ${toRemove.length} epic released: ${toRemove.map(p => p.name).join(', ') || 'none left'} · buddy frozen until ${until}` }, ...(prev.challengeLog || [])],
-      };
-    });
+    } finally { claimingRewardRef.current.delete(key); }
   };
 
   const handleClaimNovReward = async () => {
@@ -7657,33 +7639,37 @@ export default function PokemonWalker({ onStop }) {
                       />
                     ))}
 
-                    {!appState.sweets?.finalClaimed && (() => {
-                      const sw = appState.sweets || initSweets();
+                    {Object.entries(QUOTA_CHALLENGES).map(([key, cfg]) => {
+                      const c = appState[key] || initQuotaChallenge();
+                      if (c.finalClaimed) return null;
                       const today = todayString();
-                      const endDate = sweetsEndDate();
-                      const { cleanDays, streak } = sweetsStats(sw);
-                      const notStarted = today < SWEETS_START;
+                      const endDate = quotaEndDate(key);
+                      const { cleanDays, streak } = quotaStats(c);
+                      const notStarted = today < cfg.start;
                       const over = today > endDate;
-                      const dayNo = notStarted ? 0 : Math.min(SWEETS_DAYS, daysBetween(SWEETS_START, today) + 1);
-                      const loggedToday = sw.log?.[today] !== undefined;
-                      const tier = SWEETS_FINAL_TIERS.find(t => cleanDays >= t.days);
-                      const nextTier = [...SWEETS_FINAL_TIERS].reverse().find(t => cleanDays < t.days);
-                      const toBlock = SWEETS_STREAK_BLOCK - (streak % SWEETS_STREAK_BLOCK);
+                      const dayNo = notStarted ? 0 : Math.min(cfg.days, daysBetween(cfg.start, today) + 1);
+                      const loggedToday = c.log?.[today] !== undefined;
+                      const tier = QUOTA_FINAL_TIERS.find(t => cleanDays >= t.days);
+                      const nextTier = [...QUOTA_FINAL_TIERS].reverse().find(t => cleanDays < t.days);
+                      const toBlock = QUOTA_STREAK_BLOCK - (streak % QUOTA_STREAK_BLOCK);
+                      const open = openQuotaPanel === key;
+                      const draft = quotaInput[key] ?? '';
+                      const unit = cfg.unit ? ` ${cfg.unit}` : '';
                       return (
-                        <div className="gba-section">
-                          <button className="wc-toggle-btn" onClick={() => setShowSweetsPanel(p => !p)}>
-                            🍫 50 Day No Sweets
-                            {notStarted ? <span className="obj-active-badge">Starts Oct 27</span>
+                        <div className="gba-section" key={key}>
+                          <button className="wc-toggle-btn" onClick={() => setOpenQuotaPanel(o => (o === key ? null : key))}>
+                            {cfg.icon} {cfg.title}
+                            {notStarted ? <span className="obj-active-badge">Starts {cfg.start}</span>
                               : over ? (tier ? <span className="obj-updated-badge">Claim!</span> : <span className="obj-pending-badge">Ended</span>)
                               : loggedToday ? <span className="obj-updated-badge">Logged · {streak}d</span>
                               : <span className="obj-pending-badge">Log Today</span>}
                           </button>
-                          {showSweetsPanel && (
+                          {open && (
                             <div style={{ padding: '4px 0' }}>
                               <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
                                 <div style={{ flex: 1, background: '#fef3c7', borderRadius: 6, padding: '6px 8px', border: '1px solid #fcd34d' }}>
                                   <div style={{ fontSize: 8, color: '#92400e', fontWeight: 700 }}>DAY</div>
-                                  <div style={{ fontSize: 13, fontWeight: 900, color: '#78350f' }}>{dayNo} / {SWEETS_DAYS}</div>
+                                  <div style={{ fontSize: 13, fontWeight: 900, color: '#78350f' }}>{dayNo} / {cfg.days}</div>
                                   <div style={{ fontSize: 8, color: '#b45309' }}>ends {endDate}</div>
                                 </div>
                                 <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 6, padding: '6px 8px', border: '1px solid #bbf7d0' }}>
@@ -7694,40 +7680,41 @@ export default function PokemonWalker({ onStop }) {
                                 <div style={{ flex: 1, background: '#f0f9ff', borderRadius: 6, padding: '6px 8px', border: '1px solid #bae6fd' }}>
                                   <div style={{ fontSize: 8, color: '#0369a1', fontWeight: 700 }}>STREAK</div>
                                   <div style={{ fontSize: 13, fontWeight: 900, color: '#0369a1' }}>{streak}</div>
-                                  <div style={{ fontSize: 8, color: '#6b7280' }}>{streak > 0 ? `${toBlock} to +${SWEETS_STREAK_REWARD}` : `${SWEETS_STREAK_BLOCK} for +${SWEETS_STREAK_REWARD}`}</div>
+                                  <div style={{ fontSize: 8, color: '#6b7280' }}>{streak > 0 ? `${toBlock} to +${QUOTA_STREAK_REWARD}` : `${QUOTA_STREAK_BLOCK} for +${QUOTA_STREAK_REWARD}`}</div>
                                 </div>
                               </div>
 
                               {!notStarted && !over && (
                                 <div className="sw-log-row">
-                                  <span className="sw-log-label">Sweets today</span>
+                                  <span className="sw-log-label">{cfg.inputLabel}</span>
                                   <input
                                     className="sw-log-input"
                                     type="number"
                                     min="0"
-                                    placeholder={String(sw.log?.[today] ?? 0)}
-                                    value={sweetsInput}
-                                    onChange={e => setSweetsInput(e.target.value)}
+                                    step={cfg.step}
+                                    placeholder={String(c.log?.[today] ?? 0)}
+                                    value={draft}
+                                    onChange={e => setQuotaInput(q => ({ ...q, [key]: e.target.value }))}
                                   />
-                                  <button className="sw-log-zero" onClick={() => handleLogSweets(today, 0)}>Clean day ✓</button>
-                                  <button className="sw-log-save" disabled={sweetsInput === ''} onClick={() => handleLogSweets(today, sweetsInput)}>Log</button>
+                                  <button className="sw-log-zero" onClick={() => handleLogQuota(key, today, 0)}>Clean day ✓</button>
+                                  <button className="sw-log-save" disabled={draft === ''} onClick={() => handleLogQuota(key, today, draft)}>Log</button>
                                 </div>
                               )}
                               {loggedToday && (
                                 <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'center', marginBottom: 6 }}>
-                                  Today logged as {sw.log[today]} — logging again overwrites it
+                                  Today logged as {c.log[today]}{unit} — logging again overwrites it
                                 </div>
                               )}
 
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 6 }}>
-                                {SWEETS_FINAL_TIERS.map(t => (
+                                {QUOTA_FINAL_TIERS.map(t => (
                                   <div key={t.days} style={{
                                     display: 'flex', gap: 6, fontSize: 8, padding: '3px 6px', borderRadius: 4,
                                     background: tier?.days === t.days ? '#14532d' : 'transparent',
                                     border: tier?.days === t.days ? '1px solid #22c55e' : '1px solid transparent',
                                     opacity: cleanDays >= t.days && tier?.days !== t.days ? 0.35 : 1,
                                   }}>
-                                    <span style={{ minWidth: 54, fontWeight: 700, color: tier?.days === t.days ? '#22c55e' : '#9ca3af' }}>{t.days}/{SWEETS_DAYS} days</span>
+                                    <span style={{ minWidth: 54, fontWeight: 700, color: tier?.days === t.days ? '#22c55e' : '#9ca3af' }}>{t.days}/{cfg.days} days</span>
                                     <span style={{ flex: 1, color: tier?.days === t.days ? '#86efac' : '#6b7280' }}>{t.label}</span>
                                   </div>
                                 ))}
@@ -7735,15 +7722,15 @@ export default function PokemonWalker({ onStop }) {
 
                               <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 6, padding: '5px 7px', marginBottom: 6 }}>
                                 <div style={{ fontSize: 8, color: '#dc2626', fontWeight: 700, marginBottom: 2 }}>
-                                  🍬 QUOTA — {SWEETS_DAILY_QUOTA} a day is free
+                                  QUOTA — {cfg.quotaLabel}
                                 </div>
-                                {SWEETS_PENALTIES.map(p => (
+                                {QUOTA_PENALTIES.map(p => (
                                   <div key={p.windowDays} style={{ fontSize: 8, color: '#374151' }}>
                                     {p.label} → lose {p.lose} common
                                   </div>
                                 ))}
                                 <div style={{ fontSize: 8, color: '#374151' }}>
-                                  {SWEETS_PENALTY_BASE.label} → lose {SWEETS_PENALTY_BASE.lose} common
+                                  {QUOTA_PENALTY_BASE.label} → lose {QUOTA_PENALTY_BASE.lose} common
                                 </div>
                                 <div style={{ fontSize: 7, color: '#9ca3af', marginTop: 2 }}>
                                   Closest rule wins — slipping again soon costs more. A quota day still breaks your streak.
@@ -7752,23 +7739,23 @@ export default function PokemonWalker({ onStop }) {
 
                               {over && tier && (
                                 <button style={{ width: '100%', padding: '8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 800, fontSize: 10, cursor: 'pointer' }}
-                                  onClick={handleClaimSweetsFinal}>
+                                  onClick={() => handleClaimQuotaFinal(key)}>
                                   🏆 {cleanDays} clean days — claim {tier.label}
                                 </button>
                               )}
                               {over && !tier && (
                                 <div style={{ fontSize: 9, color: '#dc2626', textAlign: 'center', fontWeight: 700 }}>
-                                  Ended with {cleanDays} clean days — under the {SWEETS_FINAL_TIERS.at(-1).days}-day tier
+                                  Ended with {cleanDays} clean days — under the {QUOTA_FINAL_TIERS.at(-1).days}-day tier
                                 </div>
                               )}
                               <div style={{ fontSize: 7, color: '#6b7280', textAlign: 'center', marginTop: 4 }}>
-                                Sweets = sugar as the main ingredient — Indian sweets, chocolate, cake, pastry. Rice, bread and milk don't count.
+                                {cfg.note}
                               </div>
                             </div>
                           )}
                         </div>
                       );
-                    })()}
+                    })}
 
                     {!(appState.decChallenge?.claimedReward || appState.decChallenge?.penaltyApplied) && (() => {
                       const today = todayString();
