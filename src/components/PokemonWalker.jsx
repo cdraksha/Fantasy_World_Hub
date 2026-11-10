@@ -414,14 +414,14 @@ const QUOTA_CHALLENGES = {
   },
   rice: {
     icon: '🍙',
-    title: '50 Day White Rice',
-    start: '2026-11-11',
+    title: '50 Day No White Rice',
+    start: '2026-11-18',
     days: 50,
-    quota: 0.25,
+    quota: 0,                 // none allowed, so every clean day is also a quota day
     step: '0.25',
     unit: 'cups',
     inputLabel: 'Rice today',
-    quotaLabel: 'up to ¼ cup a day is free',
+    quotaLabel: 'none allowed',
     note: "White rice only — brown rice, millets and other grains don't count.",
   },
 };
@@ -6972,6 +6972,12 @@ export default function PokemonWalker({ onStop }) {
                       const dayNo = notStarted ? 0 : Math.min(RAMEEZ_DAYS, daysBetween(RAMEEZ_START, today) + 1);
                       const logged = Object.keys(r.log || {}).length;
                       const loggedToday = !!r.log?.[today];
+                      // weight bookends for the programme: first reading on or after the
+                      // start, and the most recent one, straight from the weight log
+                      const wHist = [...(appState.weight?.history || [])].sort((a, b) => (a.date < b.date ? -1 : 1));
+                      const startW = wHist.find(e => e.date >= RAMEEZ_START) || null;
+                      const latestW = wHist.length ? wHist[wHist.length - 1] : null;
+                      const netW = startW && latestW ? latestW.kg - startW.kg : null;
                       // the form edits today unless a past day was picked from the history list
                       const editDate = rameezEditDate || today;
                       const editingPast = editDate !== today;
@@ -7030,6 +7036,32 @@ export default function PokemonWalker({ onStop }) {
 
                           {showRameezPanel && (
                             <div style={{ padding: '4px 0' }}>
+                              {startW && (
+                                <div className="rz-wrow">
+                                  <div className="rz-wcell">
+                                    <span className="rz-wlabel">Start</span>
+                                    <span className="rz-wval">{startW.kg.toFixed(1)}<i>kg</i></span>
+                                    <span className="rz-wsub">{startW.date}</span>
+                                  </div>
+                                  <div className="rz-warrow">→</div>
+                                  <div className="rz-wcell">
+                                    <span className="rz-wlabel">Current</span>
+                                    <span className="rz-wval">{latestW.kg.toFixed(1)}<i>kg</i></span>
+                                    <span className="rz-wsub">{latestW.date}</span>
+                                  </div>
+                                  <div className="rz-wcell rz-wnet" style={{
+                                    background: netW <= 0 ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.10)',
+                                    borderColor: netW <= 0 ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.35)',
+                                  }}>
+                                    <span className="rz-wlabel">{netW <= 0 ? 'Lost' : 'Gained'}</span>
+                                    <span className="rz-wval" style={{ color: netW <= 0 ? '#15803d' : '#dc2626' }}>
+                                      {Math.abs(netW).toFixed(1)}<i>kg</i>
+                                    </span>
+                                    <span className="rz-wsub">over {daysBetween(startW.date, latestW.date)}d</span>
+                                  </div>
+                                </div>
+                              )}
+
                               <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
                                 <div style={{ flex: 1, background: '#eef2ff', borderRadius: 6, padding: '6px 8px', border: '1px solid #c7d2fe' }}>
                                   <div style={{ fontSize: 8, color: '#3730a3', fontWeight: 700 }}>DAY</div>

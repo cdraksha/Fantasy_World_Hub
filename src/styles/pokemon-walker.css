@@ -6685,3 +6685,48 @@
   font-weight: 700;
   color: #b45309;
 }
+
+/* ── Rameez: weight bookends ── */
+.rz-wrow { display: flex; align-items: stretch; gap: 5px; margin-bottom: 8px; }
+
+.rz-wcell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  background: #fafaf8;
+  border: 1.5px solid #e5e0d6;
+  border-radius: 7px;
+  padding: 6px 4px;
+  min-width: 0;
+}
+
+.rz-wlabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+}
+
+.rz-wval {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a1a2e;
+  line-height: 1.1;
+}
+.rz-wval i { font-size: 8px; font-style: normal; font-weight: 600; color: #9ca3af; margin-left: 1px; }
+
+.rz-wsub { font-size: 7.5px; color: #b0aba0; font-family: 'JetBrains Mono', monospace; }
+
+.rz-warrow {
+  align-self: center;
+  font-size: 11px;
+  color: #c4bdb0;
+  flex-shrink: 0;
+}
+
+.rz-wnet { border-width: 1.5px; border-style: solid; }
