@@ -347,7 +347,9 @@ const RAMEEZ_FIELDS = [
   { key: 'stress',       label: 'Stress levels',    record: 'Scale of 1–10',          type: 'number', min: 1, max: 10 },
   { key: 'weight',       label: 'Weight',           record: 'kg',                     type: 'number', step: '0.1', auto: true },
   { key: 'dailyRoutine', label: 'Daily routine',    record: 'workout, work...',       type: 'text' },
-  { key: 'herbalDrink',  label: 'Herbal drink',     record: 'As recommended',         type: 'text' },
+  // one-tap fill for the mix Rameez recommended, so it isn't retyped every day
+  { key: 'herbalDrink',  label: 'Herbal drink',     record: 'As recommended',         type: 'text',
+    preset: { label: 'Regular drink', value: '3 scoop formula, 2 scoop malt, 1 scoop protein' } },
   { key: 'notes',        label: 'Notes',            record: 'Anything worth flagging', type: 'text' },
 ];
 
@@ -7151,17 +7153,27 @@ export default function PokemonWalker({ onStop }) {
                                             ))}
                                           </span>
                                         ) : (
-                                          <input
-                                            className="rz-input"
-                                            type={f.type === 'number' ? 'number' : f.type === 'time' ? 'time' : 'text'}
-                                            min={f.min ?? (f.type === 'number' ? 0 : undefined)}
-                                            max={f.max}
-                                            step={f.step}
-                                            placeholder={f.record}
-                                            value={val(f.key)}
-                                            onChange={e => setVal(f.key, e.target.value)}
-                                            onBlur={e => { if (e.target.value !== '') setVal(f.key, e.target.value); }}
-                                          />
+                                          <span className="rz-fieldcell">
+                                            <input
+                                              className="rz-input"
+                                              type={f.type === 'number' ? 'number' : f.type === 'time' ? 'time' : 'text'}
+                                              min={f.min ?? (f.type === 'number' ? 0 : undefined)}
+                                              max={f.max}
+                                              step={f.step}
+                                              placeholder={f.record}
+                                              value={val(f.key)}
+                                              onChange={e => setVal(f.key, e.target.value)}
+                                              onBlur={e => { if (e.target.value !== '') setVal(f.key, e.target.value); }}
+                                            />
+                                            {f.preset && (
+                                              <button
+                                                type="button"
+                                                className={`rz-preset${val(f.key) === f.preset.value ? ' rz-preset-on' : ''}`}
+                                                title={f.preset.value}
+                                                onClick={() => setVal(f.key, val(f.key) === f.preset.value ? '' : f.preset.value)}
+                                              >{f.preset.label}</button>
+                                            )}
+                                          </span>
                                         )}
                                       </div>
                                     ))}

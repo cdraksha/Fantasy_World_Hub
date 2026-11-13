@@ -6271,6 +6271,28 @@
 .rz-choice:hover { border-color: #6366f1; color: #4338ca; }
 .rz-choice-on { background: #6366f1; border-color: #4338ca; color: #fff; }
 
+/* a field that carries a one-tap preset: input on top, the shortcut under it */
+.rz-fieldcell { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rz-preset {
+  align-self: flex-start;
+  max-width: 100%;
+  border: 1.5px solid #d8d3c8;
+  background: #fff;
+  border-radius: 5px;
+  padding: 3px 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #6b7280;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rz-preset::before { content: '+ '; }
+.rz-preset:hover { border-color: #6366f1; color: #4338ca; }
+.rz-preset-on { background: #6366f1; border-color: #4338ca; color: #fff; }
+.rz-preset-on::before { content: '✓ '; }
 
 
 .rz-routine { margin-top: 2px; }
