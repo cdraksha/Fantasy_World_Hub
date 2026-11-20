@@ -1851,6 +1851,237 @@ function RameezDayPopup({ date, dayNo, values, logged, onEdit, onClose }) {
   );
 }
 
+// ─── Monthly steps: cricket worm graph ────────────────────────────────────
+// Overs become days, runs become cumulative steps, and the two innings are
+// this month against the month it is measured against. A 10k day is marked
+// on the line the way a wicket is marked on a cricket worm.
+
+function monthDayCount(month) {
+  return new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
+}
+
+// Day 0 at zero so the line starts at the origin, then one point per day —
+// including days with nothing walked, which read as a flat stretch.
+function cumulativeMonth(stepHistory, month, lastDay, extra) {
+  const byDay = {};
+  (stepHistory || []).forEach(e => {
+    if (e.date.startsWith(month)) byDay[Number(e.date.slice(8, 10))] = e.steps;
+  });
+  if (extra) Object.assign(byDay, extra);
+  const pts = [{ day: 0, total: 0, steps: 0 }];
+  let run = 0;
+  for (let d = 1; d <= lastDay; d++) {
+    run += byDay[d] || 0;
+    pts.push({ day: d, total: run, steps: byDay[d] || 0 });
+  }
+  return pts;
+}
+
+// Smallest round gridline step that keeps the axis under `maxTicks` lines.
+// Taking peak/4 and rounding up overshot badly — a 274k month landed on a
+// 100k step, which is three labels for the whole axis.
+function axisStep(peak, maxTicks = 6) {
+  const exp = Math.floor(Math.log10(Math.max(peak, 1)));
+  for (let e = exp - 2; e <= exp + 1; e++) {
+    for (const b of [1, 2, 2.5, 5, 10]) {
+      const step = b * Math.pow(10, e);
+      if (step > 0 && Math.ceil(peak / step) <= maxTicks) return step;
+    }
+  }
+  return Math.max(peak, 1);
+}
+
+const WORM_CUR = '#17a2d1';   // this month — the innings still being played
+const WORM_BASE = '#1a3a5c';  // the month being chased
+
+function WormGraph({ month, baseMonth, stepHistory, todayDate, todaySteps, target, onClose }) {
+  const [hover, setHover] = useState(null);
+  const shortLabel = m => new Date(m + '-02').toLocaleString('default', { month: 'short' });
+  const currentMonth = todayDate.slice(0, 7);
+  const live = month === currentMonth;
+  const todayDay = Number(todayDate.slice(8, 10));
+
+  // today never reaches stepHistory until midnight, so it is folded in here
+  const curLast = live ? todayDay : monthDayCount(month);
+  const curPts = cumulativeMonth(stepHistory, month, curLast,
+    live && todaySteps ? { [todayDay]: todaySteps } : null);
+  const basePts = cumulativeMonth(stepHistory, baseMonth, monthDayCount(baseMonth));
+
+  const curTotal = curPts[curPts.length - 1].total;
+  const baseTotal = basePts[basePts.length - 1].total;
+  const hasBase = baseTotal > 0;
+
+  // the full runway of both months, so the days still to come stay visible
+  const maxDay = Math.max(monthDayCount(month), monthDayCount(baseMonth));
+
+  const W = 340, H = 232;
+  const padL = 38, padR = 12, padT = 14, padB = 36;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  // floor the axis so a month with nothing in it still draws a readable
+  // scale instead of labelling the gridlines 0 and 1
+  const peak = Math.max(curTotal, baseTotal, target || 0, 10000);
+  const tickStep = axisStep(peak);
+  const yMax = tickStep * Math.max(1, Math.ceil(peak / tickStep));
+
+  const X = d => padL + (d / maxDay) * plotW;
+  const Y = v => padT + plotH - (v / yMax) * plotH;
+  const path = pts => pts.map(p => `${X(p.day).toFixed(1)},${Y(p.total).toFixed(1)}`).join(' ');
+
+  const yTicks = [];
+  for (let v = 0; v <= yMax + 1; v += tickStep) yTicks.push(v);
+  const xTicks = [];
+  for (let d = 5; d <= maxDay; d += 5) xTicks.push(d);
+
+  const fmtK = v => v >= 1000 ? `${Math.round(v / 1000)}k` : String(v);
+
+  // like-for-like: the base month at the same day of the month
+  const baseAtDay = basePts[Math.min(curLast, basePts.length - 1)]?.total ?? 0;
+  const gap = curTotal - baseAtDay;
+  const ahead = gap >= 0;
+
+  // Every day gets a dot. An ordinary day is a hollow ring; a 10k day is the
+  // solid marker, so the big days still read at a glance the way wickets do.
+  const dots = (pts, color, m, prefix) => pts.filter(p => p.day >= 1).map(p => {
+    const big = p.steps >= 10000;
+    const cx = X(p.day), cy = Y(p.total);
+    const id = `${prefix}${p.day}`;
+    const hot = hover?.id === id;
+    const pick = { ...p, cx, cy, color, month: m, id };
+    return (
+      <g key={id}>
+        {hot && <circle cx={cx} cy={cy} r={big ? 8.4 : 5.4} fill="none" stroke={color} strokeWidth="1.1" opacity="0.5" />}
+        {big ? (
+          <>
+            <circle cx={cx} cy={cy} r="5.8" fill={color} stroke="#f5f3ed" strokeWidth="1.3" />
+            <text x={cx} y={cy + 2.2} textAnchor="middle" fontSize="6.2" fontWeight="800" fill="#fff">10</text>
+          </>
+        ) : (
+          <circle cx={cx} cy={cy} r="2.3" fill={hot ? color : '#f5f3ed'} stroke={color} strokeWidth="1.4" />
+        )}
+        {/* a hit area big enough to hover or tap without aiming at a 2px dot */}
+        <circle
+          cx={cx} cy={cy} r="7.5" fill="transparent" style={{ cursor: 'pointer' }}
+          onMouseEnter={() => setHover(pick)}
+          onClick={e => { e.stopPropagation(); setHover(h => (h?.id === id ? null : pick)); }}
+        />
+      </g>
+    );
+  });
+
+  return (
+    <div className="pw-popup-overlay" onClick={onClose}>
+      <div className="worm-modal" onClick={e => e.stopPropagation()}>
+        <div className="worm-header">
+          <div className="worm-title">
+            <span className="worm-title-main">WORM</span>
+            <span className="worm-title-sub">{shortLabel(baseMonth)} v {shortLabel(month)}</span>
+          </div>
+          <button className="worm-close" onClick={onClose}>✕</button>
+        </div>
+
+        {hasBase && (
+          <div className={`worm-gap${ahead ? ' worm-gap-up' : ' worm-gap-down'}`}>
+            <span className="worm-gap-arrow">{ahead ? '▲' : '▼'}</span>
+            <span className="worm-gap-val">{Math.abs(gap).toLocaleString()}</span>
+            <span className="worm-gap-txt">
+              {ahead ? 'ahead of' : 'behind'} {shortLabel(baseMonth)} by day {curLast}
+            </span>
+          </div>
+        )}
+
+        <svg className="worm-svg" viewBox={`0 0 ${W} ${H}`} role="img"
+             onMouseLeave={() => setHover(null)}
+             aria-label={`Cumulative steps, ${shortLabel(month)} against ${shortLabel(baseMonth)}`}>
+          <text x="6" y="10" fontSize="7.5" fontWeight="800" fill="#6b7280">Steps</text>
+
+          {yTicks.map(v => (
+            <g key={`y${v}`}>
+              <line x1={padL} y1={Y(v)} x2={W - padR} y2={Y(v)} stroke="#e3ded2" strokeWidth="1" />
+              <text x={padL - 5} y={Y(v) + 2.6} textAnchor="end" fontSize="7.5" fill="#8b8578">{fmtK(v)}</text>
+            </g>
+          ))}
+
+          {/* the month's target — the par score being chased */}
+          {target > 0 && target <= yMax && (
+            <g>
+              <line x1={padL} y1={Y(target)} x2={W - padR} y2={Y(target)}
+                    stroke="#d97706" strokeWidth="1.1" strokeDasharray="4 3" opacity="0.75" />
+              <text x={W - padR} y={Y(target) - 3.5} textAnchor="end" fontSize="7" fontWeight="700" fill="#b45309">
+                target {fmtK(target)}
+              </text>
+            </g>
+          )}
+
+          <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} stroke="#c9c2b4" strokeWidth="1" />
+          <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} stroke="#c9c2b4" strokeWidth="1" />
+
+          {xTicks.map(d => (
+            <text key={`x${d}`} x={X(d)} y={padT + plotH + 12} textAnchor="middle" fontSize="7.5" fill="#8b8578">{d}</text>
+          ))}
+          <text x={padL + plotW / 2} y={H - 4} textAnchor="middle" fontSize="7.5" fontWeight="800" fill="#6b7280">Day of month</text>
+
+          {hasBase && (
+            <polyline points={path(basePts)} fill="none" stroke={WORM_BASE}
+                      strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+          )}
+          <polyline points={path(curPts)} fill="none" stroke={WORM_CUR}
+                    strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+
+          {/* the hovered day, picked out before the dots so it sits under them */}
+          {hover && (
+            <line x1={hover.cx} y1={padT} x2={hover.cx} y2={padT + plotH}
+                  stroke={hover.color} strokeWidth="0.9" strokeDasharray="3 3" opacity="0.5" />
+          )}
+
+          {hasBase && dots(basePts, WORM_BASE, baseMonth, 'b')}
+          {dots(curPts, WORM_CUR, month, 'c')}
+
+          {hover && (() => {
+            const lines = [
+              `${hover.day} ${shortLabel(hover.month)}`,
+              `${hover.steps.toLocaleString()} steps`,
+              `total ${hover.total.toLocaleString()}`,
+            ];
+            const boxW = 8 + Math.max(...lines.map(l => l.length)) * 4.3;
+            const boxH = 31;
+            // keep it inside the plot, and flip below the point near the top
+            const bx = Math.min(Math.max(hover.cx - boxW / 2, padL + 1), W - padR - boxW - 1);
+            const below = hover.cy - boxH - 11 < padT;
+            const by = below ? hover.cy + 11 : hover.cy - boxH - 11;
+            return (
+              <g pointerEvents="none">
+                <rect x={bx} y={by} width={boxW} height={boxH} rx="4" fill="#1a1a2e" opacity="0.96" />
+                <text x={bx + 5} y={by + 9.5} fontSize="7" fontWeight="800" fill="#FFCB05">{lines[0]}</text>
+                <text x={bx + 5} y={by + 19} fontSize="7.5" fontWeight="800" fill="#fff">{lines[1]}</text>
+                <text x={bx + 5} y={by + 27.5} fontSize="6.8" fill="#9ca8bd">{lines[2]}</text>
+              </g>
+            );
+          })()}
+        </svg>
+
+        <div className="worm-legend">
+          {hasBase && (
+            <span className="worm-key">
+              <i style={{ background: WORM_BASE }} />{shortLabel(baseMonth)} · {baseTotal.toLocaleString()}
+            </span>
+          )}
+          <span className="worm-key">
+            <i style={{ background: WORM_CUR }} />{shortLabel(month)} · {curTotal.toLocaleString()}
+          </span>
+          <span className="worm-key worm-key-note"><b>10</b> = 10k+ day</span>
+        </div>
+        <div className="worm-hint">Hover or tap a dot for that day</div>
+
+        {!hasBase && (
+          <div className="worm-empty">No {shortLabel(baseMonth)} history to compare against yet.</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Header clock ─────────────────────────────────────────────────────────
 // Owns its own interval and state. Kept out of PokemonWalker because ticking
 // a second-resolution clock through the parent's state re-rendered the whole
@@ -2451,6 +2682,7 @@ export default function PokemonWalker({ onStop }) {
   const inclineConfirmTimer = useRef(null);
   const [showDistancePanel, setShowDistancePanel] = useState(false);
   const [showMonthlyPanel, setShowMonthlyPanel] = useState(false);
+  const [showWormGraph, setShowWormGraph] = useState(false);
   const [distanceInput, setDistanceInput] = useState('');
   const [showWeightPanel, setShowWeightPanel] = useState(false);
   const [weightInput, setWeightInput] = useState('');
@@ -4831,6 +5063,17 @@ export default function PokemonWalker({ onStop }) {
           />
         );
       })()}
+      {showWormGraph && appState.monthlyChallenge && (
+        <WormGraph
+          month={appState.monthlyChallenge.month}
+          baseMonth={appState.monthlyChallenge.baseMonth}
+          target={appState.monthlyChallenge.target}
+          stepHistory={appState.stepHistory}
+          todayDate={todayString()}
+          todaySteps={appState.todaySteps}
+          onClose={() => setShowWormGraph(false)}
+        />
+      )}
       {showPokedex && (
         <PokedexPopup
           caughtDex={uniqueDex}
@@ -5690,6 +5933,18 @@ export default function PokemonWalker({ onStop }) {
                                 </div>
                               );
                             })()}
+
+                            {/* the month drawn out day by day, cricket-worm style */}
+                            <button className="worm-btn" onClick={() => setShowWormGraph(true)}>
+                              <span className="worm-btn-spark">
+                                <svg viewBox="0 0 24 10" preserveAspectRatio="none">
+                                  <polyline points="0,9 5,7 9,7.5 14,4 18,3 24,1" fill="none"
+                                            stroke="currentColor" strokeWidth="1.6"
+                                            strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </span>
+                              Worm Graph
+                            </button>
 
                             {/* once a tier is cleared, what the next one needs */}
                             {activeTierIdx !== -1 && (
