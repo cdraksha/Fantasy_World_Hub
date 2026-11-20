@@ -486,6 +486,7 @@ function quotaPenaltyFor(key, log, date) {
 }
 
 const WEIGHT_LOG_START = '2026-08-01';   // weight log in the Log tab starts here
+const STEPS_LOG_START  = '2026-08-01';   // monthly steps log and worm graph start here
 
 // 100-day manual-log challenges. seedDays = days completed before the tracker existed.
 const DAY_CHALLENGES = {
@@ -5141,7 +5142,7 @@ export default function PokemonWalker({ onStop }) {
           baseMonth={appState.monthlyChallenge?.baseMonth}
           target={appState.monthlyChallenge?.target}
           targetMonth={appState.monthlyChallenge?.month}
-          stepHistory={appState.stepHistory}
+          stepHistory={(appState.stepHistory || []).filter(e => e.date >= STEPS_LOG_START)}
           todayDate={todayString()}
           todaySteps={appState.todaySteps}
           onClose={() => setShowWormGraph(false)}
@@ -8700,6 +8701,7 @@ export default function PokemonWalker({ onStop }) {
                     {(() => {
                       const totals = {};
                       (appState.stepHistory || []).forEach(e => {
+                        if (e.date < STEPS_LOG_START) return;
                         const m = e.date.slice(0, 7);
                         totals[m] = (totals[m] || 0) + e.steps;
                       });
