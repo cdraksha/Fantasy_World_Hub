@@ -1896,6 +1896,10 @@ const WORM_BASE = '#1a3a5c';  // the month being chased
 
 function WormGraph({ month, baseMonth, stepHistory, todayDate, todaySteps, target, onClose }) {
   const [hover, setHover] = useState(null);
+  // either innings can be taken off the chart — two near-identical lines with
+  // two sets of markers is the worst case for reading a single month
+  const [off, setOff] = useState({});
+  const toggle = k => { setOff(o => ({ ...o, [k]: !o[k] })); setHover(null); };
   const shortLabel = m => new Date(m + '-02').toLocaleString('default', { month: 'short' });
   const currentMonth = todayDate.slice(0, 7);
   const live = month === currentMonth;
@@ -1914,8 +1918,11 @@ function WormGraph({ month, baseMonth, stepHistory, todayDate, todaySteps, targe
   // the full runway of both months, so the days still to come stay visible
   const maxDay = Math.max(monthDayCount(month), monthDayCount(baseMonth));
 
-  const W = 340, H = 232;
-  const padL = 38, padR = 12, padT = 14, padB = 36;
+  // A 10k marker is ~11.6 units across, so the plot has to give each day at
+  // least that much x or a run of big days smears into one blob.
+  const W = 460, H = 252;
+  // padT clears the 'Steps' caption, which otherwise sits on the top tick label
+  const padL = 42, padR = 14, padT = 22, padB = 38;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
@@ -1951,14 +1958,14 @@ function WormGraph({ month, baseMonth, stepHistory, todayDate, todaySteps, targe
     const pick = { ...p, cx, cy, color, month: m, id };
     return (
       <g key={id}>
-        {hot && <circle cx={cx} cy={cy} r={big ? 8.4 : 5.4} fill="none" stroke={color} strokeWidth="1.1" opacity="0.5" />}
+        {hot && <circle cx={cx} cy={cy} r={big ? 7.8 : 5.1} fill="none" stroke={color} strokeWidth="1.1" opacity="0.5" />}
         {big ? (
           <>
-            <circle cx={cx} cy={cy} r="5.8" fill={color} stroke="#f5f3ed" strokeWidth="1.3" />
-            <text x={cx} y={cy + 2.2} textAnchor="middle" fontSize="6.2" fontWeight="800" fill="#fff">10</text>
+            <circle cx={cx} cy={cy} r="5.2" fill={color} stroke="#f5f3ed" strokeWidth="1.2" />
+            <text x={cx} y={cy + 2} textAnchor="middle" fontSize="5.9" fontWeight="800" fill="#fff">10</text>
           </>
         ) : (
-          <circle cx={cx} cy={cy} r="2.3" fill={hot ? color : '#f5f3ed'} stroke={color} strokeWidth="1.4" />
+          <circle cx={cx} cy={cy} r="2.1" fill={hot ? color : '#f5f3ed'} stroke={color} strokeWidth="1.3" />
         )}
         {/* a hit area big enough to hover or tap without aiming at a 2px dot */}
         <circle
@@ -1994,12 +2001,12 @@ function WormGraph({ month, baseMonth, stepHistory, todayDate, todaySteps, targe
         <svg className="worm-svg" viewBox={`0 0 ${W} ${H}`} role="img"
              onMouseLeave={() => setHover(null)}
              aria-label={`Cumulative steps, ${shortLabel(month)} against ${shortLabel(baseMonth)}`}>
-          <text x="6" y="10" fontSize="7.5" fontWeight="800" fill="#6b7280">Steps</text>
+          <text x="6" y="10" fontSize="8" fontWeight="800" fill="#6b7280">Steps</text>
 
           {yTicks.map(v => (
             <g key={`y${v}`}>
               <line x1={padL} y1={Y(v)} x2={W - padR} y2={Y(v)} stroke="#e3ded2" strokeWidth="1" />
-              <text x={padL - 5} y={Y(v) + 2.6} textAnchor="end" fontSize="7.5" fill="#8b8578">{fmtK(v)}</text>
+              <text x={padL - 5} y={Y(v) + 2.8} textAnchor="end" fontSize="8" fill="#8b8578">{fmtK(v)}</text>
             </g>
           ))}
 
@@ -2008,7 +2015,7 @@ function WormGraph({ month, baseMonth, stepHistory, todayDate, todaySteps, targe
             <g>
               <line x1={padL} y1={Y(target)} x2={W - padR} y2={Y(target)}
                     stroke="#d97706" strokeWidth="1.1" strokeDasharray="4 3" opacity="0.75" />
-              <text x={W - padR} y={Y(target) - 3.5} textAnchor="end" fontSize="7" fontWeight="700" fill="#b45309">
+              <text x={W - padR} y={Y(target) - 3.5} textAnchor="end" fontSize="7.5" fontWeight="700" fill="#b45309">
                 target {fmtK(target)}
               </text>
             </g>
@@ -2018,16 +2025,18 @@ function WormGraph({ month, baseMonth, stepHistory, todayDate, todaySteps, targe
           <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} stroke="#c9c2b4" strokeWidth="1" />
 
           {xTicks.map(d => (
-            <text key={`x${d}`} x={X(d)} y={padT + plotH + 12} textAnchor="middle" fontSize="7.5" fill="#8b8578">{d}</text>
+            <text key={`x${d}`} x={X(d)} y={padT + plotH + 13} textAnchor="middle" fontSize="8" fill="#8b8578">{d}</text>
           ))}
-          <text x={padL + plotW / 2} y={H - 4} textAnchor="middle" fontSize="7.5" fontWeight="800" fill="#6b7280">Day of month</text>
+          <text x={padL + plotW / 2} y={H - 5} textAnchor="middle" fontSize="8" fontWeight="800" fill="#6b7280">Day of month</text>
 
-          {hasBase && (
+          {hasBase && !off.base && (
             <polyline points={path(basePts)} fill="none" stroke={WORM_BASE}
                       strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
           )}
-          <polyline points={path(curPts)} fill="none" stroke={WORM_CUR}
-                    strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+          {!off.cur && (
+            <polyline points={path(curPts)} fill="none" stroke={WORM_CUR}
+                      strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+          )}
 
           {/* the hovered day, picked out before the dots so it sits under them */}
           {hover && (
@@ -2035,8 +2044,8 @@ function WormGraph({ month, baseMonth, stepHistory, todayDate, todaySteps, targe
                   stroke={hover.color} strokeWidth="0.9" strokeDasharray="3 3" opacity="0.5" />
           )}
 
-          {hasBase && dots(basePts, WORM_BASE, baseMonth, 'b')}
-          {dots(curPts, WORM_CUR, month, 'c')}
+          {hasBase && !off.base && dots(basePts, WORM_BASE, baseMonth, 'b')}
+          {!off.cur && dots(curPts, WORM_CUR, month, 'c')}
 
           {hover && (() => {
             const lines = [
@@ -2063,16 +2072,16 @@ function WormGraph({ month, baseMonth, stepHistory, todayDate, todaySteps, targe
 
         <div className="worm-legend">
           {hasBase && (
-            <span className="worm-key">
+            <button className={`worm-key${off.base ? ' worm-key-off' : ''}`} onClick={() => toggle('base')}>
               <i style={{ background: WORM_BASE }} />{shortLabel(baseMonth)} · {baseTotal.toLocaleString()}
-            </span>
+            </button>
           )}
-          <span className="worm-key">
+          <button className={`worm-key${off.cur ? ' worm-key-off' : ''}`} onClick={() => toggle('cur')}>
             <i style={{ background: WORM_CUR }} />{shortLabel(month)} · {curTotal.toLocaleString()}
-          </span>
+          </button>
           <span className="worm-key worm-key-note"><b>10</b> = 10k+ day</span>
         </div>
-        <div className="worm-hint">Hover or tap a dot for that day</div>
+        <div className="worm-hint">Hover or tap a dot for that day · tap a month to hide its line</div>
 
         {!hasBase && (
           <div className="worm-empty">No {shortLabel(baseMonth)} history to compare against yet.</div>
