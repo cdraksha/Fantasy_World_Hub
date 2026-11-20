@@ -6726,135 +6726,10 @@
 .rz-wnet { border-width: 1.5px; border-style: solid; }
 
 
-/* ── Monthly steps: cricket worm graph ── */
-/* lives in the Log tab, which is cream rather than the dark challenge panel */
-.worm-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  width: 100%;
-  margin: 6px 0 4px;
-  background: #e6f5fb;
-  border: 1.5px solid #9fd5e8;
-  border-radius: 7px;
-  padding: 7px 10px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: #0f6f91;
-  cursor: pointer;
-}
-.worm-btn:hover { background: #d5edf6; border-color: #5fbcd9; }
-.worm-btn-spark { display: block; width: 22px; height: 9px; }
-.worm-btn-spark svg { display: block; width: 100%; height: 100%; }
-
-/* month picker — any two months can be put up against each other */
-.worm-months {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  padding: 8px 12px 0;
-  scrollbar-width: none;
-}
-.worm-months::-webkit-scrollbar { display: none; }
-.worm-month {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  min-width: 42px;
-  padding: 3px 7px;
-  border: 1.5px solid #ddd8cc;
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  font-family: 'JetBrains Mono', monospace;
-}
-.worm-month:hover { border-color: #b0a99a; }
-.worm-month-name  { font-size: 8.5px; font-weight: 800; color: #3a3a4a; }
-.worm-month-total { font-size: 7px; color: #8b8578; }
-.worm-month-cur  { background: #17a2d1; border-color: #0f82a8; }
-.worm-month-base { background: #1a3a5c; border-color: #102840; }
-.worm-month-cur  .worm-month-name, .worm-month-cur  .worm-month-total,
-.worm-month-base .worm-month-name, .worm-month-base .worm-month-total { color: #fff; }
-.worm-month-base .worm-month-total, .worm-month-cur .worm-month-total { opacity: 0.8; }
-
-.worm-modal {
-  background: #f5f3ed;
-  border: 2px solid #1a1a2e;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 560px;
-  max-height: 88vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.35);
-  animation: pw-pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.worm-header {
-  display: flex;
-  align-items: center;
-  padding: 9px 12px;
-  background: #1a1a2e;
-}
-.worm-title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.worm-title-main {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  color: #FFCB05;
-}
-.worm-title-sub {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  font-weight: 700;
-  color: #9ca8bd;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.worm-close {
-  margin-left: auto;
-  flex-shrink: 0;
-  background: rgba(255,203,5,0.12);
-  border: none;
-  border-radius: 5px;
-  color: #FFCB05;
-  font-size: 11px;
-  padding: 3px 7px;
-  cursor: pointer;
-}
-.worm-close:hover { background: rgba(255,203,5,0.25); }
-
-.worm-gap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 8px 12px 0;
-  padding: 4px 8px;
-  border-radius: 5px;
-  font-family: 'JetBrains Mono', monospace;
-}
-.worm-gap-up   { background: rgba(22,163,74,0.10); border: 1px solid rgba(22,163,74,0.30); }
-.worm-gap-down { background: rgba(220,38,38,0.09); border: 1px solid rgba(220,38,38,0.28); }
-.worm-gap-arrow { font-size: 9px; line-height: 1; }
-.worm-gap-val { font-size: 11px; font-weight: 900; }
-.worm-gap-txt { font-size: 8.5px; color: #6b7280; }
-.worm-gap-up .worm-gap-arrow, .worm-gap-up .worm-gap-val { color: #15803d; }
-.worm-gap-down .worm-gap-arrow, .worm-gap-down .worm-gap-val { color: #dc2626; }
-
-.worm-svg {
-  display: block;
-  width: calc(100% - 16px);
-  height: auto;
-  margin: 4px 8px 0;
-  font-family: 'JetBrains Mono', monospace;
-}
+/* ── Monthly steps: cricket worm graph ──
+   The modal reuses the weight graph's shell (.wg-*) so the two charts are
+   siblings; only the pieces unique to the worm live here. */
+.wg-modal-wide { max-width: 680px; }
 
 .worm-legend {
   display: flex;
@@ -6862,17 +6737,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 6px 12px 4px;
-  border-top: 1px solid #e6e1d5;
-  margin-top: 4px;
-}
-
-.worm-hint {
-  padding: 0 12px 9px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 7.5px;
-  color: #a39c8d;
-  text-align: center;
+  margin-top: 5px;
 }
 .worm-key {
   display: inline-flex;
@@ -6882,14 +6747,7 @@
   font-size: 8.5px;
   font-weight: 700;
   color: #3a3a4a;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  padding: 2px 5px;
 }
-button.worm-key { cursor: pointer; }
-button.worm-key:hover { border-color: #d8d3c8; }
-.worm-key-off { opacity: 0.38; text-decoration: line-through; }
 .worm-key i { width: 12px; height: 3px; border-radius: 2px; display: block; }
 .worm-key-note { color: #8b8578; font-weight: 600; }
 .worm-key-note b {
@@ -6900,16 +6758,15 @@ button.worm-key:hover { border-color: #d8d3c8; }
   height: 13px;
   border-radius: 50%;
   background: #8b8578;
-  color: #f5f3ed;
+  color: #fff;
   font-size: 6.5px;
   font-weight: 800;
 }
 
-.worm-empty {
-  padding: 0 12px 10px;
+.worm-hint {
+  margin-top: 3px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 8.5px;
-  color: #8b8578;
+  font-size: 7.5px;
+  color: #a39c8d;
   text-align: center;
-  font-style: italic;
 }

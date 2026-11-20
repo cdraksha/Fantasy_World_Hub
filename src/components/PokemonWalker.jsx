@@ -1896,10 +1896,6 @@ const WORM_BASE = '#1a3a5c';  // the month being chased
 
 function WormGraph({ month, baseMonth, target, targetMonth, stepHistory, todayDate, todaySteps, onClose }) {
   const [hover, setHover] = useState(null);
-  // either innings can be taken off the chart — two near-identical lines with
-  // two sets of markers is the worst case for reading a single month
-  const [off, setOff] = useState({});
-  const toggle = k => { setOff(o => ({ ...o, [k]: !o[k] })); setHover(null); };
 
   const currentMonth = todayDate.slice(0, 7);
   const todayDay = Number(todayDate.slice(8, 10));
@@ -1915,26 +1911,22 @@ function WormGraph({ month, baseMonth, target, targetMonth, stepHistory, todayDa
   totals[currentMonth] = (totals[currentMonth] || 0) + (todaySteps || 0);
   const allMonths = Object.keys(totals).sort().reverse();
 
-  // opens on the challenge's own pairing, then any two months can be compared
-  const [sel, setSel] = useState(() => {
-    const seed = [...new Set([baseMonth, month].filter(m => m && totals[m] !== undefined))];
-    return seed.length ? seed : allMonths.slice(0, 2);
-  });
-  const pick = m => {
-    setHover(null);
-    setOff({});
-    setSel(s => {
-      // never leave the chart empty — the last remaining month stays put
-      if (s.includes(m)) return s.length > 1 ? s.filter(x => x !== m) : s;
-      // two innings at a time, so a third pick pushes out the older one
-      return s.length < 2 ? [...s, m] : [s[1], m];
-    });
-  };
+  // opens on the challenge's own pairing, then either month can be re-picked
+  const has = m => m && totals[m] !== undefined;
+  const seedCur = has(month) ? month : allMonths[0];
+  const seedBase = has(baseMonth) && baseMonth !== seedCur
+    ? baseMonth
+    : (allMonths.find(m => m !== seedCur) || null);
+  const [curM, setCurM] = useState(seedCur);
+  const [baseM, setBaseM] = useState(seedBase);
 
-  // the later month is the chase, the earlier one is what it is chasing
-  const ordered = [...sel].sort();
-  const curM = ordered[ordered.length - 1] || currentMonth;
-  const baseM = ordered.length > 1 ? ordered[0] : null;
+  const pickCur = m => {
+    setHover(null);
+    setCurM(m);
+    // a month can't run against itself
+    if (m === baseM) setBaseM(null);
+  };
+  const pickBase = m => { setHover(null); setBaseM(m || null); };
 
   // only spell out the year when the picker actually spans more than one
   const multiYear = new Set(allMonths.map(m => m.slice(0, 4))).size > 1;
@@ -2004,11 +1996,11 @@ function WormGraph({ month, baseMonth, target, targetMonth, stepHistory, todayDa
         {hot && <circle cx={cx} cy={cy} r={big ? 7.8 : 5.1} fill="none" stroke={color} strokeWidth="1.1" opacity="0.5" />}
         {big ? (
           <>
-            <circle cx={cx} cy={cy} r="5.2" fill={color} stroke="#f5f3ed" strokeWidth="1.2" />
+            <circle cx={cx} cy={cy} r="5.2" fill={color} stroke="#fff" strokeWidth="1.2" />
             <text x={cx} y={cy + 2} textAnchor="middle" fontSize="5.9" fontWeight="800" fill="#fff">10</text>
           </>
         ) : (
-          <circle cx={cx} cy={cy} r="2.1" fill={hot ? color : '#f5f3ed'} stroke={color} strokeWidth="1.3" />
+          <circle cx={cx} cy={cy} r="2.1" fill={hot ? color : '#fff'} stroke={color} strokeWidth="1.3" />
         )}
         {/* a hit area big enough to hover or tap without aiming at a 2px dot */}
         <circle
@@ -2020,49 +2012,26 @@ function WormGraph({ month, baseMonth, target, targetMonth, stepHistory, todayDa
     );
   });
 
+  const bigCount = pts => pts.filter(p => p.steps >= 10000).length;
+
   return (
     <div className="pw-popup-overlay" onClick={onClose}>
-      <div className="worm-modal" onClick={e => e.stopPropagation()}>
-        <div className="worm-header">
-          <div className="worm-title">
-            <span className="worm-title-main">WORM</span>
-            <span className="worm-title-sub">{hasBase ? `${shortLabel(baseM)} v ${shortLabel(curM)}` : shortLabel(curM)}</span>
-          </div>
-          <button className="worm-close" onClick={onClose}>✕</button>
+      <div className="wg-modal wg-modal-wide" onClick={e => e.stopPropagation()}>
+        <div className="wg-header">
+          <span className="wg-title">Worm Graph</span>
+          <button className="wg-close" onClick={onClose}>✕</button>
         </div>
 
-        {allMonths.length > 1 && (
-          <div className="worm-months">
-            {allMonths.map(m => {
-              const role = m === curM ? 'cur' : m === baseM ? 'base' : null;
-              return (
-                <button key={m} className={`worm-month${role ? ` worm-month-${role}` : ''}`} onClick={() => pick(m)}>
-                  <span className="worm-month-name">{shortLabel(m)}</span>
-                  <span className="worm-month-total">{fmtK(totals[m])}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {hasBase && (
-          <div className={`worm-gap${ahead ? ' worm-gap-up' : ' worm-gap-down'}`}>
-            <span className="worm-gap-arrow">{ahead ? '▲' : '▼'}</span>
-            <span className="worm-gap-val">{Math.abs(gap).toLocaleString()}</span>
-            <span className="worm-gap-txt">
-              {ahead ? 'ahead of' : 'behind'} {shortLabel(baseM)} by day {curLast}
-            </span>
-          </div>
-        )}
-
-        <svg className="worm-svg" viewBox={`0 0 ${W} ${H}`} role="img"
+        <div className="wg-body">
+          <div className="wg-chart">
+        <svg className="wg-svg" viewBox={`0 0 ${W} ${H}`} role="img"
              onMouseLeave={() => setHover(null)}
              aria-label={`Cumulative steps, ${shortLabel(curM)}${hasBase ? ` against ${shortLabel(baseM)}` : ''}`}>
           <text x="6" y="10" fontSize="8" fontWeight="800" fill="#6b7280">Steps</text>
 
           {yTicks.map(v => (
             <g key={`y${v}`}>
-              <line x1={padL} y1={Y(v)} x2={W - padR} y2={Y(v)} stroke="#e3ded2" strokeWidth="1" />
+              <line x1={padL} y1={Y(v)} x2={W - padR} y2={Y(v)} stroke="#eef0f2" strokeWidth="1" />
               <text x={padL - 5} y={Y(v) + 2.8} textAnchor="end" fontSize="8" fill="#8b8578">{fmtK(v)}</text>
             </g>
           ))}
@@ -2078,22 +2047,20 @@ function WormGraph({ month, baseMonth, target, targetMonth, stepHistory, todayDa
             </g>
           )}
 
-          <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} stroke="#c9c2b4" strokeWidth="1" />
-          <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} stroke="#c9c2b4" strokeWidth="1" />
+          <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} stroke="#d7dade" strokeWidth="1" />
+          <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} stroke="#d7dade" strokeWidth="1" />
 
           {xTicks.map(d => (
             <text key={`x${d}`} x={X(d)} y={padT + plotH + 13} textAnchor="middle" fontSize="8" fill="#8b8578">{d}</text>
           ))}
           <text x={padL + plotW / 2} y={H - 5} textAnchor="middle" fontSize="8" fontWeight="800" fill="#6b7280">Day of month</text>
 
-          {hasBase && !off.base && (
+          {hasBase && (
             <polyline points={path(basePts)} fill="none" stroke={WORM_BASE}
                       strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
           )}
-          {!off.cur && (
-            <polyline points={path(curPts)} fill="none" stroke={WORM_CUR}
-                      strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
-          )}
+          <polyline points={path(curPts)} fill="none" stroke={WORM_CUR}
+                    strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
 
           {/* the hovered day, picked out before the dots so it sits under them */}
           {hover && (
@@ -2101,8 +2068,8 @@ function WormGraph({ month, baseMonth, target, targetMonth, stepHistory, todayDa
                   stroke={hover.color} strokeWidth="0.9" strokeDasharray="3 3" opacity="0.5" />
           )}
 
-          {hasBase && !off.base && dots(basePts, WORM_BASE, baseM, 'b')}
-          {!off.cur && dots(curPts, WORM_CUR, curM, 'c')}
+          {hasBase && dots(basePts, WORM_BASE, baseM, 'b')}
+          {dots(curPts, WORM_CUR, curM, 'c')}
 
           {hover && (() => {
             const lines = [
@@ -2127,22 +2094,61 @@ function WormGraph({ month, baseMonth, target, targetMonth, stepHistory, todayDa
           })()}
         </svg>
 
-        <div className="worm-legend">
-          {hasBase && (
-            <button className={`worm-key${off.base ? ' worm-key-off' : ''}`} onClick={() => toggle('base')}>
-              <i style={{ background: WORM_BASE }} />{shortLabel(baseM)} · {baseTotal.toLocaleString()}
-            </button>
-          )}
-          <button className={`worm-key${off.cur ? ' worm-key-off' : ''}`} onClick={() => toggle('cur')}>
-            <i style={{ background: WORM_CUR }} />{shortLabel(curM)} · {curTotal.toLocaleString()}
-          </button>
-          <span className="worm-key worm-key-note"><b>10</b> = 10k+ day</span>
-        </div>
-        <div className="worm-hint">Pick any two months above · hover a dot for that day · tap a key to hide its line</div>
+            <div className="worm-legend">
+              {hasBase && <span className="worm-key"><i style={{ background: WORM_BASE }} />{monthLabel(baseM)}</span>}
+              <span className="worm-key"><i style={{ background: WORM_CUR }} />{monthLabel(curM)}</span>
+              <span className="worm-key worm-key-note"><b>10</b> = 10k+ day</span>
+            </div>
+            <div className="worm-hint">Hover or tap a dot for that day's steps</div>
+          </div>
 
-        {!hasBase && (
-          <div className="worm-empty">No {shortLabel(baseMonth)} history to compare against yet.</div>
-        )}
+          <div className="wg-side">
+            <label className="wg-field">
+              <span className="wg-field-label">Month</span>
+              <select className="wg-select" value={curM} onChange={e => pickCur(e.target.value)}>
+                {allMonths.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+              </select>
+            </label>
+            <label className="wg-field">
+              <span className="wg-field-label">Compare with</span>
+              <select className="wg-select" value={baseM || ''} onChange={e => pickBase(e.target.value)}>
+                <option value="">None</option>
+                {allMonths.filter(m => m !== curM).map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+              </select>
+            </label>
+
+            <div className="wg-stats">
+              <div className="wg-stat">
+                <span>{shortLabel(curM)}</span>
+                <strong style={{ color: WORM_CUR }}>{curTotal.toLocaleString()}</strong>
+              </div>
+              {hasBase && (
+                <div className="wg-stat">
+                  <span>{shortLabel(baseM)}</span>
+                  <strong style={{ color: WORM_BASE }}>{baseTotal.toLocaleString()}</strong>
+                </div>
+              )}
+              {hasBase && (
+                <div className="wg-stat">
+                  <span>By day {curLast}</span>
+                  <strong style={{ color: ahead ? '#15803d' : '#dc2626' }}>
+                    {ahead ? '+' : '−'}{Math.abs(gap).toLocaleString()}
+                  </strong>
+                </div>
+              )}
+              <div className="wg-stat">
+                <span>10k days</span>
+                <strong>{bigCount(curPts)}{hasBase ? ` v ${bigCount(basePts)}` : ''}</strong>
+              </div>
+              {showTarget && (
+                <div className="wg-stat">
+                  <span>Target</span>
+                  <strong style={{ color: '#b45309' }}>{target.toLocaleString()}</strong>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -8714,16 +8720,11 @@ export default function PokemonWalker({ onStop }) {
                               ? <div className="sh-empty">No history yet.</div>
                               : (
                                 <>
-                                <button className="worm-btn" onClick={() => setShowWormGraph(true)}>
-                                  <span className="worm-btn-spark">
-                                    <svg viewBox="0 0 24 10" preserveAspectRatio="none">
-                                      <polyline points="0,9 5,7 9,7.5 14,4 18,3 24,1" fill="none"
-                                                stroke="currentColor" strokeWidth="1.6"
-                                                strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                  </span>
-                                  Worm Graph
-                                </button>
+                                <div className="wg-open-row">
+                                  <button className="wg-open-btn" onClick={() => setShowWormGraph(true)}>
+                                    📈 Worm Graph
+                                  </button>
+                                </div>
                                 <table className="sh-table">
                                   <thead>
                                     <tr>
