@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 // styled fork — the stock xlsx build silently drops cell styling on write
 import * as XLSX from 'xlsx-js-style';
+import { unzipSync, zipSync, strToU8, strFromU8 } from 'fflate';
 import '../styles/pokemon-walker.css';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -1850,6 +1851,41 @@ function RameezDayPopup({ date, dayNo, values, logged, onEdit, onClose }) {
       </div>
     </div>
   );
+}
+
+// ─── xlsx: freeze the header row ──────────────────────────────────────────
+// xlsx-js-style has no pane support — it writes <sheetView workbookViewId="0"/>
+// and silently drops ws['!freeze']. The file is a zip, so the one worksheet
+// part is unpacked, given a <pane>, and repacked. Everything else is passed
+// through byte for byte, in its original order.
+function xlsxWithFrozenHeader(buf, rows = 1) {
+  try {
+    const files = unzipSync(new Uint8Array(buf));
+    const key = Object.keys(files).find(k => /^xl\/worksheets\/sheet1\.xml$/.test(k));
+    if (!key) return buf;
+    const xml = strFromU8(files[key]);
+    if (xml.includes('<pane ')) return buf;
+    const top = `A${rows + 1}`;
+    const pane = `<pane ySplit="${rows}" topLeftCell="${top}" activePane="bottomLeft" state="frozen"/>`
+               + `<selection pane="bottomLeft" activeCell="${top}" sqref="${top}"/>`;
+    const next = xml.replace(/<sheetView([^>]*?)\/>/, `<sheetView$1>${pane}</sheetView>`);
+    if (next === xml) return buf;           // markup not as expected — ship it unpatched
+    files[key] = strToU8(next);
+    return zipSync(files);
+  } catch {
+    return buf;                             // a download without panes beats no download
+  }
+}
+
+function downloadBlob(data, filename, type) {
+  const url = URL.createObjectURL(new Blob([data], { type }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ─── Monthly steps: cricket worm graph ────────────────────────────────────
@@ -4401,7 +4437,10 @@ export default function PokemonWalker({ onStop }) {
     XLSX.utils.book_append_sheet(wb, ws, 'Daily Tracking');
 
 
-    XLSX.writeFile(wb, `rameez-100day-${todayString()}.xlsx`);
+    // written by hand rather than XLSX.writeFile so the header row can be frozen
+    const out = xlsxWithFrozenHeader(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }));
+    downloadBlob(out, `rameez-100day-${todayString()}.xlsx`,
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   };
 
   // ─── 50 Day No Sweets ────────────────────────────────────────────────
