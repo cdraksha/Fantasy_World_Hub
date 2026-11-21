@@ -350,7 +350,7 @@ const RAMEEZ_FIELDS = [
   { key: 'dailyRoutine', label: 'Daily routine',    record: 'workout, work...',       type: 'text' },
   // one-tap fill for the mix Rameez recommended, so it isn't retyped every day
   { key: 'herbalDrink',  label: 'Herbal drink',     record: 'As recommended',         type: 'text',
-    preset: { label: 'Regular drink', value: '3 scoop formula, 2 scoop malt, 1 scoop protein' } },
+    preset: { label: 'Regular drink', value: '3 scoop formula, 2 scoop shakemate, 1 scoop protein' } },
   { key: 'notes',        label: 'Notes',            record: 'Anything worth flagging', type: 'text' },
 ];
 
