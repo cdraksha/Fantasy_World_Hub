@@ -2723,6 +2723,7 @@ function HeaderClock({ dateStr }) {
 
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const monthLabel = m => `${MONTH_NAMES[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`;
+const fmtDMY = d => `${d.slice(8, 10)}-${MONTH_NAMES[Number(d.slice(5, 7)) - 1].toUpperCase()}-${d.slice(0, 4)}`;
 const dayNum = d => Math.round(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) / 86400000);
 
 function WeightGraphPopup({ history, onClose }) {
@@ -3333,6 +3334,7 @@ export default function PokemonWalker({ onStop }) {
   const [claimingWeddingReward, setClaimingWeddingReward] = useState(false);
   const [claimingTrainer, setClaimingTrainer] = useState(null);
   const [showLogStepsDropdown, setShowLogStepsDropdown] = useState(false);
+  const [stepsLogMonth, setStepsLogMonth] = useState('');   // '' = every month
   const [showLogMonthlyDropdown, setShowLogMonthlyDropdown] = useState(false);
   const [showLogMilestonesDropdown, setShowLogMilestonesDropdown] = useState(false);
   const [showLogDistanceDropdown, setShowLogDistanceDropdown] = useState(false);
@@ -9300,9 +9302,14 @@ export default function PokemonWalker({ onStop }) {
                       const byDate = {};
                       (appState.stepHistory || []).forEach(e => { byDate[e.date] = e.steps; });
                       if (appState.todayDate && appState.todaySteps) byDate[appState.todayDate] = appState.todaySteps;
-                      const stepRows = Object.entries(byDate)
+                      const allRows = Object.entries(byDate)
                         .map(([date, steps]) => ({ date, steps }))
                         .sort((a, b) => (a.date < b.date ? 1 : -1));
+                      const logMonths = [...new Set(allRows.map(e => e.date.slice(0, 7)))].sort().reverse();
+                      // a month that has since been deleted must not strand the filter
+                      const activeMonth = logMonths.includes(stepsLogMonth) ? stepsLogMonth : '';
+                      const stepRows = activeMonth ? allRows.filter(e => e.date.startsWith(activeMonth)) : allRows;
+                      const shownTotal = stepRows.reduce((s, e) => s + e.steps, 0);
                       return (
                       <>
                     <button className="log-section-toggle" onClick={() => setShowLogStepsDropdown(p => !p)}>
@@ -9310,26 +9317,41 @@ export default function PokemonWalker({ onStop }) {
                       <span className="log-section-chevron">{showLogStepsDropdown ? '▲' : '▼'}</span>
                     </button>
                     {showLogStepsDropdown && (
-                      stepRows.length === 0 ? (
-                        <div className="sh-empty">No steps logged yet.</div>
-                      ) : (
-                        <table className="sh-table">
-                          <thead>
-                            <tr>
-                              <th className="sh-th">Date</th>
-                              <th className="sh-th sh-th-right">Steps</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {stepRows.map((entry, i) => (
-                              <tr key={i} className={`sh-row${entry.steps >= 10000 ? ' sh-row-10k' : ''}`}>
-                                <td className="sh-td">{entry.date}</td>
-                                <td className="sh-td sh-td-right">{entry.steps.toLocaleString()}</td>
+                      <>
+                        <div className="sh-filter">
+                          <select
+                            className="wg-select sh-month"
+                            value={activeMonth}
+                            onChange={e => setStepsLogMonth(e.target.value)}
+                          >
+                            <option value="">All months</option>
+                            {logMonths.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+                          </select>
+                          <span className="sh-filter-sum">
+                            {stepRows.length} day{stepRows.length === 1 ? '' : 's'} · {shownTotal.toLocaleString()} steps
+                          </span>
+                        </div>
+                        {stepRows.length === 0 ? (
+                          <div className="sh-empty">No steps logged yet.</div>
+                        ) : (
+                          <table className="sh-table">
+                            <thead>
+                              <tr>
+                                <th className="sh-th">Date</th>
+                                <th className="sh-th sh-th-right">Steps</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )
+                            </thead>
+                            <tbody>
+                              {stepRows.map((entry, i) => (
+                                <tr key={i} className={`sh-row${entry.steps >= 10000 ? ' sh-row-10k' : ''}`}>
+                                  <td className="sh-td">{fmtDMY(entry.date)}</td>
+                                  <td className="sh-td sh-td-right">{entry.steps.toLocaleString()}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </>
                     )}
                       </>
                       );
