@@ -351,6 +351,7 @@ const RAMEEZ_FIELDS = [
   // one-tap fill for the mix Rameez recommended, so it isn't retyped every day
   { key: 'herbalDrink',  label: 'Herbal drink',     record: 'As recommended',         type: 'text',
     preset: { label: 'Regular drink', value: '3 scoop formula, 2 scoop shakemate, 1 scoop protein' } },
+  { key: 'afresh',       label: '5:30am - 6:30am Afresh', record: 'Yes / No',          type: 'choice', choices: ['Yes', 'No'] },
   { key: 'notes',        label: 'Notes',            record: 'Anything worth flagging', type: 'text' },
 ];
 
