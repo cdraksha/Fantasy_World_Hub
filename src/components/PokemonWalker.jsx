@@ -415,6 +415,7 @@ const QUOTA_CHALLENGES = {
     inputLabel: 'Sweets today',
     quotaLabel: '1 a day is free',
     note: "Sweets = sugar as the main ingredient — Indian sweets, chocolate, cake, pastry. Rice, bread and milk don't count.",
+    rewardKind: 'pokemon',
   },
   rice: {
     icon: '🍙',
@@ -427,11 +428,21 @@ const QUOTA_CHALLENGES = {
     inputLabel: 'Rice today',
     quotaLabel: 'none allowed',
     note: "White rice only — brown rice, millets and other grains don't count.",
+    // paid in packs, not raw commons. Packs are wiped at midnight, so the
+    // counts stay small enough to actually open on the day they land.
+    rewardKind: 'packs',
+    streakGrant: { rare: 1, common: 1 },
+    finalTiers: [
+      { days: 30, grant: { epic: 3, rare: 4, common: 5 }, label: '3 epic + 4 rare + 5 common packs' },
+      { days: 20, grant: { epic: 2, common: 3 },          label: '2 epic + 3 common packs' },
+      { days: 10, grant: { common: 2 },                   label: '2 common packs' },
+    ],
   },
 };
 
 const QUOTA_STREAK_BLOCK = 5;    // clean days per repeating reward
-const QUOTA_STREAK_REWARD = 5;   // common Pokémon per block
+const QUOTA_STREAK_REWARD = 5;   // default: common Pokémon per block
+
 
 // Ordered harshest first; a slip with nothing near it falls through to the base.
 const QUOTA_PENALTIES = [
@@ -446,6 +457,20 @@ const QUOTA_FINAL_TIERS = [
   { days: 20, grant: { common: 10, epic: 5 },           label: '10 common + 5 epic' },
   { days: 10, grant: { common: 5 },                     label: '5 common' },
 ];
+// What a challenge pays per 5-day block, and what it pays at the end.
+const quotaStreakGrant = key =>
+  QUOTA_CHALLENGES[key].streakGrant || { common: QUOTA_STREAK_REWARD };
+const quotaFinalTiers = key =>
+  QUOTA_CHALLENGES[key].finalTiers || QUOTA_FINAL_TIERS;
+// "2 common packs" / "1 rare + 1 common pack" from { common: 2 } etc.
+// The noun goes singular when every count is one, so it reads distributively
+// rather than as "1 common packs".
+const grantLabel = (g, noun) => {
+  const parts = Object.entries(g).map(([t, n]) => `${n} ${t}`);
+  if (!noun) return parts.join(' + ');
+  const singular = Object.values(g).every(n => n === 1);
+  return `${parts.join(' + ')} ${singular ? noun.replace(/s$/, '') : noun}`;
+};
 
 function initQuotaChallenge() {
   return {
@@ -5002,9 +5027,11 @@ export default function PokemonWalker({ onStop }) {
       && after.streak % QUOTA_STREAK_BLOCK === 0
       && after.streak !== c.lastRewardedStreak;
 
+    const streakGrant = quotaStreakGrant(key);
+    const paysPacks = cfg.rewardKind === 'packs';
     let granted = [];
-    if (blockHit) {
-      granted = await grantPokemonByTier({ common: QUOTA_STREAK_REWARD }, appState.pokemon.map(p => p.dexId));
+    if (blockHit && !paysPacks) {
+      granted = await grantPokemonByTier(streakGrant, appState.pokemon.map(p => p.dexId));
     }
 
     setAppState(prev => {
@@ -5025,9 +5052,17 @@ export default function PokemonWalker({ onStop }) {
         logLines.push({ date: todayString(), type: key, tier: 'common', outcome: `${cfg.title} — ${after.streak}-day clean streak — ${granted.length} common Pokémon: ${granted.map(p => p.name).join(', ')}` });
       }
 
+      let packInventory = prev.packInventory;
+      if (blockHit && paysPacks) {
+        packInventory = { ...packInventory };
+        Object.entries(streakGrant).forEach(([t, n]) => { packInventory[t] = (packInventory[t] || 0) + n; });
+        logLines.push({ date: todayString(), type: key, tier: null, outcome: `${cfg.title} — ${after.streak}-day clean streak — ${grantLabel(streakGrant, 'packs')}` });
+      }
+
       return {
         ...prev,
         pokemon,
+        packInventory,
         caughtDex: [...new Set([...(prev.caughtDex || []), ...granted.map(p => p.dexId)])],
         [key]: {
           ...cur,
@@ -5044,7 +5079,7 @@ export default function PokemonWalker({ onStop }) {
     setQuotaInput(q => ({ ...q, [key]: '' }));
     setDeltaFlash(
       penalty ? `${penalty.lose} common released — ${penalty.label}`
-      : blockHit ? `${after.streak}-day clean streak — ${QUOTA_STREAK_REWARD} common Pokémon!`
+      : blockHit ? `${after.streak}-day clean streak — ${grantLabel(streakGrant, paysPacks ? 'packs' : 'Pokémon')}!`
       : amount === 0 ? 'Clean day logged'
       : `${amount}${cfg.unit ? ' ' + cfg.unit : ''} logged — within quota, but the streak resets`
     );
@@ -5058,16 +5093,23 @@ export default function PokemonWalker({ onStop }) {
     if (todayString() <= quotaEndDate(key)) return;
     if (claimingRewardRef.current.has(key)) return;
     const { cleanDays } = quotaStats(c);
-    const tier = QUOTA_FINAL_TIERS.find(t => cleanDays >= t.days);
+    const tier = quotaFinalTiers(key).find(t => cleanDays >= t.days);
     if (!tier) return;
+    const paysPacks = cfg.rewardKind === 'packs';
     claimingRewardRef.current.add(key);
     try {
-      const granted = await grantPokemonByTier(tier.grant, appState.pokemon.map(p => p.dexId));
+      const granted = paysPacks ? [] : await grantPokemonByTier(tier.grant, appState.pokemon.map(p => p.dexId));
       setAppState(prev => {
         if (prev[key]?.finalClaimed) return prev;
+        let packInventory = prev.packInventory;
+        if (paysPacks) {
+          packInventory = { ...packInventory };
+          Object.entries(tier.grant).forEach(([t, n]) => { packInventory[t] = (packInventory[t] || 0) + n; });
+        }
         return {
           ...prev,
           pokemon: [...prev.pokemon, ...granted.map(p => ({ uid: makeUID(), ...p, buddySteps: 0, caughtDate: todayString(), onTeam: false }))],
+          packInventory,
           caughtDex: [...new Set([...(prev.caughtDex || []), ...granted.map(p => p.dexId)])],
           [key]: { ...prev[key], finalClaimed: true },
           challengeLog: [{ date: todayString(), type: key, tier: 'epic', outcome: `${cfg.title} — ${cleanDays} clean days — ${tier.label}` }, ...(prev.challengeLog || [])],
@@ -8650,9 +8692,11 @@ export default function PokemonWalker({ onStop }) {
                       const over = today > endDate;
                       const dayNo = notStarted ? 0 : Math.min(cfg.days, daysBetween(cfg.start, today) + 1);
                       const loggedToday = c.log?.[today] !== undefined;
-                      const tier = QUOTA_FINAL_TIERS.find(t => cleanDays >= t.days);
-                      const nextTier = [...QUOTA_FINAL_TIERS].reverse().find(t => cleanDays < t.days);
+                      const tiers = quotaFinalTiers(key);
+                      const tier = tiers.find(t => cleanDays >= t.days);
+                      const nextTier = [...tiers].reverse().find(t => cleanDays < t.days);
                       const toBlock = QUOTA_STREAK_BLOCK - (streak % QUOTA_STREAK_BLOCK);
+                      const blockReward = grantLabel(quotaStreakGrant(key), cfg.rewardKind === 'packs' ? 'packs' : '');
                       const open = openQuotaPanel === key;
                       const draft = quotaInput[key] ?? '';
                       const unit = cfg.unit ? ` ${cfg.unit}` : '';
@@ -8681,7 +8725,7 @@ export default function PokemonWalker({ onStop }) {
                                 <div style={{ flex: 1, background: '#f0f9ff', borderRadius: 6, padding: '6px 8px', border: '1px solid #bae6fd' }}>
                                   <div style={{ fontSize: 8, color: '#0369a1', fontWeight: 700 }}>STREAK</div>
                                   <div style={{ fontSize: 13, fontWeight: 900, color: '#0369a1' }}>{streak}</div>
-                                  <div style={{ fontSize: 8, color: '#6b7280' }}>{streak > 0 ? `${toBlock} to +${QUOTA_STREAK_REWARD}` : `${QUOTA_STREAK_BLOCK} for +${QUOTA_STREAK_REWARD}`}</div>
+                                  <div style={{ fontSize: 8, color: '#6b7280' }}>{streak > 0 ? `${toBlock} to ${blockReward}` : `${QUOTA_STREAK_BLOCK} for ${blockReward}`}</div>
                                 </div>
                               </div>
 
@@ -8708,7 +8752,7 @@ export default function PokemonWalker({ onStop }) {
                               )}
 
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 6 }}>
-                                {QUOTA_FINAL_TIERS.map(t => (
+                                {tiers.map(t => (
                                   <div key={t.days} style={{
                                     display: 'flex', gap: 6, fontSize: 8, padding: '3px 6px', borderRadius: 4,
                                     background: tier?.days === t.days ? '#14532d' : 'transparent',
@@ -8746,7 +8790,7 @@ export default function PokemonWalker({ onStop }) {
                               )}
                               {over && !tier && (
                                 <div style={{ fontSize: 9, color: '#dc2626', textAlign: 'center', fontWeight: 700 }}>
-                                  Ended with {cleanDays} clean days — under the {QUOTA_FINAL_TIERS.at(-1).days}-day tier
+                                  Ended with {cleanDays} clean days — under the {tiers.at(-1).days}-day tier
                                 </div>
                               )}
                               <div style={{ fontSize: 7, color: '#6b7280', textAlign: 'center', marginTop: 4 }}>
