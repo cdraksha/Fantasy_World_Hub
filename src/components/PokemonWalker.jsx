@@ -351,7 +351,7 @@ const RAMEEZ_FIELDS = [
   // one-tap fill for the mix Rameez recommended, so it isn't retyped every day
   { key: 'herbalDrink',  label: 'Herbal drink',     record: 'As recommended',         type: 'text',
     preset: { label: 'Regular drink', value: '3 scoop formula, 2 scoop shakemate, 1 scoop protein' } },
-  { key: 'afresh',       label: '5:30am - 6:30am Afresh', record: 'Yes / No',          type: 'choice', choices: ['Yes', 'No'] },
+  { key: 'afresh',       label: 'Afresh',           record: '1 / 2 / custom',         type: 'choice', choices: ['1', '2'], custom: true },
   { key: 'notes',        label: 'Notes',            record: 'Anything worth flagging', type: 'text' },
 ];
 
@@ -2793,6 +2793,8 @@ export default function PokemonWalker({ onStop }) {
   const [showDistancePanel, setShowDistancePanel] = useState(false);
   const [showMonthlyPanel, setShowMonthlyPanel] = useState(false);
   const [showWormGraph, setShowWormGraph] = useState(false);
+  // which choice fields have their free-text box open, keyed by field
+  const [rameezCustom, setRameezCustom] = useState({});
   const [distanceInput, setDistanceInput] = useState('');
   const [showWeightPanel, setShowWeightPanel] = useState(false);
   const [weightInput, setWeightInput] = useState('');
@@ -7501,13 +7503,45 @@ export default function PokemonWalker({ onStop }) {
                                         <span className="rz-param">{f.label}</span>
                                         {f.type === 'choice' ? (
                                           <span className="rz-choices">
-                                            {f.choices.map(c => (
-                                              <button
-                                                key={c}
-                                                className={`rz-choice${val(f.key) === c ? ' rz-choice-on' : ''}`}
-                                                onClick={() => setVal(f.key, val(f.key) === c ? '' : c)}
-                                              >{c}</button>
-                                            ))}
+                                            {(() => {
+                                              const v = String(val(f.key) ?? '');
+                                              // anything saved that isn't one of the presets was typed by hand,
+                                              // so the box reopens on it without needing a flag
+                                              const isCustom = f.custom && (rameezCustom[f.key] || (v !== '' && !f.choices.includes(v)));
+                                              return (
+                                                <>
+                                                  {f.choices.map(c => (
+                                                    <button
+                                                      key={c}
+                                                      className={`rz-choice${!isCustom && v === c ? ' rz-choice-on' : ''}`}
+                                                      onClick={() => {
+                                                        if (f.custom) setRameezCustom(s2 => ({ ...s2, [f.key]: false }));
+                                                        setVal(f.key, v === c && !isCustom ? '' : c);
+                                                      }}
+                                                    >{c}</button>
+                                                  ))}
+                                                  {f.custom && (
+                                                    <button
+                                                      className={`rz-choice${isCustom ? ' rz-choice-on' : ''}`}
+                                                      onClick={() => {
+                                                        setRameezCustom(s2 => ({ ...s2, [f.key]: !isCustom }));
+                                                        // clear either way, so an empty box never hides a stored preset
+                                                        if (isCustom || f.choices.includes(v)) setVal(f.key, '');
+                                                      }}
+                                                    >Custom</button>
+                                                  )}
+                                                  {isCustom && (
+                                                    <input
+                                                      className="rz-input rz-choice-box"
+                                                      type="text"
+                                                      placeholder="type it in"
+                                                      value={f.choices.includes(v) ? '' : v}
+                                                      onChange={e => setVal(f.key, e.target.value)}
+                                                    />
+                                                  )}
+                                                </>
+                                              );
+                                            })()}
                                           </span>
                                         ) : (
                                           <span className="rz-fieldcell">
