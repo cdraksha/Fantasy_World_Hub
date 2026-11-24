@@ -518,6 +518,7 @@ const TIMING_MILESTONES = [
 
 // ─── Water Intake ─────────────────────────────────────────────────────────────
 const WATER_GOAL_ML = 3500; // 3.5L/day — recommended for obese adult male
+const CAL_TARGET = 1500;    // net kcal/day the calorie tracker scores against
 
 const WATER_MILESTONES = [
   { days: 5,   reward: { buddySteps: 500 } },
@@ -1160,6 +1161,7 @@ function defaultState(steps) {
     sugar: initSugar(),
     daycare: initDaycare(),
     totalDistanceCovered: 0,
+    homeStats: [...HOME_STATS_DEFAULT],
     monthlyChallenge: null,
     claimedLegendaryMilestones: [],
     stepHistory: [],
@@ -1346,6 +1348,12 @@ function loadState() {
     if (!saved.claimedTrainers) saved.claimedTrainers = [];
     if (!saved.claimedVaultMilestones) saved.claimedVaultMilestones = [];
     if (!saved.totalDistanceCovered) saved.totalDistanceCovered = 0;
+    // older saves predate the pickable stat boxes, and a stat removed from the
+    // catalogue must not leave an empty slot behind
+    saved.homeStats = (Array.isArray(saved.homeStats) ? saved.homeStats : HOME_STATS_DEFAULT)
+      .filter(id => OVERALL_STATS.some(st => st.id === id))
+      .slice(0, HOME_STATS_MAX);
+    if (!saved.homeStats.length) saved.homeStats = [...HOME_STATS_DEFAULT];
     if (!saved.claimedLegendaryMilestones) saved.claimedLegendaryMilestones = [];
     if (!saved.monthlyChallenge) {
       const augSteps = (saved.stepHistory || []).filter(e => e.date.startsWith('2026-08')).reduce((s, e) => s + e.steps, 0);
@@ -1853,6 +1861,500 @@ function RameezDayPopup({ date, dayNo, values, logged, onEdit, onClose }) {
     </div>
   );
 }
+
+// ─── Overall stats ────────────────────────────────────────────────────────
+// Every entry is derived from data already in the save, so a stat is right
+// the moment a day is logged and self-corrects if a past day is edited.
+// Six can be shown at once — the home page has six boxes.
+
+const HOME_STATS_MAX = 6;
+const HOME_STATS_DEFAULT = ['totalWalked', 'bestDay', 'streak8k', 'streak10k', 'monthlySteps', 'distance'];
+
+const shortDate = d => {
+  if (!d) return '';
+  const [y, m, day] = d.split('-');
+  return `${Number(day)} ${MONTH_NAMES[Number(m) - 1].slice(0, 3)} ${y}`;
+};
+
+// stepHistory with today folded in — today does not land in history until midnight
+function statsContext(state) {
+  const today = todayString();
+  const steps = [...(state.stepHistory || []).filter(e => e.date !== today)];
+  if (state.todaySteps) steps.push({ date: today, steps: state.todaySteps });
+  steps.sort((a, b) => (a.date < b.date ? -1 : 1));
+
+  const byMonth = {};
+  steps.forEach(e => { const m = e.date.slice(0, 7); byMonth[m] = (byMonth[m] || 0) + e.steps; });
+
+  const water = [...(state.water?.history || [])];
+  if (state.water?.todayDate === today && state.water.todayMl) {
+    const rest = water.filter(e => e.date !== today);
+    rest.push({ date: today, ml: state.water.todayMl });
+    water.length = 0; water.push(...rest);
+  }
+  const cal = [...(state.calories?.history || [])];
+  if (state.calories?.todayDate === today && state.calories.consumed) {
+    const rest = cal.filter(e => e.date !== today);
+    rest.push({ date: today, consumed: state.calories.consumed, burnt: state.calories.burnt || 0 });
+    cal.length = 0; cal.push(...rest);
+  }
+  // Rameez values come off text inputs, so they are strings: "9" would sort
+  // above "10" untouched. Coerce once here and drop anything unparseable.
+  const rlog = state.rameez?.log || {};
+  const rz = key => Object.keys(rlog).sort()
+    .map(date => ({ date, n: Number(rlog[date]?.[key]) }))
+    .filter(e => Number.isFinite(e.n));
+  const rzTime = key => Object.keys(rlog).sort()
+    .map(date => ({ date, t: rlog[date]?.[key] }))
+    .filter(e => /^\d{1,2}:\d{2}$/.test(e.t || ''))
+    .map(e => ({ ...e, mins: Number(e.t.split(':')[0]) * 60 + Number(e.t.split(':')[1]) }));
+
+  return {
+    state, today, steps, byMonth,
+    weight: [...(state.weight?.history || [])].sort((a, b) => (a.date < b.date ? -1 : 1)),
+    water, cal, rz, rzTime,
+  };
+}
+
+const pickBy = (arr, val, cmp) => arr.reduce((best, e) =>
+  (best === null || cmp(val(e), val(best)) ? e : best), null);
+const maxBy = (arr, val) => pickBy(arr, val, (a, b) => a > b);
+const minBy = (arr, val) => pickBy(arr, val, (a, b) => a < b);
+const mean = (arr, val) => (arr.length ? arr.reduce((s, e) => s + val(e), 0) / arr.length : null);
+
+// Best or worst run of `days` consecutive calendar days. Windows with a gap in
+// them are skipped rather than silently counted short.
+function bestWindow(steps, days, wantMax) {
+  const map = {};
+  steps.forEach(e => { map[e.date] = e.steps; });
+  let best = null;
+  for (const e of steps) {
+    let sum = 0, whole = true;
+    for (let i = 0; i < days; i++) {
+      const d = addDays(e.date, i);
+      if (map[d] === undefined) { whole = false; break; }
+      sum += map[d];
+    }
+    if (!whole) continue;
+    if (best === null || (wantMax ? sum > best.sum : sum < best.sum)) {
+      best = { sum, start: e.date, end: addDays(e.date, days - 1) };
+    }
+  }
+  return best;
+}
+
+// 10k days per month, so the best and worst month for big days can be named.
+function tenKByMonth(steps) {
+  const by = {};
+  steps.forEach(e => {
+    const m = e.date.slice(0, 7);
+    by[m] = (by[m] || 0) + (e.steps >= 10000 ? 1 : 0);
+  });
+  return by;
+}
+
+// Largest fall or rise between two consecutive weigh-ins.
+function weightSwing(weight, wantDrop) {
+  let best = null;
+  for (let i = 1; i < weight.length; i++) {
+    const d = weight[i].kg - weight[i - 1].kg;
+    if (wantDrop ? d >= 0 : d <= 0) continue;
+    if (best === null || Math.abs(d) > Math.abs(best.d)) best = { d, from: weight[i - 1], to: weight[i] };
+  }
+  return best;
+}
+
+// Average steps by day of the week, so the best and worst day can be named.
+const DOW_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+function dowAverages(steps) {
+  const sum = Array(7).fill(0), n = Array(7).fill(0);
+  steps.forEach(e => {
+    // midday avoids the UTC shift that would move a date to the day before
+    const d = new Date(`${e.date}T12:00:00`).getDay();
+    sum[d] += e.steps; n[d]++;
+  });
+  let best = null, worst = null;
+  for (let d = 0; d < 7; d++) {
+    if (!n[d]) continue;
+    const avg = sum[d] / n[d];
+    if (!best || avg > best.avg) best = { avg, name: DOW_NAMES[d] };
+    if (!worst || avg < worst.avg) worst = { avg, name: DOW_NAMES[d] };
+  }
+  return { best, worst };
+}
+
+// Longest run of days *below* `min` — the mirror of bestRun.
+function worstRun(steps, min) {
+  let run = 0, best = 0, ended = null, prev = null;
+  steps.forEach(e => {
+    const consecutive = prev && daysBetween(prev, e.date) === 1;
+    run = e.steps < min ? (consecutive && run ? run + 1 : 1) : 0;
+    if (run > best) { best = run; ended = e.date; }
+    prev = e.date;
+  });
+  return { days: best, ended };
+}
+
+// Longest run of days inside a quota challenge's allowance.
+function cleanRun(c, key) {
+  const cfg = QUOTA_CHALLENGES[key];
+  const log = c.state[key]?.log || {};
+  const dates = Object.keys(log).sort();
+  if (!dates.length) return null;
+  let run = 0, best = 0, ended = null, prev = null;
+  dates.forEach(d => {
+    const consecutive = prev && daysBetween(prev, d) === 1;
+    run = Number(log[d]) <= cfg.quota ? (consecutive && run ? run + 1 : 1) : 0;
+    if (run > best) { best = run; ended = d; }
+    prev = d;
+  });
+  return best ? { value: `${best}d`, sub: `clean, to ${shortDate(ended)}` } : null;
+}
+
+// Longest run of days clearing `min`, and the day it ended on.
+function bestRun(steps, min) {
+  let run = 0, best = 0, endedPrev = null, ended = null;
+  let prev = null;
+  steps.forEach(e => {
+    const consecutive = prev && daysBetween(prev, e.date) === 1;
+    run = e.steps >= min ? (consecutive && run ? run + 1 : 1) : 0;
+    if (run > best) { best = run; ended = e.date; }
+    prev = e.date;
+  });
+  return { days: best, ended };
+}
+
+const OVERALL_STATS = [
+  // ── steps ──
+  { id: 'totalWalked', group: 'Steps', label: 'Total Walked', get: c =>
+      ({ value: fmtNum(c.state.totalStepsWalked || 0), sub: c.steps.length ? `since ${shortDate(c.steps[0].date)}` : '' }) },
+  { id: 'bestDay', group: 'Steps', label: 'Highest Day', get: c => {
+      const e = maxBy(c.steps, x => x.steps);
+      return e && { value: fmtNum(e.steps), sub: shortDate(e.date) }; } },
+  { id: 'worstDay', group: 'Steps', label: 'Lowest Day', get: c => {
+      const e = minBy(c.steps, x => x.steps);
+      return e && { value: fmtNum(e.steps), sub: shortDate(e.date) }; } },
+  { id: 'bestWeek', group: 'Steps', label: 'Best Week', get: c => {
+      const w = bestWindow(c.steps, 7, true);
+      return w && { value: fmtNum(w.sum), sub: `${shortDate(w.start)} – ${shortDate(w.end)}` }; } },
+  { id: 'worstWeek', group: 'Steps', label: 'Lowest Week', get: c => {
+      const w = bestWindow(c.steps, 7, false);
+      return w && { value: fmtNum(w.sum), sub: `${shortDate(w.start)} – ${shortDate(w.end)}` }; } },
+  { id: 'bestMonth', group: 'Steps', label: 'Best Month', get: c => {
+      const ms = Object.keys(c.byMonth);
+      if (!ms.length) return null;
+      const m = ms.reduce((a, b) => (c.byMonth[b] > c.byMonth[a] ? b : a));
+      return { value: fmtNum(c.byMonth[m]), sub: monthLabel(m) }; } },
+  { id: 'worstMonth', group: 'Steps', label: 'Lowest Month', get: c => {
+      // the month in progress is always lowest, so it does not compete
+      const ms = Object.keys(c.byMonth).filter(m => m !== c.today.slice(0, 7));
+      if (!ms.length) return null;
+      const m = ms.reduce((a, b) => (c.byMonth[b] < c.byMonth[a] ? b : a));
+      return { value: fmtNum(c.byMonth[m]), sub: monthLabel(m) }; } },
+  { id: 'avgDay', group: 'Steps', label: 'Avg / Day', get: c => {
+      const m = mean(c.steps, x => x.steps);
+      return m === null ? null : { value: fmtNum(Math.round(m)), sub: `over ${c.steps.length} days` }; } },
+  { id: 'monthlySteps', group: 'Steps', label: 'Monthly Steps', get: c => {
+      const m = c.today.slice(0, 7);
+      return { value: fmtNum(c.byMonth[m] || 0), sub: monthLabel(m) }; } },
+  { id: 'streak8k', group: 'Steps', label: '8K Streak', get: c =>
+      ({ value: `${liveStreak(c.state.stepHistory, c.today, c.state.todaySteps, 8000)}d`, sub: 'current' }) },
+  { id: 'streak10k', group: 'Steps', label: '10K Streak', get: c =>
+      ({ value: `${liveStreak(c.state.stepHistory, c.today, c.state.todaySteps, 10000)}d`, sub: 'current' }) },
+  { id: 'best10k', group: 'Steps', label: 'Longest 10K', get: c => {
+      const r = bestRun(c.steps, 10000);
+      return r.days ? { value: `${r.days}d`, sub: `ended ${shortDate(r.ended)}` } : null; } },
+  { id: 'best8k', group: 'Steps', label: 'Longest 8K', get: c => {
+      const r = bestRun(c.steps, 8000);
+      return r.days ? { value: `${r.days}d`, sub: `ended ${shortDate(r.ended)}` } : null; } },
+  { id: 'days10k', group: 'Steps', label: '10K Days', get: c => {
+      const n = c.steps.filter(e => e.steps >= 10000).length;
+      return { value: String(n), sub: `of ${c.steps.length} logged` }; } },
+  { id: 'month10kHigh', group: 'Steps', label: 'Most 10K Days', get: c => {
+      const by = tenKByMonth(c.steps);
+      const ms = Object.keys(by);
+      if (!ms.length) return null;
+      const m = ms.reduce((a, b) => (by[b] > by[a] ? b : a));
+      return by[m] ? { value: `${by[m]}`, sub: monthLabel(m) } : null; } },
+  { id: 'month10kLow', group: 'Steps', label: 'Fewest 10K Days', get: c => {
+      // the month in progress has not had its chance yet
+      const by = tenKByMonth(c.steps);
+      const ms = Object.keys(by).filter(m => m !== c.today.slice(0, 7));
+      if (!ms.length) return null;
+      const m = ms.reduce((a, b) => (by[b] < by[a] ? b : a));
+      return { value: `${by[m]}`, sub: monthLabel(m) }; } },
+  { id: 'daysLogged', group: 'Steps', label: 'Days Logged', get: c =>
+      ({ value: String(c.steps.length), sub: c.steps.length ? `since ${shortDate(c.steps[0].date)}` : '' }) },
+  { id: 'distance', group: 'Steps', label: 'Distance Covered', get: c =>
+      ({ value: `${(c.state.totalDistanceCovered || 0).toFixed(1)}km`, sub: 'all time' }) },
+
+  // ── weight ──
+  { id: 'weightLow', group: 'Weight', label: 'Lowest Weight', get: c => {
+      const e = minBy(c.weight, x => x.kg);
+      return e && { value: `${e.kg.toFixed(1)}kg`, sub: shortDate(e.date) }; } },
+  { id: 'weightHigh', group: 'Weight', label: 'Highest Weight', get: c => {
+      const e = maxBy(c.weight, x => x.kg);
+      return e && { value: `${e.kg.toFixed(1)}kg`, sub: shortDate(e.date) }; } },
+  { id: 'weightAvg', group: 'Weight', label: 'Avg Weight', get: c => {
+      const m = mean(c.weight, x => x.kg);
+      return m === null ? null : { value: `${m.toFixed(1)}kg`, sub: `over ${c.weight.length} readings` }; } },
+  { id: 'weightNow', group: 'Weight', label: 'Current Weight', get: c => {
+      const e = c.weight[c.weight.length - 1];
+      return e && { value: `${e.kg.toFixed(1)}kg`, sub: shortDate(e.date) }; } },
+  { id: 'weightNet', group: 'Weight', label: 'Net Weight', get: c => {
+      if (c.weight.length < 2) return null;
+      const a = c.weight[0], b = c.weight[c.weight.length - 1];
+      const d = b.kg - a.kg;
+      return { value: `${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d).toFixed(1)}kg`,
+               sub: `since ${shortDate(a.date)}`, tone: d <= 0 ? 'good' : 'bad' }; } },
+
+  { id: 'weightDrop', group: 'Weight', label: 'Biggest Drop', get: c => {
+      const w = weightSwing(c.weight, true);
+      return w && { value: `−${Math.abs(w.d).toFixed(1)}kg`, sub: shortDate(w.to.date), tone: 'good' }; } },
+  { id: 'weightGain', group: 'Weight', label: 'Biggest Gain', get: c => {
+      const w = weightSwing(c.weight, false);
+      return w && { value: `+${w.d.toFixed(1)}kg`, sub: shortDate(w.to.date), tone: 'bad' }; } },
+
+  // ── water ──
+  { id: 'waterBest', group: 'Water', label: 'Most Water', get: c => {
+      const e = maxBy(c.water, x => x.ml);
+      return e && { value: `${(e.ml / 1000).toFixed(1)}L`, sub: shortDate(e.date) }; } },
+  { id: 'waterLow', group: 'Water', label: 'Least Water', get: c => {
+      const e = minBy(c.water.filter(x => (x.ml || 0) > 0), x => x.ml);
+      return e && { value: `${(e.ml / 1000).toFixed(1)}L`, sub: shortDate(e.date) }; } },
+  { id: 'waterMonth', group: 'Water', label: 'Best Water Month', get: c => {
+      const by = {};
+      c.water.forEach(e => { const m = e.date.slice(0, 7); by[m] = (by[m] || 0) + (e.ml || 0); });
+      const ms = Object.keys(by);
+      if (!ms.length) return null;
+      const m = ms.reduce((a, b) => (by[b] > by[a] ? b : a));
+      return { value: `${(by[m] / 1000).toFixed(1)}L`, sub: monthLabel(m) }; } },
+  { id: 'waterAvg', group: 'Water', label: 'Avg Water', get: c => {
+      const m = mean(c.water, x => x.ml);
+      return m === null ? null : { value: `${(m / 1000).toFixed(1)}L`, sub: `over ${c.water.length} days` }; } },
+
+  // ── calories ──
+  { id: 'calHigh', group: 'Calories', label: 'Most Calories', get: c => {
+      const e = maxBy(c.cal, x => x.consumed || 0);
+      return e && { value: fmtNum(e.consumed || 0), sub: shortDate(e.date) }; } },
+  { id: 'calLow', group: 'Calories', label: 'Fewest Calories', get: c => {
+      const e = minBy(c.cal.filter(x => (x.consumed || 0) > 0), x => x.consumed);
+      return e && { value: fmtNum(e.consumed), sub: shortDate(e.date) }; } },
+  { id: 'burntHigh', group: 'Calories', label: 'Most Burnt', get: c => {
+      const e = maxBy(c.cal.filter(x => (x.burnt || 0) > 0), x => x.burnt);
+      return e && { value: fmtNum(e.burnt), sub: shortDate(e.date) }; } },
+  { id: 'calAvg', group: 'Calories', label: 'Avg Calories', get: c => {
+      const list = c.cal.filter(x => (x.consumed || 0) > 0);
+      const m = mean(list, x => x.consumed);
+      return m === null ? null : { value: fmtNum(Math.round(m)), sub: `over ${list.length} days` }; } },
+
+  // ── steps: the rest of the highs and lows ──
+  { id: 'best30', group: 'Steps', label: 'Best 30 Days', get: c => {
+      const w = bestWindow(c.steps, 30, true);
+      return w && { value: fmtNum(w.sum), sub: `${shortDate(w.start)} – ${shortDate(w.end)}` }; } },
+  { id: 'strongDow', group: 'Steps', label: 'Strongest Day', get: c => {
+      const d = dowAverages(c.steps);
+      return d.best && { value: fmtNum(Math.round(d.best.avg)), sub: `${d.best.name}s on average` }; } },
+  { id: 'weakDow', group: 'Steps', label: 'Weakest Day', get: c => {
+      const d = dowAverages(c.steps);
+      return d.worst && { value: fmtNum(Math.round(d.worst.avg)), sub: `${d.worst.name}s on average` }; } },
+  { id: 'slump', group: 'Steps', label: 'Longest Slump', get: c => {
+      const r = worstRun(c.steps, 8000);
+      return r.days ? { value: `${r.days}d`, sub: `under 8K, to ${shortDate(r.ended)}`, tone: 'bad' } : null; } },
+  { id: 'gap', group: 'Steps', label: 'Longest Gap', get: c => {
+      let best = 0, ended = null;
+      for (let i = 1; i < c.steps.length; i++) {
+        const g = daysBetween(c.steps[i - 1].date, c.steps[i].date) - 1;
+        if (g > best) { best = g; ended = c.steps[i].date; }
+      }
+      return best ? { value: `${best}d`, sub: `unlogged, to ${shortDate(ended)}`, tone: 'bad' } : null; } },
+  { id: 'sinceBest', group: 'Steps', label: 'Since Best Day', get: c => {
+      const e = maxBy(c.steps, x => x.steps);
+      return e && { value: `${daysBetween(e.date, c.today)}d`, sub: `best was ${shortDate(e.date)}` }; } },
+  { id: 'days15k', group: 'Steps', label: '15K Days', get: c => {
+      const n = c.steps.filter(e => e.steps >= 15000).length;
+      return { value: String(n), sub: `of ${c.steps.length} logged` }; } },
+  { id: 'days20k', group: 'Steps', label: '20K Days', get: c => {
+      const n = c.steps.filter(e => e.steps >= 20000).length;
+      return { value: String(n), sub: `of ${c.steps.length} logged` }; } },
+  { id: 'bestJump', group: 'Steps', label: 'Biggest Jump', get: c => {
+      const ms = Object.keys(c.byMonth).sort();
+      let best = null;
+      for (let i = 1; i < ms.length; i++) {
+        const d = c.byMonth[ms[i]] - c.byMonth[ms[i - 1]];
+        if (best === null || d > best.d) best = { d, m: ms[i] };
+      }
+      return best && best.d > 0 ? { value: `+${fmtNum(best.d)}`, sub: `into ${monthLabel(best.m)}`, tone: 'good' } : null; } },
+  { id: 'projected', group: 'Steps', label: 'Month Projection', get: c => {
+      const m = c.today.slice(0, 7);
+      const dayNo = Number(c.today.slice(8, 10));
+      const total = c.byMonth[m] || 0;
+      if (!total) return null;
+      const days = monthDayCount(m);
+      return { value: fmtNum(Math.round((total / dayNo) * days)), sub: `at this pace, ${monthLabel(m)}` }; } },
+
+  // ── weight ──
+  { id: 'weightRange', group: 'Weight', label: 'Weight Range', get: c => {
+      if (c.weight.length < 2) return null;
+      const hi = maxBy(c.weight, x => x.kg), lo = minBy(c.weight, x => x.kg);
+      return { value: `${(hi.kg - lo.kg).toFixed(1)}kg`, sub: `${lo.kg.toFixed(1)} – ${hi.kg.toFixed(1)}` }; } },
+  { id: 'weightRate', group: 'Weight', label: 'Loss Rate', get: c => {
+      if (c.weight.length < 2) return null;
+      const a = c.weight[0], b = c.weight[c.weight.length - 1];
+      const days = daysBetween(a.date, b.date);
+      if (!days) return null;
+      const perWeek = ((b.kg - a.kg) / days) * 7;
+      return { value: `${perWeek > 0 ? '+' : '−'}${Math.abs(perWeek).toFixed(2)}kg`, sub: 'per week',
+               tone: perWeek <= 0 ? 'good' : 'bad' }; } },
+  { id: 'weightRun', group: 'Weight', label: 'Losing Streak', get: c => {
+      let run = 0, best = 0, ended = null;
+      for (let i = 1; i < c.weight.length; i++) {
+        if (c.weight[i].kg < c.weight[i - 1].kg) { run++; if (run > best) { best = run; ended = c.weight[i].date; } }
+        else run = 0;
+      }
+      return best ? { value: `${best}`, sub: `weigh-ins down, to ${shortDate(ended)}`, tone: 'good' } : null; } },
+  { id: 'sinceLow', group: 'Weight', label: 'Since Lowest', get: c => {
+      const e = minBy(c.weight, x => x.kg);
+      return e && { value: `${daysBetween(e.date, c.today)}d`, sub: `lowest was ${shortDate(e.date)}` }; } },
+  { id: 'weightMonth', group: 'Weight', label: 'Lightest Month', get: c => {
+      const by = {};
+      c.weight.forEach(e => { const m = e.date.slice(0, 7); (by[m] = by[m] || []).push(e.kg); });
+      const ms = Object.keys(by);
+      if (!ms.length) return null;
+      const avg = m => by[m].reduce((s, k) => s + k, 0) / by[m].length;
+      const m = ms.reduce((a, b) => (avg(b) < avg(a) ? b : a));
+      return { value: `${avg(m).toFixed(1)}kg`, sub: monthLabel(m) }; } },
+
+  // ── water ──
+  { id: 'waterGoalDays', group: 'Water', label: 'Goal Days', get: c => {
+      const n = c.water.filter(e => (e.ml || 0) >= WATER_GOAL_ML).length;
+      return { value: String(n), sub: `hit ${(WATER_GOAL_ML / 1000).toFixed(1)}L, of ${c.water.length}` }; } },
+  { id: 'waterRun', group: 'Water', label: 'Best Water Run', get: c => {
+      const r = bestRun(c.water.map(e => ({ date: e.date, steps: e.ml || 0 })), WATER_GOAL_ML);
+      return r.days ? { value: `${r.days}d`, sub: `ended ${shortDate(r.ended)}` } : null; } },
+  { id: 'waterTotal', group: 'Water', label: 'Total Water', get: c => {
+      if (!c.water.length) return null;
+      const l = c.water.reduce((s, e) => s + (e.ml || 0), 0) / 1000;
+      return { value: `${l.toFixed(0)}L`, sub: `over ${c.water.length} days` }; } },
+
+  // ── calories ──
+  { id: 'calUnder', group: 'Calories', label: 'Under Target', get: c => {
+      const list = c.cal.filter(x => (x.consumed || 0) > 0);
+      if (!list.length) return null;
+      const n = list.filter(x => (x.consumed || 0) - (x.burnt || 0) <= CAL_TARGET).length;
+      return { value: String(n), sub: `net under ${fmtNum(CAL_TARGET)}, of ${list.length}` }; } },
+  { id: 'calRun', group: 'Calories', label: 'Best Cal Run', get: c => {
+      const list = c.cal.filter(x => (x.consumed || 0) > 0)
+        .map(e => ({ date: e.date, steps: (e.consumed - (e.burnt || 0)) <= CAL_TARGET ? 1 : 0 }));
+      const r = bestRun(list, 1);
+      return r.days ? { value: `${r.days}d`, sub: `under target, to ${shortDate(r.ended)}` } : null; } },
+  { id: 'calNetLow', group: 'Calories', label: 'Best Net Day', get: c => {
+      const list = c.cal.filter(x => (x.consumed || 0) > 0);
+      const e = minBy(list, x => x.consumed - (x.burnt || 0));
+      return e && { value: fmtNum(e.consumed - (e.burnt || 0)), sub: shortDate(e.date) }; } },
+  { id: 'burntTotal', group: 'Calories', label: 'Total Burnt', get: c => {
+      const t = c.cal.reduce((s, e) => s + (e.burnt || 0), 0);
+      return t ? { value: fmtNum(t), sub: `over ${c.cal.length} days` } : null; } },
+
+  // ── sleep and how the body felt, straight out of the Rameez log ──
+  { id: 'sleepMost', group: 'Sleep & Body', label: 'Most Sleep', get: c => {
+      const e = maxBy(c.rz('sleepHours'), x => x.n);
+      return e && { value: `${e.n}h`, sub: shortDate(e.date) }; } },
+  { id: 'sleepLeast', group: 'Sleep & Body', label: 'Least Sleep', get: c => {
+      const e = minBy(c.rz('sleepHours'), x => x.n);
+      return e && { value: `${e.n}h`, sub: shortDate(e.date), tone: 'bad' }; } },
+  { id: 'sleepAvg', group: 'Sleep & Body', label: 'Avg Sleep', get: c => {
+      const l = c.rz('sleepHours'), m = mean(l, x => x.n);
+      return m === null ? null : { value: `${m.toFixed(1)}h`, sub: `over ${l.length} nights` }; } },
+  { id: 'sleepRun', group: 'Sleep & Body', label: '7h+ Run', get: c => {
+      const r = bestRun(c.rz('sleepHours').map(e => ({ date: e.date, steps: e.n })), 7);
+      return r.days ? { value: `${r.days}d`, sub: `ended ${shortDate(r.ended)}` } : null; } },
+  { id: 'energyBest', group: 'Sleep & Body', label: 'Best Energy', get: c => {
+      const e = maxBy(c.rz('energy'), x => x.n);
+      return e && { value: `${e.n}/10`, sub: shortDate(e.date), tone: 'good' }; } },
+  { id: 'energyWorst', group: 'Sleep & Body', label: 'Worst Energy', get: c => {
+      const e = minBy(c.rz('energy'), x => x.n);
+      return e && { value: `${e.n}/10`, sub: shortDate(e.date), tone: 'bad' }; } },
+  { id: 'energyAvg', group: 'Sleep & Body', label: 'Avg Energy', get: c => {
+      const l = c.rz('energy'), m = mean(l, x => x.n);
+      return m === null ? null : { value: `${m.toFixed(1)}/10`, sub: `over ${l.length} days` }; } },
+  { id: 'stressHigh', group: 'Sleep & Body', label: 'Worst Stress', get: c => {
+      const e = maxBy(c.rz('stress'), x => x.n);
+      return e && { value: `${e.n}/10`, sub: shortDate(e.date), tone: 'bad' }; } },
+  { id: 'stressAvg', group: 'Sleep & Body', label: 'Avg Stress', get: c => {
+      const l = c.rz('stress'), m = mean(l, x => x.n);
+      return m === null ? null : { value: `${m.toFixed(1)}/10`, sub: `over ${l.length} days` }; } },
+  { id: 'hungerAvg', group: 'Sleep & Body', label: 'Avg Hunger', get: c => {
+      const l = c.rz('hunger'), m = mean(l, x => x.n);
+      return m === null ? null : { value: `${m.toFixed(1)}/10`, sub: `over ${l.length} days` }; } },
+
+  // ── food and training, also from the Rameez log ──
+  { id: 'proteinHigh', group: 'Food & Training', label: 'Most Protein', get: c => {
+      const e = maxBy(c.rz('protein'), x => x.n);
+      return e && { value: `${e.n}g`, sub: shortDate(e.date) }; } },
+  { id: 'proteinAvg', group: 'Food & Training', label: 'Avg Protein', get: c => {
+      const l = c.rz('protein'), m = mean(l, x => x.n);
+      return m === null ? null : { value: `${Math.round(m)}g`, sub: `over ${l.length} days` }; } },
+  { id: 'exerciseHigh', group: 'Food & Training', label: 'Longest Workout', get: c => {
+      const e = maxBy(c.rz('exerciseMins'), x => x.n);
+      return e && { value: `${e.n}m`, sub: shortDate(e.date) }; } },
+  { id: 'exerciseTotal', group: 'Food & Training', label: 'Total Exercise', get: c => {
+      const l = c.rz('exerciseMins');
+      if (!l.length) return null;
+      const t = l.reduce((s, e) => s + e.n, 0);
+      return { value: `${Math.floor(t / 60)}h ${t % 60}m`, sub: `over ${l.length} days` }; } },
+  { id: 'fruitHigh', group: 'Food & Training', label: 'Most Fruit & Veg', get: c => {
+      const e = maxBy(c.rz('fruitVeg'), x => x.n);
+      return e && { value: `${e.n}`, sub: `servings, ${shortDate(e.date)}` }; } },
+  { id: 'fruitAvg', group: 'Food & Training', label: 'Avg Fruit & Veg', get: c => {
+      const l = c.rz('fruitVeg'), m = mean(l, x => x.n);
+      return m === null ? null : { value: m.toFixed(1), sub: `servings over ${l.length} days` }; } },
+  { id: 'mealsAvg', group: 'Food & Training', label: 'Avg Meals', get: c => {
+      const l = c.rz('meals'), m = mean(l, x => x.n);
+      return m === null ? null : { value: m.toFixed(1), sub: `a day over ${l.length} days` }; } },
+  { id: 'dinnerLate', group: 'Food & Training', label: 'Latest Dinner', get: c => {
+      const e = maxBy(c.rzTime('dinnerAt'), x => x.mins);
+      return e && { value: e.t, sub: shortDate(e.date) }; } },
+  { id: 'dinnerEarly', group: 'Food & Training', label: 'Earliest Dinner', get: c => {
+      const e = minBy(c.rzTime('dinnerAt'), x => x.mins);
+      return e && { value: e.t, sub: shortDate(e.date) }; } },
+  { id: 'afreshDays', group: 'Food & Training', label: 'Afresh Days', get: c => {
+      const log = c.state.rameez?.log || {};
+      const n = Object.values(log).filter(e => e?.afresh !== undefined && e.afresh !== '').length;
+      return n ? { value: String(n), sub: 'days recorded' } : null; } },
+  { id: 'rameezDays', group: 'Food & Training', label: 'Days Tracked', get: c => {
+      const n = Object.keys(c.state.rameez?.log || {}).length;
+      return n ? { value: String(n), sub: `of ${RAMEEZ_DAYS} with Rameez` } : null; } },
+
+  // ── challenges and the vault ──
+  { id: 'vault', group: 'Challenges', label: 'Step Vault', get: c =>
+      ({ value: fmtNum(c.state.stepVault || 0), sub: 'banked right now' }) },
+  { id: 'collector', group: 'Challenges', label: 'Collector Level', get: c =>
+      ({ value: String(c.state.collectorLevel || 1), sub: `${fmtNum(c.state.totalStepsWalked || 0)} walked` }) },
+  { id: 'challengeWins', group: 'Challenges', label: 'Challenges Won', get: c => {
+      const log = c.state.challengeLog || [];
+      const n = log.filter(e => !/failed|broke|lost|defaulted/i.test(e.outcome || '')).length;
+      return log.length ? { value: String(n), sub: `of ${log.length} logged`, tone: 'good' } : null; } },
+  { id: 'challengeLosses', group: 'Challenges', label: 'Challenges Lost', get: c => {
+      const log = c.state.challengeLog || [];
+      const n = log.filter(e => /failed|broke|lost|defaulted/i.test(e.outcome || '')).length;
+      return log.length ? { value: String(n), sub: `of ${log.length} logged`, tone: n ? 'bad' : 'good' } : null; } },
+  { id: 'waterStreakNow', group: 'Challenges', label: 'Water Streak', get: c =>
+      ({ value: `${c.state.water?.streak || 0}d`, sub: 'current' }) },
+  { id: 'sweetsClean', group: 'Challenges', label: 'No Sweets Run', get: c => cleanRun(c, 'sweets') },
+  { id: 'riceClean', group: 'Challenges', label: 'No Rice Run', get: c => cleanRun(c, 'rice') },
+  { id: 'ganjiDays', group: 'Challenges', label: 'Ganji Days', get: c => {
+      const n = c.state.ganji?.daysDone || 0;
+      return n ? { value: String(n), sub: 'of 100' } : null; } },
+  { id: 'acvDays', group: 'Challenges', label: 'ACV Days', get: c => {
+      const n = c.state.acv?.daysDone || 0;
+      return n ? { value: String(n), sub: 'of 100' } : null; } },
+  { id: 'twoMealsDays', group: 'Challenges', label: '2 Meals Days', get: c => {
+      const n = c.state.twoMeals?.daysDone || 0;
+      return n ? { value: String(n), sub: 'of 100' } : null; } },
+];
+
+const statById = id => OVERALL_STATS.find(s => s.id === id);
 
 // ─── xlsx: freeze the header row ──────────────────────────────────────────
 // xlsx-js-style has no pane support — it writes <sheetView workbookViewId="0"/>
@@ -2795,6 +3297,8 @@ export default function PokemonWalker({ onStop }) {
   const [showWormGraph, setShowWormGraph] = useState(false);
   // which choice fields have their free-text box open, keyed by field
   const [rameezCustom, setRameezCustom] = useState({});
+  const [showStatPicker, setShowStatPicker] = useState(false);
+  const [statGroup, setStatGroup] = useState('All');   // group filter inside the stats popup
   const [distanceInput, setDistanceInput] = useState('');
   const [showWeightPanel, setShowWeightPanel] = useState(false);
   const [weightInput, setWeightInput] = useState('');
@@ -2931,6 +3435,18 @@ export default function PokemonWalker({ onStop }) {
     if (!appState) return;
     setSaveFailed(!saveState(appState));
   }, [appState]);
+
+  // ─── Home stat boxes: which six are shown ────────────────────────────
+  const addHomeStat = id => setAppState(prev => {
+    const list = prev.homeStats || HOME_STATS_DEFAULT;
+    if (list.includes(id) || list.length >= HOME_STATS_MAX) return prev;
+    return { ...prev, homeStats: [...list, id] };
+  });
+  const removeHomeStat = id => setAppState(prev => {
+    const list = (prev.homeStats || HOME_STATS_DEFAULT).filter(x => x !== id);
+    // the last one stays — an empty row of boxes is just a gap
+    return list.length ? { ...prev, homeStats: list } : prev;
+  });
 
   // ─── Midnight warning timer ──────────────────────────────────────────
   useEffect(() => {
@@ -4755,8 +5271,7 @@ export default function PokemonWalker({ onStop }) {
       const cal = prev.calories || { todayDate: null, consumed: 0, burnt: 0, logged: false, history: [] };
       if (cal.logged && cal.todayDate === today) return prev;
       const net = (cal.consumed || 0) - (cal.burnt || 0);
-      const TARGET = 1500;
-      const over = net - TARGET;
+      const over = net - CAL_TARGET;
       let next = { ...prev };
       if (over <= 0) {
         // Under target — buddy +2000
@@ -5145,6 +5660,69 @@ export default function PokemonWalker({ onStop }) {
           <button className="pw-pack-warning-dismiss" onClick={() => setStepsWarning(false)}>✕</button>
         </div>
       )}
+      {showStatPicker && (() => {
+        const ctx = statsContext(appState);
+        const chosen = appState.homeStats || HOME_STATS_DEFAULT;
+        const full = chosen.length >= HOME_STATS_MAX;
+        const groups = [...new Set(OVERALL_STATS.map(st => st.group))];
+        // 90-odd rows is a long scroll, so the groups double as a filter
+        const shown = statGroup === 'All' ? groups : groups.filter(g => g === statGroup);
+        return (
+          <div className="pw-popup-overlay" onClick={() => setShowStatPicker(false)}>
+            <div className="osp-modal" onClick={e => e.stopPropagation()}>
+              <div className="osp-header">
+                <span className="osp-title">All Stats</span>
+                <span className="osp-count">{chosen.length} / {HOME_STATS_MAX} pinned</span>
+                <button className="osp-close" onClick={() => setShowStatPicker(false)}>✕</button>
+              </div>
+              <div className="osp-tabs">
+                {['All', ...groups].map(g => (
+                  <button
+                    key={g}
+                    className={`osp-tab${statGroup === g ? ' osp-tab-on' : ''}`}
+                    onClick={() => setStatGroup(g)}
+                  >{g}</button>
+                ))}
+              </div>
+              <div className="osp-body">
+                {shown.map(g => (
+                  <div key={g}>
+                    <div className="osp-group">{g}</div>
+                    {OVERALL_STATS.filter(st => st.group === g).map(st => {
+                      const out = st.get(ctx);
+                      const on = chosen.includes(st.id);
+                      // nothing logged for it yet — there is nothing to pin
+                      const empty = !out;
+                      const locked = !on && full;
+                      return (
+                        <button
+                          key={st.id}
+                          className={`osp-row${on ? ' osp-on' : ''}${locked ? ' osp-locked' : ''}`}
+                          disabled={empty}
+                          onClick={() => { if (on) removeHomeStat(st.id); else if (!full) addHomeStat(st.id); }}
+                          title={empty ? 'Nothing logged for this yet'
+                            : on ? 'Showing in the boxes up top — tap to remove'
+                            : locked ? `All ${HOME_STATS_MAX} boxes are taken` : 'Pin to the boxes up top'}
+                        >
+                          <span className="osp-tick">{on ? '✓' : locked ? '·' : '+'}</span>
+                          <span className="osp-label">{st.label}</span>
+                          <span className="osp-val">{out ? out.value : '—'}</span>
+                          <span className="osp-sub">{out ? (out.sub || '') : 'nothing logged yet'}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+              <div className="osp-foot">
+                {full
+                  ? `All ${HOME_STATS_MAX} boxes are taken — tap a ✓ to free one up.`
+                  : `Tap + to pin a stat to the boxes up top · room for ${HOME_STATS_MAX - chosen.length} more.`}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {showWeightGraph && (
         <WeightGraphPopup
           history={(appState.weight?.history || []).filter(e => e.date >= WEIGHT_LOG_START)}
@@ -5269,6 +5847,7 @@ export default function PokemonWalker({ onStop }) {
 
                 {/* ── Top Area: Stat Boxes + Buddy Ring ── */}
                 {(() => {
+                  const statsCtx = statsContext(appState);
                   const buddyPoke = appState.buddy ? appState.pokemon.find(p => p.uid === appState.buddy) : null;
                   const buddySteps = buddyPoke?.buddySteps || 0;
                   const buddyEvolveCost = (buddyPoke?.timesEvolved || 0) === 0 ? 50000 : 100000;
@@ -5280,40 +5859,24 @@ export default function PokemonWalker({ onStop }) {
                   return (
                     <div className="pw-top-area">
                       <div className="pw-stats-boxes">
-                        <div className="pw-stat-box-sm">
-                          <span className="pw-stat-box-val">{fmtNum(appState.totalStepsWalked)}</span>
-                          <span className="pw-stat-box-label">Total Walked</span>
-                        </div>
-                        <div className="pw-stat-box-sm">
-                          <span className="pw-stat-box-val">{fmtNum(appState.bestDay || 0)}</span>
-                          <span className="pw-stat-box-label">Daily Record</span>
-                          {appState.bestDayDate && <span className="pw-stat-box-sub">{appState.bestDayDate}</span>}
-                        </div>
-                        <div className="pw-stat-box-sm">
-                          <span className="pw-stat-box-val">
-                            {liveStreak(appState.stepHistory, todayString(), appState.todaySteps, 8000)}d
-                          </span>
-                          <span className="pw-stat-box-label">8K Streak</span>
-                        </div>
-                        <div className="pw-stat-box-sm">
-                          <span className="pw-stat-box-val">
-                            {liveStreak(appState.stepHistory, todayString(), appState.todaySteps, 10000)}d
-                          </span>
-                          <span className="pw-stat-box-label">10K Streak</span>
-                        </div>
-                        <div className="pw-stat-box-sm">
-                          {(() => {
-                            const currentMonth = todayString().slice(0, 7);
-                            const monthlySteps = (appState.stepHistory || []).filter(e => e.date.startsWith(currentMonth)).reduce((s, e) => s + e.steps, 0) + (appState.todaySteps || 0);
-                            return <span className="pw-stat-box-val">{fmtNum(monthlySteps)}</span>;
-                          })()}
-                          <span className="pw-stat-box-label">Monthly Steps</span>
-                        </div>
-                        <div className="pw-stat-box-sm">
-                          <span className="pw-stat-box-val">{(appState.totalDistanceCovered || 0).toFixed(1)}km</span>
-                          <span className="pw-stat-box-label">Distance Covered</span>
-                        </div>
+                        {(appState.homeStats || HOME_STATS_DEFAULT).map(id => {
+                          const st = statById(id);
+                          const out = st?.get(statsCtx);
+                          if (!st) return null;
+                          return (
+                            <div className="pw-stat-box-sm" key={id}>
+                              <span className="pw-stat-box-val">{out ? out.value : '—'}</span>
+                              <span className="pw-stat-box-label">{st.label}</span>
+                              {out?.sub && <span className="pw-stat-box-sub">{out.sub}</span>}
+                            </div>
+                          );
+                        })}
                       </div>
+                      <div className="pw-rings-col">
+                      <button className="os-bar" onClick={() => setShowStatPicker(true)}>
+                        📊 All Stats
+                      </button>
+                      <div className="pw-rings-row">
                       <div
                         className={`pw-buddy-ring-wrap${buddyPoke ? ' has-buddy' : ''}`}
                         onClick={() => buddyPoke && setShowBuddyDetail(p => !p)}
@@ -5417,6 +5980,8 @@ export default function PokemonWalker({ onStop }) {
                           </div>
                         );
                       })()}
+                      </div>
+                      </div>
                     </div>
                   );
                 })()}
@@ -7214,17 +7779,16 @@ export default function PokemonWalker({ onStop }) {
                       const consumed = isToday ? (cal.consumed || 0) : 0;
                       const burnt = isToday ? (cal.burnt || 0) : 0;
                       const net = consumed - burnt;
-                      const TARGET = 1500;
-                      const remaining = TARGET - net;
-                      const pct = Math.min(100, (net / TARGET) * 100);
-                      const over = net > TARGET;
+                                      const remaining = CAL_TARGET - net;
+                      const pct = Math.min(100, (net / CAL_TARGET) * 100);
+                      const over = net > CAL_TARGET;
                       const logged = isToday && cal.logged;
                       return (
                         <div className="gba-section">
                           <button className="cal-toggle-btn" onClick={() => setShowCaloriesPanel(p => !p)}>
                             Calories
                             {logged ? <span className="obj-updated-badge">Logged ✓</span>
-                              : over ? <span className="obj-pending-badge">{net - TARGET} over</span>
+                              : over ? <span className="obj-pending-badge">{net - CAL_TARGET} over</span>
                               : consumed > 0 ? <span className="obj-pending-badge">{remaining} left</span>
                               : null}
                           </button>
@@ -7238,7 +7802,7 @@ export default function PokemonWalker({ onStop }) {
                                 <div className="cal-bar-labels">
                                   <span className="cal-net-label">{net} kcal net</span>
                                   <span className={`cal-remain-label${over ? ' cal-over' : ''}`}>
-                                    {over ? `${net - TARGET} over limit` : `${remaining} left`}
+                                    {over ? `${net - CAL_TARGET} over limit` : `${remaining} left`}
                                   </span>
                                 </div>
                               </div>
@@ -7295,10 +7859,10 @@ export default function PokemonWalker({ onStop }) {
                               {/* Log day */}
                               {!logged ? (
                                 <button className="cal-log-btn" onClick={handleLogCaloriesDay} disabled={consumed === 0}>
-                                  Log Day · {over ? `buddy −${net - TARGET} steps` : 'buddy +2,000 steps'}
+                                  Log Day · {over ? `buddy −${net - CAL_TARGET} steps` : 'buddy +2,000 steps'}
                                 </button>
                               ) : (
-                                <div className="cal-logged-msg">Day logged · {over ? `buddy lost ${net - TARGET} steps` : 'buddy earned 2,000 steps'}</div>
+                                <div className="cal-logged-msg">Day logged · {over ? `buddy lost ${net - CAL_TARGET} steps` : 'buddy earned 2,000 steps'}</div>
                               )}
 
                               {/* History */}
