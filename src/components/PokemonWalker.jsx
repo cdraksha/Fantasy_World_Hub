@@ -2865,6 +2865,24 @@ function RewardCardStack({ cards, title, onDone }) {
   );
 }
 
+// ─── The Evolve column ────────────────────────────────────────────────────
+// Shared by every tier. Legendaries are not special-cased: the ones that
+// cannot evolve resolve to "Does Not Evolve" through the same path as a
+// final-form common, and Cosmog gets a real bar like anything else.
+function EvolveCell({ p }) {
+  if (p.nextEvoDexId === undefined) return <span className="pklist-evo-checking">…</span>;
+  if (p.nextEvoDexId === null) return <span className="pklist-evo-no">Does Not Evolve</span>;
+  const cost = (p.timesEvolved || 0) === 0 ? 50000 : 100000;
+  const current = p.buddySteps || 0;
+  const pct = Math.min(100, (current / cost) * 100);
+  return (
+    <>
+      <span className="pklist-evo-label">{fmtNum(current)}/{fmtNum(cost)}</span>
+      <div className="pklist-evo-bar"><div className="pklist-evo-fill" style={{ width: `${pct}%` }} /></div>
+    </>
+  );
+}
+
 // ─── Header clock ─────────────────────────────────────────────────────────
 // Owns its own interval and state. Kept out of PokemonWalker because ticking
 // a second-resolution clock through the parent's state re-rendered the whole
@@ -6621,15 +6639,18 @@ export default function PokemonWalker({ onStop }) {
                                     <span className="pklist-col-name">Pokémon</span>
                                     <span className="pklist-col-region">Region</span>
                                     <span className="pklist-col-type">Type</span>
-                                    <span className="pklist-col-evo">Buddy Steps</span>
+                                    <span className="pklist-col-evo">Evolve</span>
                                   </div>
                                   {legendaryGroup.map(p => (
                                     <div key={p.uid} className="pklist-row" onClick={() => setDetailPokemon(p)}>
                                       <span className="pklist-col-img">{p.sprite && <img src={p.sprite} alt={p.name} className="pklist-sprite" />}</span>
-                                      <span className="pklist-col-name">{p.name}</span>
+                                      <span className="pklist-col-name">
+                                        {p.name}
+                                        {(p.timesEvolved > 0) && <span className="pklist-evolved-label">(evolved)</span>}
+                                      </span>
                                       <span className="pklist-col-region">{getRegion(p.dexId)}</span>
                                       <span className="pklist-col-type">{p.types?.map(t => <TypeBadge key={t} type={t} />)}</span>
-                                      <span className="pklist-col-evo"><span className="pklist-evo-label">{fmtNum(p.buddySteps || 0)}</span></span>
+                                      <span className="pklist-col-evo"><EvolveCell p={p} /></span>
                                     </div>
                                   ))}
                                 </div>
@@ -6684,19 +6705,7 @@ export default function PokemonWalker({ onStop }) {
                                           </span>
                                           <span className="pklist-col-region">{getRegion(p.dexId)}</span>
                                           <span className="pklist-col-type">{p.types.map(t => <TypeBadge key={t} type={t} />)}</span>
-                                          <span className="pklist-col-evo">{(() => {
-                                            if (p.nextEvoDexId === undefined) return <span className="pklist-evo-checking">…</span>;
-                                            if (p.nextEvoDexId === null) return <span className="pklist-evo-no">Does Not Evolve</span>;
-                                            const cost = (p.timesEvolved || 0) === 0 ? 50000 : 100000;
-                                            const current = p.buddySteps || 0;
-                                            const pct = Math.min(100, (current / cost) * 100);
-                                            return (
-                                              <>
-                                                <span className="pklist-evo-label">{fmtNum(current)}/{fmtNum(cost)}</span>
-                                                <div className="pklist-evo-bar"><div className="pklist-evo-fill" style={{ width: `${pct}%` }} /></div>
-                                              </>
-                                            );
-                                          })()}</span>
+                                          <span className="pklist-col-evo"><EvolveCell p={p} /></span>
                                         </div>
                                       ));
                                     })()}
