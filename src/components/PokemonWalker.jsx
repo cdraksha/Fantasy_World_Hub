@@ -910,9 +910,9 @@ const LEGENDARY_MILESTONES = [
   { steps: 180000, dexId: 1025, name: 'Pecharunt',    classification: 'Mythical'   },
   { steps: 182200, dexId: 1017, name: 'Ogerpon',      classification: 'Legendary'  },
   { steps: 184400, dexId: 1001, name: 'Wo-Chien',     classification: 'Legendary'  },
-  { steps: 186700, dexId: 1009, name: 'Okidogi',      classification: 'Legendary'  },
-  { steps: 188900, dexId: 1010, name: 'Munkidori',    classification: 'Legendary'  },
-  { steps: 191100, dexId: 1011, name: 'Fezandipiti',  classification: 'Legendary'  },
+  { steps: 186700, dexId: 1014, name: 'Okidogi',      classification: 'Legendary'  },
+  { steps: 188900, dexId: 1015, name: 'Munkidori',    classification: 'Legendary'  },
+  { steps: 191100, dexId: 1016, name: 'Fezandipiti',  classification: 'Legendary'  },
   { steps: 193300, dexId: 1002, name: 'Chien-Pao',    classification: 'Legendary'  },
   { steps: 195600, dexId: 1003, name: 'Ting-Lu',      classification: 'Legendary'  },
   { steps: 197800, dexId: 1004, name: 'Chi-Yu',       classification: 'Legendary'  },
@@ -1033,7 +1033,12 @@ async function fetchBaseFormPokemon(tier, ownedDexIds, maxTries = 10) {
   return await fetchPokemonById(pickFromPool(tier, ownedDexIds));
 }
 
+// PokeAPI puts Phione in Manaphy's evolution chain, but Phione never evolves
+// in any game — left alone it offers a bar that would hand over a free Manaphy.
+const NEVER_EVOLVES = new Set([489]);
+
 async function fetchEvolution(dexId) {
+  if (NEVER_EVOLVES.has(Number(dexId))) return null;
   const specRes = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${dexId}`);
   if (!specRes.ok) return null;
   const spec = await specRes.json();
@@ -1393,6 +1398,12 @@ function loadState() {
     if (!saved.evolvedNextEvoFixed && saved.pokemon) {
       saved.pokemon = saved.pokemon.map(p => (p.timesEvolved > 0) ? { ...p, nextEvoDexId: undefined } : p);
       saved.evolvedNextEvoFixed = true;
+    }
+    // A save made before NEVER_EVOLVES has Phione cached as evolving into
+    // Manaphy. Clearing the cached answer lets the checker re-ask and get null.
+    if (!saved.phioneEvoFixed && saved.pokemon) {
+      saved.pokemon = saved.pokemon.map(p => (Number(p.dexId) === 489 ? { ...p, nextEvoDexId: undefined } : p));
+      saved.phioneEvoFixed = true;
     }
     // Clean up old sequential milestone state if present
     delete saved.nextVaultMilestoneIdx;
