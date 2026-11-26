@@ -1187,6 +1187,7 @@ function defaultState(steps) {
     daycare: initDaycare(),
     totalDistanceCovered: 0,
     homeStats: [...HOME_STATS_DEFAULT],
+    monthBadges: {},              // '2026-12': ['silver','golden']
     monthlyChallenge: null,
     claimedLegendaryMilestones: [],
     stepHistory: [],
@@ -1373,6 +1374,7 @@ function loadState() {
     if (!saved.claimedTrainers) saved.claimedTrainers = [];
     if (!saved.claimedVaultMilestones) saved.claimedVaultMilestones = [];
     if (!saved.totalDistanceCovered) saved.totalDistanceCovered = 0;
+    if (!saved.monthBadges) saved.monthBadges = {};
     // older saves predate the pickable stat boxes, and a stat removed from the
     // catalogue must not leave an empty slot behind
     saved.homeStats = (Array.isArray(saved.homeStats) ? saved.homeStats : HOME_STATS_DEFAULT)
@@ -2416,6 +2418,54 @@ function downloadBlob(data, filename, type) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// ─── Silver & Golden Month ────────────────────────────────────────────────
+// Clear the bar every single day of a calendar month. No penalty for missing
+// it — the month simply ends and the next one starts clean. Golden clears
+// Silver's bar by definition, so a golden month pays both.
+const MONTH_BADGES = {
+  silver: {
+    icon: '🥈', title: 'Silver Month', min: 8000, tone: '#8d9199',
+    grant: { common: 20, rare: 10, epic: 5 }, freeEvolutions: 2,
+    label: '20 common + 10 rare + 5 epic + 2 free evolutions',
+  },
+  golden: {
+    icon: '🥇', title: 'Golden Month', min: 10000, tone: '#c9961f',
+    grant: { common: 50, rare: 25, epic: 12 }, freeEvolutions: 6,
+    label: '50 common + 25 rare + 12 epic + 6 free evolutions',
+  },
+};
+// First month that counts. Scanning backwards would pay out for months walked
+// long before the challenge existed.
+const MONTH_BADGE_START = '2026-12';
+
+// Walks the month day by day. Today is never counted as a miss — it is still
+// being walked — but it counts as clear the moment it crosses the bar.
+function monthBadgeStatus(state, month, min, todayDate) {
+  const byDay = {};
+  (state.stepHistory || []).forEach(e => { if (e.date.startsWith(month)) byDay[e.date] = e.steps; });
+  if (todayDate.startsWith(month) && state.todaySteps) byDay[todayDate] = state.todaySteps;
+
+  const total = monthDayCount(month);
+  const inProgress = todayDate.slice(0, 7) === month;
+  const upTo = inProgress ? Number(todayDate.slice(8, 10)) : total;
+
+  let clear = 0, miss = null, lowest = null;
+  for (let d = 1; d <= upTo; d++) {
+    const date = `${month}-${String(d).padStart(2, '0')}`;
+    const steps = byDay[date] || 0;
+    const isToday = date === todayDate;
+    if (steps >= min) clear++;
+    else if (!isToday && !miss) miss = { date, steps };
+    if (!isToday && (!lowest || steps < lowest.steps)) lowest = { date, steps };
+  }
+  return {
+    month, total, clear, miss, lowest, inProgress,
+    // a month still being walked has not been won yet, only not yet lost
+    done: !inProgress && !miss && clear === total,
+    alive: !miss,
+  };
+}
+
 // ─── Monthly steps: cricket worm graph ────────────────────────────────────
 // Overs become days, runs become cumulative steps, and the two innings are
 // this month against the month it is measured against. A 10k day is marked
@@ -2715,6 +2765,102 @@ function WormGraph({ month, baseMonth, target, targetMonth, stepHistory, todayDa
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Reward reveal: a swipeable stack of what was just won ────────────────
+// The Pokémon are already in the collection by the time this renders, so
+// closing it half-way loses nothing — it is a reveal, not a claim step.
+const TIER_TONE = { common: '#7a7a8a', rare: '#1a6fb5', epic: '#7c3aed', legendary: '#b8860b' };
+
+function RewardCardStack({ cards, title, onDone }) {
+  const [i, setI] = useState(0);
+  const [dx, setDx] = useState(0);
+  const [grid, setGrid] = useState(false);
+  const from = useRef(null);
+
+  const left = cards.length - i;
+  const advance = () => { setDx(0); setI(n => Math.min(cards.length, n + 1)); };
+
+  const down = e => { from.current = e.clientX; e.currentTarget.setPointerCapture?.(e.pointerId); };
+  const move = e => { if (from.current !== null) setDx(e.clientX - from.current); };
+  const up = () => {
+    if (from.current === null) return;
+    from.current = null;
+    // past a third of a card's width counts as a swipe, otherwise it springs back
+    if (Math.abs(dx) > 70) advance(); else setDx(0);
+  };
+
+  if (grid) {
+    return (
+      <div className="rcs">
+        <div className="rcs-head">
+          <span className="rcs-title">{title}</span>
+          <button className="rcs-link" onClick={() => setGrid(false)}>back to cards</button>
+        </div>
+        <div className="rcs-grid">
+          {cards.map((c, n) => (
+            <div className="rcs-chip" key={n} style={{ borderColor: TIER_TONE[c.packTier] }}>
+              <img src={c.sprite} alt="" loading="lazy" />
+              <span>{c.name}</span>
+            </div>
+          ))}
+        </div>
+        <button className="rcs-done" onClick={onDone}>Done · {cards.length} added</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rcs">
+      <div className="rcs-head">
+        <span className="rcs-title">{title}</span>
+        <span className="rcs-count">{Math.min(i + 1, cards.length)} / {cards.length}</span>
+        <button className="rcs-link" onClick={() => setGrid(true)}>view all</button>
+      </div>
+
+      {left > 0 ? (
+        <>
+          <div className="rcs-deck" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
+            {/* three deep is enough to read as a stack without 87 nodes on screen */}
+            {cards.slice(i, i + 3).reverse().map((c, n, arr) => {
+              const depth = arr.length - 1 - n;          // 0 = the card on top
+              const top = depth === 0;
+              return (
+                <div
+                  key={i + depth}
+                  className={`rcs-card${top ? ' rcs-card-top' : ''}`}
+                  style={{
+                    borderColor: TIER_TONE[c.packTier],
+                    transform: top
+                      ? `translateX(${dx}px) rotate(${dx / 22}deg)`
+                      : `translateY(${depth * 6}px) scale(${1 - depth * 0.04})`,
+                    opacity: top ? 1 : 0.55,
+                    transition: from.current === null ? 'transform 0.18s' : 'none',
+                  }}
+                >
+                  <img className="rcs-sprite" src={c.sprite} alt="" draggable="false" />
+                  <div className="rcs-name">{c.name}</div>
+                  <div className="rcs-tier" style={{ color: TIER_TONE[c.packTier] }}>{c.packTier}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="rcs-controls">
+            <button className="rcs-skip" onClick={() => setI(cards.length)}>skip to end</button>
+            <button className="rcs-next" onClick={advance}>Next ›</button>
+          </div>
+          <div className="rcs-hint">swipe or tap Next</div>
+        </>
+      ) : (
+        <div className="rcs-end">
+          <div className="rcs-end-icon">✨</div>
+          <div className="rcs-end-text">{cards.length} Pokémon added to your collection</div>
+          <button className="rcs-done" onClick={onDone}>Done</button>
+          <button className="rcs-link" onClick={() => { setI(0); setGrid(true); }}>see them all</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -3325,6 +3471,9 @@ export default function PokemonWalker({ onStop }) {
   const [rameezCustom, setRameezCustom] = useState({});
   const [showStatPicker, setShowStatPicker] = useState(false);
   const [statGroup, setStatGroup] = useState('All');   // group filter inside the stats popup
+  const [openBadgePanel, setOpenBadgePanel] = useState(null);
+  const [badgeReveal, setBadgeReveal] = useState(null);   // {key, month, cards}
+  const [claimingBadge, setClaimingBadge] = useState(null);
   const [distanceInput, setDistanceInput] = useState('');
   const [showWeightPanel, setShowWeightPanel] = useState(false);
   const [weightInput, setWeightInput] = useState('');
@@ -3462,6 +3611,41 @@ export default function PokemonWalker({ onStop }) {
     if (!appState) return;
     setSaveFailed(!saveState(appState));
   }, [appState]);
+
+  // ─── Silver & Golden Month ───────────────────────────────────────────
+  // The Pokémon land in the collection in the same write that marks the month
+  // claimed, so the reveal that follows is presentation only — closing it
+  // early, or a reload mid-swipe, costs nothing.
+  const handleClaimMonthBadge = async (key, month) => {
+    const guard = `badge-${key}-${month}`;
+    if (claimingRewardRef.current.has(guard)) return;
+    if ((appState.monthBadges?.[month] || []).includes(key)) return;
+    const cfg = MONTH_BADGES[key];
+    claimingRewardRef.current.add(guard);
+    setClaimingBadge(guard);
+    try {
+      const granted = await grantPokemonByTier(cfg.grant, appState.pokemon.map(p => p.dexId));
+      let wrote = false;
+      setAppState(prev => {
+        const claimed = prev.monthBadges?.[month] || [];
+        if (claimed.includes(key)) return prev;      // a second tap got here first
+        wrote = true;
+        return {
+          ...prev,
+          pokemon: [...prev.pokemon, ...granted.map(p => ({ uid: makeUID(), ...p, buddySteps: 0, caughtDate: todayString(), onTeam: false, count: 1 }))],
+          caughtDex: [...new Set([...(prev.caughtDex || []), ...granted.map(p => p.dexId)])],
+          freeEvolutionCredits: (prev.freeEvolutionCredits || 0) + cfg.freeEvolutions,
+          monthBadges: { ...(prev.monthBadges || {}), [month]: [...claimed, key] },
+          challengeLog: [{ date: todayString(), type: key === 'golden' ? 'goldenMonth' : 'silverMonth', tier: 'epic',
+            outcome: `${cfg.title} — ${monthLabel(month)} — ${cfg.label}` }, ...(prev.challengeLog || [])],
+        };
+      });
+      if (wrote) setBadgeReveal({ key, month, cards: granted });
+    } finally {
+      claimingRewardRef.current.delete(guard);
+      setClaimingBadge(null);
+    }
+  };
 
   // ─── Home stat boxes: which six are shown ────────────────────────────
   const addHomeStat = id => setAppState(prev => {
@@ -7027,6 +7211,108 @@ export default function PokemonWalker({ onStop }) {
                         );
                       })()}
                     </div>
+
+                    {/* Silver & Golden Month — last in Ongoing, after Day Care */}
+                    {Object.entries(MONTH_BADGES).map(([key, cfg]) => {
+                      const today = todayString();
+                      const thisMonth = today.slice(0, 7);
+                      // shows before it starts counting, so the rules are readable early
+                      const notStarted = thisMonth < MONTH_BADGE_START;
+                      const liveMonth = notStarted ? MONTH_BADGE_START : thisMonth;
+                      const prevMonth = addDays(`${thisMonth}-01`, -1).slice(0, 7);
+                      const claimedIn = m => (appState.monthBadges?.[m] || []).includes(key);
+                      const prevStatus = !notStarted && prevMonth >= MONTH_BADGE_START
+                        ? monthBadgeStatus(appState, prevMonth, cfg.min, today) : null;
+                      const payable = prevStatus?.done && !claimedIn(prevMonth) ? prevMonth : null;
+                      const st = monthBadgeStatus(appState, liveMonth, cfg.min, today);
+                      const open = openBadgePanel === key;
+                      const pct = Math.round((st.clear / st.total) * 100);
+                      const claiming = claimingBadge === `badge-${key}-${payable}`;
+                      return (
+                        <div className={`gba-section mb mb-${key}`} key={key}>
+                          <button className="mb-toggle" onClick={() => setOpenBadgePanel(o => (o === key ? null : key))}>
+                            <span className="mb-medal">{cfg.icon}</span>
+                            <span className="mb-head">
+                              <span className="mb-name">{cfg.title}</span>
+                              <span className="mb-sub">{fmtNum(cfg.min)} every single day</span>
+                            </span>
+                            {notStarted ? <span className="mb-pill">Starts {MONTH_NAMES[Number(MONTH_BADGE_START.slice(5, 7)) - 1]}</span>
+                              : payable ? <span className="mb-pill mb-pill-go">Claim</span>
+                              : st.alive ? <span className="mb-pill">{st.clear}/{st.total}</span>
+                              : <span className="mb-pill mb-pill-dead">Over</span>}
+                          </button>
+
+                          {open && (
+                            <div className="mb-body">
+                              {!notStarted && (
+                                <>
+                                  <div className="mb-boxes">
+                                    <div className="mb-box">
+                                      <span className="mb-k">Month</span>
+                                      <span className="mb-v">{MONTH_NAMES[Number(liveMonth.slice(5, 7)) - 1]}</span>
+                                      <span className="mb-s">{liveMonth.slice(0, 4)}</span>
+                                    </div>
+                                    <div className="mb-box">
+                                      <span className="mb-k">Clear</span>
+                                      <span className="mb-v">{st.clear}<i>/{st.total}</i></span>
+                                      <span className="mb-s">days</span>
+                                    </div>
+                                    <div className="mb-box">
+                                      <span className="mb-k">Status</span>
+                                      <span className={`mb-v${st.alive ? '' : ' mb-v-dead'}`}>{st.alive ? 'Alive' : 'Over'}</span>
+                                      <span className="mb-s">{st.alive ? `${st.total - st.clear} to go` : 'retry on the 1st'}</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="mb-bar">
+                                    <div className="mb-fill" style={{ width: `${st.alive ? pct : 100}%` }} />
+                                  </div>
+                                  <div className="mb-stat">
+                                    {st.alive
+                                      ? (st.lowest
+                                          ? <>Lowest so far <b>{fmtFull(st.lowest.steps)}</b> on {fmtDMY(st.lowest.date)}</>
+                                          : <>Nothing logged yet this month</>)
+                                      : <span className="mb-dead">Broke on {fmtDMY(st.miss.date)} — {fmtFull(st.miss.steps)} steps</span>}
+                                  </div>
+                                </>
+                              )}
+
+                              {notStarted && (
+                                <div className="mb-stat">
+                                  Opens with {monthLabel(MONTH_BADGE_START)}. Every day at <b>{fmtFull(cfg.min)}+</b> or the month is over — no penalty either way.
+                                </div>
+                              )}
+
+                              <div className="mb-reward">
+                                <span className="mb-k">Reward</span>
+                                <span className="mb-chips">
+                                  {Object.entries(cfg.grant).map(([t, n]) => (
+                                    <span className={`mb-chip mb-chip-${t}`} key={t}>{n} {t}</span>
+                                  ))}
+                                  <span className="mb-chip mb-chip-evo">{cfg.freeEvolutions} free evolutions</span>
+                                </span>
+                              </div>
+
+                              {payable && (
+                                <button className="mb-claim" disabled={claiming} onClick={() => handleClaimMonthBadge(key, payable)}>
+                                  {claiming ? 'Opening the cards…' : `${cfg.icon}  ${monthLabel(payable)} cleared — claim`}
+                                </button>
+                              )}
+
+                              {badgeReveal?.key === key && (
+                                <RewardCardStack
+                                  cards={badgeReveal.cards}
+                                  title={`${cfg.icon} ${monthLabel(badgeReveal.month)}`}
+                                  onDone={() => setBadgeReveal(null)}
+                                />
+                              )}
+
+                              {key === 'golden' && <div className="mb-note">Clearing golden clears silver too — both pay out.</div>}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
 
                     <div className="obj-category-label" style={{ marginTop: 10 }}>Manual Update</div>
 
