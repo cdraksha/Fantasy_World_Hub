@@ -6477,14 +6477,20 @@ export default function PokemonWalker({ onStop }) {
                                 <span>Legendary & Mythical</span>
                                 <span className="ms-header-sub">Direct Pokémon unlock · costs vault steps</span>
                               </div>
+                              {(() => {
+                              // claimed ones drop off, the same way every other milestone
+                              // table here behaves — the Pokémon is in the collection now
+                              const legLeft = LEGENDARY_MILESTONES.filter(
+                                m => !(appState.claimedVaultMilestones || []).includes(`legendary:${m.steps}`)
+                              );
+                              if (legLeft.length === 0) return <div className="sh-empty">All claimed.</div>;
+                              return (
                               <table className="ms-table">
                                 <tbody>
-                                  {LEGENDARY_MILESTONES.map(m => {
-                                    const milestoneKey = `legendary:${m.steps}`;
-                                    const claimed = (appState.claimedVaultMilestones || []).includes(milestoneKey);
+                                  {legLeft.map(m => {
                                     const unlocked = (appState.stepVault || 0) >= m.steps;
                                     return (
-                                      <tr className={`ms-row${claimed ? ' ms-claimed' : unlocked ? ' ms-ready' : ' ms-locked'}`} key={m.steps}>
+                                      <tr className={`ms-row${unlocked ? ' ms-ready' : ' ms-locked'}`} key={m.steps}>
                                         <td className="ms-td ms-td-name">
                                           <div className="ms-name">{m.name}</div>
                                           <div className="ms-team">{m.classification}</div>
@@ -6493,9 +6499,7 @@ export default function PokemonWalker({ onStop }) {
                                         <td className="ms-td ms-td-reward">1× Direct unlock</td>
                                         <td className="ms-td ms-td-steps">{m.steps.toLocaleString()}</td>
                                         <td className="ms-td ms-td-action">
-                                          {claimed
-                                            ? <span className="ms-need" style={{ color: '#22c55e' }}>✓ Claimed</span>
-                                            : unlocked
+                                          {unlocked
                                             ? <button className="ms-claim-btn" onClick={() => handleClaimLegendaryMilestone(m)}>Claim</button>
                                             : <span className="ms-need">{(m.steps - (appState.stepVault || 0)).toLocaleString()} left</span>}
                                         </td>
@@ -6504,6 +6508,8 @@ export default function PokemonWalker({ onStop }) {
                                   })}
                                 </tbody>
                               </table>
+                              );
+                              })()}
                             </div>
                           </>
                         );

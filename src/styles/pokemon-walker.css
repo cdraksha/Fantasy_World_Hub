@@ -3212,23 +3212,6 @@
   white-space: nowrap;
 }
 
-.ms-row.ms-claimed {
-  background: #f9fafb;
-}
-
-.ms-row.ms-claimed .ms-name,
-.ms-row.ms-claimed .ms-td-region,
-.ms-row.ms-claimed .ms-td-reward,
-.ms-row.ms-claimed .ms-td-steps {
-  color: #9ca3af;
-}
-
-.ms-claimed-label {
-  font-size: 8px;
-  font-weight: 700;
-  color: #16a34a;
-}
-
 /* ── Vault Milestone Shop Grid ── */
 .vm-shop-grid {
   display: grid;
