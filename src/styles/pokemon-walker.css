@@ -7221,14 +7221,29 @@
   font-weight: 700;
   color: #991b1b;
 }
-.dcf-warn {
-  background: #fffbeb;
-  border: 1.5px solid #fcd34d;
+/* always on, so the rule is visible long before it bites */
+.dcf-rule {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  background: #f6f5f1;
+  border: 1px solid #e0dbd0;
   border-radius: 6px;
   padding: 5px 8px;
   margin-bottom: 7px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 8.5px;
-  font-weight: 700;
-  color: #92400e;
 }
+.dcf-rule-k {
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7.5px;
+  font-weight: 800;
+  color: #8b8578;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.dcf-rule-t { font-size: 8.5px; color: #6b7280; line-height: 1.45; }
+.dcf-rule-t b { color: #b45309; font-weight: 800; }
+
+.dcf-rule-warn { background: #fffbeb; border-color: #fcd34d; }
+.dcf-rule-warn .dcf-rule-k { color: #92400e; }
+.dcf-rule-warn .dcf-rule-t { color: #92400e; font-weight: 700; }

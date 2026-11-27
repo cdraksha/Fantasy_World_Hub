@@ -3228,11 +3228,14 @@ function DayChallengeCard({ cfg, state, open, onToggle, onLog, onUndo, onClaim }
 
       {open && !failed && (
         <div style={{ padding: '4px 0' }}>
-          {!complete && idleLeft <= 3 && (
-            <div className="dcf-warn">
-              {idleLeft === 0
-                ? `Log today or this fails — ${IDLE_FAIL_PENALTY} commons released.`
-                : `${idleLeft} day${idleLeft === 1 ? '' : 's'} left before a week of silence fails this (−${IDLE_FAIL_PENALTY} commons).`}
+          {!complete && (
+            <div className={`dcf-rule${idleLeft <= 3 ? ' dcf-rule-warn' : ''}`}>
+              <span className="dcf-rule-k">Keep it alive</span>
+              <span className="dcf-rule-t">
+                Log at least once a week. {idleLeft === 0
+                  ? <b>Log today or this fails</b>
+                  : <>{idleLeft} day{idleLeft === 1 ? '' : 's'} of silence left</>} — failing costs {IDLE_FAIL_PENALTY} random commons.
+              </span>
             </div>
           )}
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
@@ -9152,12 +9155,14 @@ export default function PokemonWalker({ onStop }) {
                                 const logged = Object.keys(c.log || {}).sort();
                                 const last = logged.length ? logged[logged.length - 1] : cfg.start;
                                 const idleLeft = Math.max(0, IDLE_FAIL_DAYS - daysBetween(last, today));
-                                if (idleLeft > 3) return null;
                                 return (
-                                  <div className="dcf-warn">
-                                    {idleLeft === 0
-                                      ? `Log today or this fails — ${IDLE_FAIL_PENALTY} commons released.`
-                                      : `${idleLeft} day${idleLeft === 1 ? '' : 's'} left before a week of silence fails this (−${IDLE_FAIL_PENALTY} commons).`}
+                                  <div className={`dcf-rule${idleLeft <= 3 ? ' dcf-rule-warn' : ''}`}>
+                                    <span className="dcf-rule-k">Keep it alive</span>
+                                    <span className="dcf-rule-t">
+                                      Log at least once a week. {idleLeft === 0
+                                        ? <b>Log today or this fails</b>
+                                        : <>{idleLeft} day{idleLeft === 1 ? '' : 's'} of silence left</>} — failing costs {IDLE_FAIL_PENALTY} random commons.
+                                    </span>
                                   </div>
                                 );
                               })()}
