@@ -483,6 +483,22 @@ function initQuotaChallenge() {
 
 const quotaEndDate = key => addDays(QUOTA_CHALLENGES[key].start, QUOTA_CHALLENGES[key].days - 1);
 
+// A day or quota challenge left untouched for longer than this is treated as
+// abandoned rather than paused. Measured from the last input, or from the
+// day the challenge first appeared if nothing has ever been logged.
+const IDLE_FAIL_DAYS = 7;
+const IDLE_FAIL_PENALTY = 5;   // commons released when a challenge is abandoned
+
+// Releases up to n random commons. Anything locked up as debt-trap collateral,
+// out on loan, or currently the buddy is left alone.
+function releaseCommons(state, n) {
+  const pool = (state.pokemon || []).filter(p =>
+    p.packTier === 'common' && !p.isDTCollateral && !p.isDTLoan && !p.isLoan && p.uid !== state.buddy);
+  const taken = [...pool].sort(() => Math.random() - 0.5).slice(0, n);
+  const gone = new Set(taken.map(p => p.uid));
+  return { pokemon: (state.pokemon || []).filter(p => !gone.has(p.uid)), released: taken };
+}
+
 function quotaStats(c) {
   const log = c?.log || {};
   const dates = Object.keys(log).sort();
@@ -1568,6 +1584,51 @@ function loadState() {
       saved.spendableSteps = 0;
       saved.packInventory = { common: 0, rare: 0, epic: 0, legendary: 0 };
     }
+
+    // ── A week of silence fails a day or quota challenge ──────────────
+    // Recorded rather than derived: logging again after the fact must not
+    // quietly revive something that has already been lost.
+    //
+    // The clock starts the day the rule shipped, not the day a challenge was
+    // last touched. Without this, every challenge already past a week of
+    // silence would fail on the first load and charge for a rule that did not
+    // exist when the silence happened.
+    if (!saved.idleRuleFrom) saved.idleRuleFrom = today;
+    const idleSince = d => (d && d > saved.idleRuleFrom ? d : saved.idleRuleFrom);
+
+    Object.keys(DAY_CHALLENGES).forEach(k => {
+      const c = saved[k];
+      if (!c || c.failedOn || c.claimedReward) return;
+      if ((c.daysDone || 0) >= DAY_CHALLENGES[k].target) return;   // finished, waiting to be claimed
+      if (!c.startedOn) { saved[k] = { ...c, startedOn: today }; return; }
+      const last = idleSince(c.lastLogDate || c.startedOn);
+      if (daysBetween(last, today) > IDLE_FAIL_DAYS) {
+        const { pokemon, released } = releaseCommons(saved, IDLE_FAIL_PENALTY);
+        saved.pokemon = pokemon;
+        saved[k] = { ...c, failedOn: today, failedAfter: last, releasedNames: released.map(p => p.name) };
+        saved.challengeLog = [{ date: today, type: k, tier: null,
+          outcome: `${DAY_CHALLENGES[k].title} — failed: nothing logged since ${last} — ${released.length} common released: ${released.map(p => p.name).join(', ') || 'none left to release'}` },
+          ...(saved.challengeLog || [])];
+      }
+    });
+    Object.keys(QUOTA_CHALLENGES).forEach(k => {
+      const cfg = QUOTA_CHALLENGES[k];
+      const c = saved[k];
+      if (!c || c.failedOn || c.finalClaimed) return;
+      // only while the window is open — a gap after the last day cannot lose
+      // a reward that was already earned
+      if (today < cfg.start || today > quotaEndDate(k)) return;
+      const logged = Object.keys(c.log || {}).sort();
+      const last = idleSince(logged.length ? logged[logged.length - 1] : cfg.start);
+      if (daysBetween(last, today) > IDLE_FAIL_DAYS) {
+        const { pokemon, released } = releaseCommons(saved, IDLE_FAIL_PENALTY);
+        saved.pokemon = pokemon;
+        saved[k] = { ...c, failedOn: today, failedAfter: last, releasedNames: released.map(p => p.name) };
+        saved.challengeLog = [{ date: today, type: k, tier: null,
+          outcome: `${cfg.title} — failed: nothing logged since ${last} — ${released.length} common released: ${released.map(p => p.name).join(', ') || 'none left to release'}` },
+          ...(saved.challengeLog || [])];
+      }
+    });
 
     // Credit loan if today's steps already meet the daily requirement
     // (covers: took loan then reloaded same day, or already had enough steps before taking loan)
@@ -3135,20 +3196,45 @@ function DayChallengeCard({ cfg, state, open, onToggle, onLog, onUndo, onClaim }
   const pct = (done / cfg.target) * 100;
   const loggedToday = c.lastLogDate === today;
   const complete = done >= cfg.target;
+  const failed = !!c.failedOn;
+  const idleLeft = failed ? 0
+    : Math.max(0, IDLE_FAIL_DAYS - daysBetween(c.lastLogDate || c.startedOn || today, today));
 
   return (
     <div className="gba-section">
       <button className="wc-toggle-btn" onClick={onToggle}>
         {cfg.icon} {cfg.title}
-        {complete
+        {failed
+          ? <span className="obj-pending-badge" style={{ background: '#fee2e2', color: '#b91c1c', borderColor: '#fca5a5' }}>Failed</span>
+          : complete
           ? <span className="obj-updated-badge">Claim!</span>
           : loggedToday
             ? <span className="obj-updated-badge">Logged Today</span>
             : <span className="obj-pending-badge">Log Today</span>}
       </button>
 
-      {open && (
+      {open && failed && (
+        <div className="dcf">
+          <div className="dcf-head">Challenge failed</div>
+          <div className="dcf-text">
+            Nothing logged between {c.failedAfter} and {c.failedOn} — more than a week.
+            It stopped at <b>{done}</b> of {cfg.target} days and can't be resumed.
+          </div>
+          {c.releasedNames?.length
+            ? <div className="dcf-loss">−{c.releasedNames.length} common released: {c.releasedNames.join(', ')}</div>
+            : <div className="dcf-loss">−{IDLE_FAIL_PENALTY} common — none were left to release</div>}
+        </div>
+      )}
+
+      {open && !failed && (
         <div style={{ padding: '4px 0' }}>
+          {!complete && idleLeft <= 3 && (
+            <div className="dcf-warn">
+              {idleLeft === 0
+                ? `Log today or this fails — ${IDLE_FAIL_PENALTY} commons released.`
+                : `${idleLeft} day${idleLeft === 1 ? '' : 's'} left before a week of silence fails this (−${IDLE_FAIL_PENALTY} commons).`}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             <div style={{ flex: 1, background: '#fef3c7', borderRadius: 6, padding: '6px 8px', border: '1px solid #fcd34d' }}>
               <div style={{ fontSize: 8, color: '#92400e', fontWeight: 700 }}>GOAL</div>
@@ -5222,6 +5308,7 @@ export default function PokemonWalker({ onStop }) {
     const cfg = QUOTA_CHALLENGES[key];
     const amount = Math.max(0, parseFloat(amountRaw) || 0);
     const c = appState[key] || initQuotaChallenge();
+    if (c.failedOn) return;                       // abandoned for a week — it is over
     const nextLog = { ...c.log, [date]: amount };
     const penalty = quotaPenaltyFor(key, nextLog, date);
     const alreadyPenalised = (c.penalisedDates || []).includes(date);
@@ -5253,10 +5340,9 @@ export default function PokemonWalker({ onStop }) {
       const logLines = [];
 
       if (penalty && !(cur.penalisedDates || []).includes(date)) {
-        const commons = pokemon.filter(p => p.packTier === 'common' && !p.isDTCollateral && !p.isDTLoan && !p.isLoan && p.uid !== prev.buddy);
-        const toRemove = [...commons].sort(() => Math.random() - 0.5).slice(0, penalty.lose);
-        const gone = new Set(toRemove.map(p => p.uid));
-        pokemon = pokemon.filter(p => !gone.has(p.uid));
+        const out = releaseCommons({ pokemon, buddy: prev.buddy }, penalty.lose);
+        const toRemove = out.released;
+        pokemon = out.pokemon;
         logLines.push({ date: todayString(), type: key, tier: null, outcome: `${cfg.title} — over quota on ${date} — ${penalty.label} — ${toRemove.length} common released: ${toRemove.map(p => p.name).join(', ') || 'none left to release'}` });
       }
 
@@ -5302,7 +5388,7 @@ export default function PokemonWalker({ onStop }) {
   const handleClaimQuotaFinal = async (key) => {
     const cfg = QUOTA_CHALLENGES[key];
     const c = appState[key];
-    if (!c || c.finalClaimed) return;
+    if (!c || c.finalClaimed || c.failedOn) return;
     if (todayString() <= quotaEndDate(key)) return;
     if (claimingRewardRef.current.has(key)) return;
     const { cleanDays } = quotaStats(c);
@@ -5393,6 +5479,7 @@ export default function PokemonWalker({ onStop }) {
     setAppState(prev => {
       const today = todayString();
       const c = prev[key] || initDayChallenge(key);
+      if (c.failedOn) return prev;                // abandoned for a week — it is over
       if (c.lastLogDate === today) return prev;   // already logged today
       if (c.daysDone >= target) return prev;      // target already reached
       return { ...prev, [key]: { ...c, daysDone: c.daysDone + 1, lastLogDate: today, log: [today, ...(c.log || [])] } };
@@ -5412,7 +5499,7 @@ export default function PokemonWalker({ onStop }) {
 
   const handleClaimDayChallenge = async (key) => {
     const { title, target } = DAY_CHALLENGES[key];
-    if (appState[key]?.claimedReward) return;
+    if (appState[key]?.claimedReward || appState[key]?.failedOn) return;
     if ((appState[key]?.daysDone || 0) < target) return;   // not actually finished
     if (claimingRewardRef.current.has(key)) return;
     claimingRewardRef.current.add(key);
@@ -8998,6 +9085,26 @@ export default function PokemonWalker({ onStop }) {
                       const c = appState[key] || initQuotaChallenge();
                       if (c.finalClaimed) return null;
                       const today = todayString();
+                      if (c.failedOn) return (
+                        <div className="gba-section" key={key}>
+                          <button className="wc-toggle-btn" onClick={() => setOpenQuotaPanel(o => (o === key ? null : key))}>
+                            {cfg.icon} {cfg.title}
+                            <span className="obj-pending-badge" style={{ background: '#fee2e2', color: '#b91c1c', borderColor: '#fca5a5' }}>Failed</span>
+                          </button>
+                          {openQuotaPanel === key && (
+                            <div className="dcf">
+                              <div className="dcf-head">Challenge failed</div>
+                              <div className="dcf-text">
+                                Nothing logged between {c.failedAfter} and {c.failedOn} — more than a week.
+                                It ended on <b>{quotaStats(c).cleanDays}</b> clean days and can't be resumed.
+                              </div>
+                              {c.releasedNames?.length
+                                ? <div className="dcf-loss">−{c.releasedNames.length} common released: {c.releasedNames.join(', ')}</div>
+                                : <div className="dcf-loss">−{IDLE_FAIL_PENALTY} common — none were left to release</div>}
+                            </div>
+                          )}
+                        </div>
+                      );
                       const endDate = quotaEndDate(key);
                       const { cleanDays, streak } = quotaStats(c);
                       const notStarted = today < cfg.start;
@@ -9040,6 +9147,20 @@ export default function PokemonWalker({ onStop }) {
                                   <div style={{ fontSize: 8, color: '#6b7280' }}>{streak > 0 ? `${toBlock} to ${blockReward}` : `${QUOTA_STREAK_BLOCK} for ${blockReward}`}</div>
                                 </div>
                               </div>
+
+                              {!notStarted && !over && (() => {
+                                const logged = Object.keys(c.log || {}).sort();
+                                const last = logged.length ? logged[logged.length - 1] : cfg.start;
+                                const idleLeft = Math.max(0, IDLE_FAIL_DAYS - daysBetween(last, today));
+                                if (idleLeft > 3) return null;
+                                return (
+                                  <div className="dcf-warn">
+                                    {idleLeft === 0
+                                      ? `Log today or this fails — ${IDLE_FAIL_PENALTY} commons released.`
+                                      : `${idleLeft} day${idleLeft === 1 ? '' : 's'} left before a week of silence fails this (−${IDLE_FAIL_PENALTY} commons).`}
+                                  </div>
+                                );
+                              })()}
 
                               {!notStarted && !over && (
                                 <div className="sw-log-row">

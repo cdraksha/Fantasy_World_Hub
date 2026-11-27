@@ -7195,3 +7195,40 @@
   cursor: pointer;
   margin-top: 6px;
 }
+
+
+/* ── A day or quota challenge abandoned for a week ── */
+.dcf {
+  margin: 4px 0 2px;
+  background: #fef2f2;
+  border: 1.5px solid #fca5a5;
+  border-radius: 7px;
+  padding: 7px 9px;
+}
+.dcf-head {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #b91c1c;
+  margin-bottom: 3px;
+}
+.dcf-text { font-size: 8.5px; color: #7f1d1d; line-height: 1.5; }
+.dcf-text b { font-weight: 800; }
+.dcf-loss {
+  margin-top: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  color: #991b1b;
+}
+.dcf-warn {
+  background: #fffbeb;
+  border: 1.5px solid #fcd34d;
+  border-radius: 6px;
+  padding: 5px 8px;
+  margin-bottom: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #92400e;
+}
